@@ -1,13 +1,11 @@
 package com.example.garred.doramatv;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -43,20 +41,14 @@ public class SiteWorker {
         for (int i=0; i<editorChoiceElements.size();i++) {
             Element element1 = editorChoiceElements.get(i);
             Movie movie;
+            String genres = element1.attr("title");
+            genres = genres.substring(genres.indexOf(". ")+2);
             String url = SITE_URL+element1.getElementsByTag("a").get(0).attr("href");
             url = url.substring(0,url.lastIndexOf('/'));
             String title = element1.getElementsByTag("img").get(0).attr("alt");
-            Bitmap image = null;
-            ImageDownloader imageDownloader = new ImageDownloader();
-            try {
-                String imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
-                image = imageDownloader.execute(imageURL).get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-            movieList.add(new Movie(title,"1994",new String[4],"",image));
+            String imageURL = "";
+            imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
+            movieList.add(new Movie(title,"1994",new ArrayList<>(Arrays.asList(genres.split(", "))),"",imageURL,url));
             int y = 5;
         }
     }

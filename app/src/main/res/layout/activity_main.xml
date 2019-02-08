@@ -6,64 +6,18 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <LinearLayout
-        android:id="@+id/toolbarPanel"
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/main_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@drawable/ic_launcher_background"
-        android:orientation="horizontal"
-        tools:layout_editor_absoluteX="33dp"
-        tools:layout_editor_absoluteY="8dp">
-
-        <ImageButton
-            android:id="@+id/imageButton"
-            android:layout_width="50dp"
-            android:layout_height="match_parent"
-            app:srcCompat="@android:color/darker_gray"
-            tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="3dp" />
-
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="130dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="TextView" />
-
-        <ImageButton
-            android:id="@+id/imageButton2"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:layout_weight="1"
-            app:srcCompat="@android:color/darker_gray"
-            tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="3dp" />
-
-        <ImageButton
-            android:id="@+id/imageButton3"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:layout_weight="1"
-            app:srcCompat="@android:color/darker_gray"
-            tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="3dp" />
-
-        <ImageButton
-            android:id="@+id/imageButton4"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:layout_weight="1"
-            app:srcCompat="@android:color/darker_gray"
-            tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="3dp" />
-    </LinearLayout>
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/movie_list"
-        android:layout_below="@+id/toolbarPanel"
+        android:layout_below="@+id/main_toolbar"
         android:scrollbars="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

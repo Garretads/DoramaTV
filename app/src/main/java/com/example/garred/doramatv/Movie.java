@@ -1,25 +1,62 @@
 package com.example.garred.doramatv;
 
 import android.graphics.Bitmap;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-public class Movie {
+import java.util.List;
+
+public class Movie implements Parcelable {
     String title;
     String creationYear;
-    String[] genres;
-    String[] mainActors;
-    String[] actors;
-    String[] producers;
+    List<String> genres;
+    List<String> mainActors;
+    List<String> actors;
+    List<String> producers;
     String description;
-    Bitmap movieImage;
+    String movieImageURL;
     String URL;
 
-    public Movie(String title,String creationYear, String[] genres,String description,Bitmap movieImage) {
+    public Movie(String title,String creationYear, List genres,String description,String movieImageURL,String movieURL) {
         this.title = title;
         this.creationYear = creationYear;
+        this.URL = movieURL;
         this.genres = genres;
         this.description = description;
-        this.movieImage = movieImage;
+        this.movieImageURL = movieImageURL;
+    }
+
+    public Movie(Parcel parcel) {
+        Object[] array;
+        array = parcel.createStringArray();
+        this.title = (String) array[0];
+        this.creationYear = (String) array[1];;
+        this.genres = (List<String>) array[2];
+        this.description = (String) array[3];
+        this.movieImageURL = (String) array[4];
+        this.URL = (String) array[5];
     }
 
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeArray(new Object[] { title, creationYear, genres, description,movieImageURL,URL});
+    }
+
+    public static final Creator<Movie> CREATOR = new Creator<Movie>() {
+        @Override
+        public Movie createFromParcel(Parcel parcel) {
+            return new Movie(parcel);
+        }
+
+        @Override
+        public Movie[] newArray(int i) {
+            return new Movie[i];
+        }
+    };
 }
