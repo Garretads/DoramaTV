@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MovieAbout">
+    android:fillViewport="true"
+    tools:context=".Fragments.MovieAboutFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <LinearLayout
@@ -58,11 +59,12 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/movieDescriptionText"
+            android:id="@+id/movie_description_text"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="TextView"
             android:textSize="18sp" />
+
     </LinearLayout>
 
-</android.support.constraint.ConstraintLayout>
+</ScrollView>

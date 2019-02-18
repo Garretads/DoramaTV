@@ -1,4 +1,4 @@
-package com.example.garred.doramatv;
+package com.example.garred.doramatv.Fragments;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,18 +11,24 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.garred.doramatv.ImageDownloader;
+import com.example.garred.doramatv.R;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.concurrent.ExecutionException;
 
 
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link MovieAbout.OnFragmentInteractionListener} interface
+ * {@link MovieAboutFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
- * Use the {@link MovieAbout#newInstance} factory method to
+ * Use the {@link MovieAboutFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MovieAbout extends Fragment{
+public class MovieAboutFragment extends Fragment{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "title";
@@ -46,22 +52,25 @@ public class MovieAbout extends Fragment{
 
     private OnFragmentInteractionListener mListener;
 
-    public MovieAbout() {
+    public MovieAboutFragment() {
         // Required empty public constructor
     }
 
 
     // TODO: Rename and change types and number of parameters
-    public static MovieAbout newInstance(String movieTitle, String movieAge, String movieGenres, String movieDescription, String movieImageURL, String movieURL) {
-        MovieAbout fragment = new MovieAbout();
+    public static MovieAboutFragment newInstance(JSONObject movieInfo) throws JSONException {
+        MovieAboutFragment fragment = new MovieAboutFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, movieTitle);
-        args.putString(ARG_PARAM2, movieAge);
-        args.putString(ARG_PARAM3, movieGenres);
-        args.putString(ARG_PARAM4, movieDescription);
-        args.putString(ARG_PARAM5, movieImageURL);
-        args.putString(ARG_PARAM6, movieURL);
+
+        args.putString(ARG_PARAM1, movieInfo.getString("title"));
+        args.putString(ARG_PARAM2, movieInfo.getString("age"));
+        args.putString(ARG_PARAM3, movieInfo.getString("genres").substring(1,movieInfo.getString("genres").length()-1));
+        args.putString(ARG_PARAM4, movieInfo.getString("description"));
+        args.putString(ARG_PARAM5, movieInfo.getString("movieImageIMG"));
+        args.putString(ARG_PARAM6, movieInfo.getString("movieURL"));
+
         fragment.setArguments(args);
+
         return fragment;
     }
 
@@ -95,9 +104,11 @@ public class MovieAbout extends Fragment{
         TextView movieAgeView = view.findViewById(R.id.movie_age_text);
         TextView movieGenresView = view.findViewById(R.id.movie_genres_text);
         ImageView imageView = view.findViewById(R.id.movie_image_about);
+        TextView movieDescriptionView = view.findViewById(R.id.movie_description_text);
 
         movieAgeView.setText(AGE + movieAge);
         movieGenresView.setText(GENRES + movieGenres);
+        movieDescriptionView.setText(movieDescription);
         imageView.setImageBitmap(image);
 
         return view;

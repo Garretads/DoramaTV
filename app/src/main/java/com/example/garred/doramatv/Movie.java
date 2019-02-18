@@ -4,7 +4,14 @@ import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class Movie implements Parcelable {
     String title;
@@ -16,6 +23,7 @@ public class Movie implements Parcelable {
     String description;
     String movieImageURL;
     String URL;
+    JSONArray sources;
 
     public Movie(String title,String creationYear, List genres,String description,String movieImageURL,String movieURL) {
         this.title = title;
@@ -59,4 +67,35 @@ public class Movie implements Parcelable {
             return new Movie[i];
         }
     };
+
+        void getSources() {
+
+            /* Серия
+                    Источник (имя фансаба)
+                            id фильма в vk
+                                            ссылки с различным качеством
+
+                <select id=chapterSelectorSelect
+                Взять блок option, где имеется атрибут selected="selected". Его значение будет количеством выпущенных серий
+
+             */
+            PageDownloader pageDownloader = new PageDownloader();
+            Document pageContent;
+
+            try {
+                pageContent = pageDownloader.execute(URL).get();
+                Element element = pageContent.getElementById("chapterSelectorSelect");
+                Elements elements = element.getElementsByAttribute("selected");
+                element = elements.last();
+                int serialLength = Integer.valueOf(element.text().substring(element.text().indexOf(" ")+1));
+
+
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+        }
 }
