@@ -4,13 +4,28 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-
+import com.example.garred.doramatv.PageDownloader;
 import com.example.garred.doramatv.R;
+import com.example.garred.doramatv.SelectQualityFragment;
+import com.example.garred.doramatv.Settings;
+import com.example.garred.doramatv.Tools.VKRequest;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -24,14 +39,20 @@ import com.example.garred.doramatv.R;
 public class MovieSourcesFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final String ARG_PARAM1 = "info";
 
     // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private String mInfo;
+    static String TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/";
     private ArrayAdapter arrayAdapter;
+    ArrayList seriesList;
+    ArrayList listViewList;
     ListView listView;
+    JSONArray sourcesArray;
+    JSONObject sourcesInfo;
+    String URL;
+    String accessToken;
+    private Boolean seriesSelected = false;
 
     private OnFragmentInteractionListener mListener;
 
@@ -39,32 +60,34 @@ public class MovieSourcesFragment extends Fragment {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment MovieSourcesFragment.
-     */
+
     // TODO: Rename and change types and number of parameters
-    public static MovieSourcesFragment newInstance(String param1, String param2) {
+    public static MovieSourcesFragment newInstance(JSONObject sourcesInfo) {
         MovieSourcesFragment fragment = new MovieSourcesFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putString(ARG_PARAM1, sourcesInfo.toString());
         fragment.setArguments(args);
         return fragment;
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        arrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1, new String[]{"Sources 1", "Sources 2", "Sources 3"});
-        arrayAdapter.setNotifyOnChange(true);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            try {
+                sourcesInfo = new JSONObject(getArguments().getString(ARG_PARAM1));
+                URL = sourcesInfo.getString("URL");
+                accessToken = sourcesInfo.getString("access_token");
+
+                seriesList = formSeriesList(URL);
+                listViewList = new ArrayList();
+                listViewList.addAll(seriesList);
+                arrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1, listViewList);
+                arrayAdapter.setNotifyOnChange(true);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -73,14 +96,90 @@ public class MovieSourcesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_sources, container, false);
+
+        FragmentActivity activity = getActivity();
         listView = view.findViewById(R.id.sourcesListView);
-        arrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1, new String[]{"Sources 1", "Sources 2", "Sources 3"});
-        arrayAdapter.setNotifyOnChange(true);
         listView.setAdapter(arrayAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                try {
+                    if (!seriesSelected) {
+                        sourcesArray = getSources(URL, i + 1);
+                        ArrayList funSubList = new ArrayList();
+                        funSubList.add(seriesList.get(i));
+                        for (int index=0; index<sourcesArray.length();index++) {
+
+                            JSONObject jsonObject = (JSONObject)sourcesArray.get(index);
+                            funSubList.add(jsonObject.getString("sub_unit"));
+                        }
+                        arrayAdapter.clear();
+                        arrayAdapter.addAll(funSubList);
+                        arrayAdapter.notifyDataSetChanged();
+                        seriesSelected = true;
+                    }
+                    else {
+                        switch (i) {
+                            case 0: {
+                                arrayAdapter.clear();
+                                arrayAdapter.addAll(seriesList);
+                                arrayAdapter.notifyDataSetChanged();
+                                seriesSelected = false;
+                                break;
+                            }
+                            default: {
+                                //Выбор качества, воспроизведение
+                                /*
+                                * Формируем запрос в vk api
+                                * https://api.vk.com/method/video.get?videos=-66384560_456239143&access_token=d053e5de82599c59b61a8a138cfe732d462a245623f8807ee3a4bf5a9dad3e22f1179377b0499001932f0&v=5.92
+                                *
+                                * Парсим ответ в JSONObject. Выцепляем оттуда
+                                *
+                                *
+                                *
+                                * */
+                                JSONObject jsonObject = (JSONObject) sourcesArray.get(i-1);
+                                String METHOD_NAME = "video.get";
+                                Uri.Builder builder = new Uri.Builder();
+                                builder.scheme("https")
+                                        .authority("api.vk.com")
+                                        .appendPath("method")
+                                        .appendPath(METHOD_NAME)
+                                        .appendQueryParameter("videos",jsonObject.getString("movie_id"))
+                                        .appendQueryParameter("access_token",accessToken)
+                                        .appendQueryParameter("v", Settings.version());
+                                builder.build();
+
+                                VKRequest vkRequest = new VKRequest();
+                                JSONObject object = new JSONObject(vkRequest.execute(builder.toString()).get());
+                                object = (JSONObject) object.get("response");
+                                object = (JSONObject) ((JSONArray) object.get("items")).get(0);
+                                JSONObject fileLink = (JSONObject) object.get("files");
+
+                                SelectQualityFragment selectQualityFragment = SelectQualityFragment.newInstance(fileLink);
+
+                                selectQualityFragment.show(getFragmentManager(), "Выберите качество");
+
+                            }
+                        }
+                    }
+
+                    int a = 5;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
         return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
+
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -117,5 +216,93 @@ public class MovieSourcesFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+    }
+
+    static ArrayList formSeriesList(String URL) {
+
+            /* Серия
+                    Источник (имя фансаба)
+                            id фильма в vk
+                                            ссылки с различным качеством
+
+                <select id=chapterSelectorSelect
+                Взять блок option, где имеется атрибут selected="selected". Его значение будет количеством выпущенных серий
+
+             */
+
+
+        PageDownloader pageDownloader = new PageDownloader();
+        Document pageContent;
+        ArrayList seriesNameList = new ArrayList();
+
+        try {
+            pageContent = pageDownloader.execute(URL+"/series1").get();
+            Element element = pageContent.getElementById("chapterSelectorSelect");
+            Elements elements = element.getElementsByTag("option");
+            int serialLength = elements.size();
+            for (Element element1 : elements)
+                seriesNameList.add(element1.text());
+
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return seriesNameList;
+    }
+
+    JSONArray getSources(String URL, int seriesIndex) throws InterruptedException,ExecutionException {
+        Pattern vkPattern = Pattern.compile("oid=(.?[\\d]+).+id=([\\d]+).+hash=(.+)\" a");
+        Matcher matcher;
+
+        PageDownloader pageDownloader;
+        Document pageContent;
+
+        JSONArray oneSeriesSources = new JSONArray();
+        pageDownloader = new PageDownloader();
+
+        pageContent = pageDownloader.execute(URL+"/series"+seriesIndex).get();
+        Elements elements = pageContent.getElementsByClass("chapter-link");
+
+        for (Element element1 : elements) {
+            JSONObject jsonObject = new JSONObject();
+            String subUnit;
+            String seriesID;
+            String oid;
+            String id;
+            String hash;
+
+            subUnit = element1.getElementsByClass("person-link").first().text();
+            seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid");
+
+            pageDownloader = new PageDownloader();
+            pageContent = pageDownloader.execute(TRAGUS_URL+seriesID).get();
+
+            String tempURL = pageContent.getElementsByTag("iframe").first().toString();
+
+            if (tempURL.contains("vk.com")) {
+                matcher = vkPattern.matcher(tempURL);
+                if (matcher.find()) {
+                    oid = matcher.group(1);
+                    id = matcher.group(2);
+                    hash = matcher.group(3);
+
+                    try {
+                        jsonObject.put("sub_unit",subUnit);
+                        jsonObject.put("movie_id",oid+"_"+id);
+                        jsonObject.put("hash",hash);
+                        oneSeriesSources.put(jsonObject);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else
+                continue;
+
+        }
+        return oneSeriesSources;
     }
 }

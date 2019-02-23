@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Fragments.MovieSourcesFragment">
+    tools:context=".Fragments.MovieSourcesFragment"
+    android:id="@+id/movie_sources_fragment">
 
     <ListView
         android:id="@+id/sourcesListView"

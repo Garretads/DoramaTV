@@ -1,20 +1,18 @@
 package com.example.garred.doramatv;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -46,9 +44,10 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
         } catch (ExecutionException e) {
             Toast.makeText(getApplicationContext(),getText(R.string.cant_connect_error),Toast.LENGTH_SHORT).show();
         }
-        //setInitialData();
+
         MovieTitleAdapter mMovieAdapter = new MovieTitleAdapter(this,mMovieList,this);
         mRecyclerView.setAdapter(mMovieAdapter);
+
 
     }
 
@@ -64,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
             jsonObject.put("genres",selectedMovie.genres.toString());
             jsonObject.put("movieImageIMG",selectedMovie.movieImageURL);
             jsonObject.put("movieURL",selectedMovie.URL);
+            jsonObject.put("access_token",Settings.access_token());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -71,4 +71,5 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
         intent.putExtra("movieInfo",jsonObject.toString());
         startActivity(intent);
     }
+
 }
