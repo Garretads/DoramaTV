@@ -11,6 +11,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import com.example.garred.doramatv.Fragments.MovieAboutFragment;
 import com.example.garred.doramatv.Fragments.MovieSourcesFragment;
+import com.example.garred.doramatv.Tools.PageDownloader;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

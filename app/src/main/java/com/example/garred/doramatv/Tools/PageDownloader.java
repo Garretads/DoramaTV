@@ -7,7 +7,7 @@ import org.jsoup.nodes.Document;
 
 import java.io.IOException;
 
-public class WebPageDownloader extends AsyncTask<String,Void,Document> {
+public class PageDownloader extends AsyncTask<String,Void,Document> {
 
     @Override
     protected Document doInBackground(String... strings) {
@@ -20,3 +20,4 @@ public class WebPageDownloader extends AsyncTask<String,Void,Document> {
         return result;
     }
 }
+

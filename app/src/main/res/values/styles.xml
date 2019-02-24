@@ -6,6 +6,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="searchViewStyle">@style/AppSearchViewStyle</item>
     </style>
 
     <style name="NoActionBar" parent="Theme.AppCompat.NoActionBar">
@@ -16,5 +17,11 @@
     <style name="AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+
+    <style name="AppSearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <item name="queryBackground">@android:color/transparent</item>
+        <item name="android:imeActionId">6</item>
+    </style>
 
 </resources>

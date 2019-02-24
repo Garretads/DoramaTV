@@ -1,11 +1,11 @@
 package com.example.garred.doramatv;
 
-import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.example.garred.doramatv.Tools.PageDownloader;
+
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

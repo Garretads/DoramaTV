@@ -1,4 +1,4 @@
-package com.example.garred.doramatv;
+package com.example.garred.doramatv.Fragments;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+import android.widget.Toast;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
@@ -61,6 +63,9 @@ public class SelectQualityFragment extends DialogFragment implements DialogInter
     public void onClick(DialogInterface dialogInterface, int i) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(Uri.parse(sourcesLinks.get(i)), "video/mp4");
-        startActivity(intent);
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        } else
+            Toast.makeText(getContext(),"Не найдено приложений, способных открыть файл",Toast.LENGTH_LONG).show();
     }
 }
