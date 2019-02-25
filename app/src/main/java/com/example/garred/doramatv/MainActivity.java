@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
             jsonObject.put("movieImageIMG",selectedMovie.movieImageURL);
             jsonObject.put("movieURL",selectedMovie.URL);
             jsonObject.put("access_token",Settings.access_token());
+            jsonObject.put("isSerial",selectedMovie.isSerial);
         } catch (JSONException e) {
             e.printStackTrace();
         }

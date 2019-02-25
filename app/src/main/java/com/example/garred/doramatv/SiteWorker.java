@@ -42,7 +42,8 @@ public class SiteWorker {
          * Из img берутся значения аттриб data-original, title
          *
          * Из div class="tile-info" берем содержимое тега <a> (перечень жанров)
-        *
+         * div class=tags
+        * span class="mangaSingle" показатель полнометражки
         * */
         SearchRequest searchRequest = new SearchRequest();
         Document pageContent = searchRequest.execute(SITE_URL+addPath,searchString).get();
@@ -50,7 +51,6 @@ public class SiteWorker {
         for (Element element : elements) {
             Elements tempElements = element.getElementsByClass("tile-info").first().getElementsByTag("a");
             if (tempElements.size() != 0) {
-
                 String genres;
                 if (tempElements.size() > 1) {
                     StringBuilder stringBuilder = new StringBuilder();
@@ -67,7 +67,9 @@ public class SiteWorker {
                 tempElement = tempElement.getElementsByTag("img").first();
                 String title = tempElement.attr("title");
                 String imageURL = tempElement.attr("data-original");
-                movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url));
+                tempElement = element.getElementsByClass("tags").first();
+                Boolean isSerial = tempElement.getElementsByClass("mangaSingle").isEmpty();
+                movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial));
             }
         }
         int a = 5;
@@ -96,7 +98,7 @@ public class SiteWorker {
             String title = element1.getElementsByTag("img").get(0).attr("alt");
             String imageURL = "";
             imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
-            movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url));
+            movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,true));
         }
 
         return movieList;

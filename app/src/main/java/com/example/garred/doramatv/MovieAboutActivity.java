@@ -37,6 +37,7 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
     String imageURL;
     String movieURL;
     String accessToken;
+    Boolean isSerial;
 
 
     @Override
@@ -52,6 +53,7 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
             this.imageURL = movieInfo.getString("movieImageIMG");
             this.movieURL = movieInfo.getString("movieURL");
             this.accessToken = movieInfo.getString("access_token");
+            this.isSerial = movieInfo.getBoolean("isSerial");
 
             JSONObject newMovieInfo = getMovieInfo(movieURL);
 
@@ -70,11 +72,10 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
         }
 
 
-        setSupportActionBar(toolbar);
+        /*setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle(title);
+        getSupportActionBar().setTitle(title);*/
 
-        toolbar.setTitle(title);
         setupViewPager(mViewPager);
         tabLayout.setupWithViewPager(mViewPager);
 
@@ -91,9 +92,13 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
             JSONObject sourcesInfo = new JSONObject();
             sourcesInfo.put("URL",movieURL);
             sourcesInfo.put("access_token",accessToken);
+            sourcesInfo.put("isSerial",isSerial);
             mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме");
             mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники");
             viewPager.setAdapter(mFragmentAdapter);
+            setSupportActionBar(toolbar);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle(title);
         } catch (JSONException e) {
             e.printStackTrace();
         }

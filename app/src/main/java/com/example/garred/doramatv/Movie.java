@@ -24,14 +24,16 @@ public class Movie implements Parcelable {
     String movieImageURL;
     String URL;
     JSONArray sources;
+    Boolean isSerial;
 
-    public Movie(String title,String creationYear, List genres,String description,String movieImageURL,String movieURL) {
+    public Movie(String title,String creationYear, List genres,String description,String movieImageURL,String movieURL,Boolean isSerial) {
         this.title = title;
         this.creationYear = creationYear;
         this.URL = movieURL;
         this.genres = genres;
         this.description = description;
         this.movieImageURL = movieImageURL;
+        this.isSerial = isSerial;
     }
 
     public Movie(Parcel parcel) {
@@ -67,35 +69,4 @@ public class Movie implements Parcelable {
             return new Movie[i];
         }
     };
-
-        void getSources() {
-
-            /* Серия
-                    Источник (имя фансаба)
-                            id фильма в vk
-                                            ссылки с различным качеством
-
-                <select id=chapterSelectorSelect
-                Взять блок option, где имеется атрибут selected="selected". Его значение будет количеством выпущенных серий
-
-             */
-            PageDownloader pageDownloader = new PageDownloader();
-            Document pageContent;
-
-            try {
-                pageContent = pageDownloader.execute(URL).get();
-                Element element = pageContent.getElementById("chapterSelectorSelect");
-                Elements elements = element.getElementsByAttribute("selected");
-                element = elements.last();
-                int serialLength = Integer.valueOf(element.text().substring(element.text().indexOf(" ")+1));
-
-
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-
-        }
 }

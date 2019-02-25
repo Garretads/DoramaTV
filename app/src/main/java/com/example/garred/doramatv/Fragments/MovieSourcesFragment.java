@@ -51,6 +51,7 @@ public class MovieSourcesFragment extends Fragment {
     JSONObject sourcesInfo;
     String URL;
     String accessToken;
+    Boolean isSerial;
     private Boolean seriesSelected = false;
 
     private OnFragmentInteractionListener mListener;
@@ -78,8 +79,8 @@ public class MovieSourcesFragment extends Fragment {
                 sourcesInfo = new JSONObject(getArguments().getString(ARG_PARAM1));
                 URL = sourcesInfo.getString("URL");
                 accessToken = sourcesInfo.getString("access_token");
-
-                seriesList = formSeriesList(URL);
+                isSerial = sourcesInfo.getBoolean("isSerial");
+                seriesList = formSeriesList(URL,isSerial);
                 listViewList = new ArrayList();
                 listViewList.addAll(seriesList);
                 arrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1, listViewList);
@@ -95,8 +96,6 @@ public class MovieSourcesFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_sources, container, false);
-
-        FragmentActivity activity = getActivity();
         listView = view.findViewById(R.id.sourcesListView);
         listView.setAdapter(arrayAdapter);
 
@@ -105,7 +104,11 @@ public class MovieSourcesFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 try {
                     if (!seriesSelected) {
-                        sourcesArray = getSources(URL, i + 1);
+                        if (isSerial)
+                            sourcesArray = getSources(URL, i + 1);
+                        else
+                            sourcesArray = getSources(URL, i);
+
                         ArrayList funSubList = new ArrayList();
                         funSubList.add(seriesList.get(i));
                         for (int index=0; index<sourcesArray.length();index++) {
@@ -217,7 +220,7 @@ public class MovieSourcesFragment extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
-    static ArrayList formSeriesList(String URL) {
+    static ArrayList formSeriesList(String URL,Boolean isSerial) {
 
             /* Серия
                     Источник (имя фансаба)
@@ -226,19 +229,20 @@ public class MovieSourcesFragment extends Fragment {
 
                 <select id=chapterSelectorSelect
                 Взять блок option, где имеется атрибут selected="selected". Его значение будет количеством выпущенных серий
-
              */
 
 
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
         ArrayList seriesNameList = new ArrayList();
-
         try {
-            pageContent = pageDownloader.execute(URL+"/series1").get();
+            if (isSerial)
+                pageContent = pageDownloader.execute(URL+"/series1").get();
+            else
+                pageContent = pageDownloader.execute(URL+"/series0").get();
+
             Element element = pageContent.getElementById("chapterSelectorSelect");
             Elements elements = element.getElementsByTag("option");
-            int serialLength = elements.size();
             for (Element element1 : elements)
                 seriesNameList.add(element1.text());
 
@@ -272,7 +276,11 @@ public class MovieSourcesFragment extends Fragment {
             String id;
             String hash;
 
-            subUnit = element1.getElementsByClass("person-link").first().text();
+            if (element1.getElementsByClass("person-link").first() != null)
+                subUnit = element1.getElementsByClass("person-link").first().text();
+            else
+                subUnit = "";
+
             seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid");
 
             pageDownloader = new PageDownloader();
