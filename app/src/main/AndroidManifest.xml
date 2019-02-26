@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.garred.doramatv">
+    package="ru.garretech.garred.doramatv">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -18,7 +18,7 @@
             android:theme="@style/NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.garred.doramatv.MainActivity" />
+                android:value="ru.garretech.garred.doramatv.MainActivity" />
         </activity>
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -28,5 +28,4 @@
             </intent-filter>
         </activity>
     </application>
-
 </manifest>
