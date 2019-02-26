@@ -1,6 +1,10 @@
 package com.example.garred.doramatv.Tools;
 
+import android.app.ProgressDialog;
 import android.os.AsyncTask;
+import android.os.RecoverySystem;
+
+import com.example.garred.doramatv.ProgressBottomSheet;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,6 +18,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class SearchRequest extends AsyncTask<String,Void,Document>  {
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
     @Override
     protected Document doInBackground(String... strings) {
         Document content = null;
@@ -22,7 +32,6 @@ public class SearchRequest extends AsyncTask<String,Void,Document>  {
             String parameters = "q="+strings[1];
             byte[] data = null;
             InputStream is = null;
-
             try {
                 URL url = new URL(myURL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();

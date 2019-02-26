@@ -1,6 +1,9 @@
 package com.example.garred.doramatv.Tools;
 
 import android.os.AsyncTask;
+import android.support.v4.app.FragmentManager;
+
+import com.example.garred.doramatv.ProgressBottomSheet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +17,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class VKRequest extends AsyncTask<String,Void, String> {
     URL urlToRequest;
+
 
     @Override
     protected String doInBackground(String... url) {

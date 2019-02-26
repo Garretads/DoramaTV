@@ -4,13 +4,14 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import com.example.garred.doramatv.ProgressBottomSheet;
 import com.example.garred.doramatv.Tools.PageDownloader;
 import com.example.garred.doramatv.R;
 import com.example.garred.doramatv.Settings;
@@ -53,6 +54,7 @@ public class MovieSourcesFragment extends Fragment {
     String accessToken;
     Boolean isSerial;
     private Boolean seriesSelected = false;
+    ProgressBottomSheet progressBottomSheet;
 
     private OnFragmentInteractionListener mListener;
 
@@ -76,6 +78,7 @@ public class MovieSourcesFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             try {
+                progressBottomSheet = new ProgressBottomSheet();
                 sourcesInfo = new JSONObject(getArguments().getString(ARG_PARAM1));
                 URL = sourcesInfo.getString("URL");
                 accessToken = sourcesInfo.getString("access_token");
@@ -103,6 +106,7 @@ public class MovieSourcesFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 try {
+                    progressBottomSheet.show(getFragmentManager(),"progressBar");
                     if (!seriesSelected) {
                         if (isSerial)
                             sourcesArray = getSources(URL, i + 1);
@@ -167,7 +171,7 @@ public class MovieSourcesFragment extends Fragment {
                         }
                     }
 
-                    int a = 5;
+                    progressBottomSheet.dismiss();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -177,7 +181,6 @@ public class MovieSourcesFragment extends Fragment {
                 }
             }
         });
-
         return view;
     }
 
