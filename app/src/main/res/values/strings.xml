@@ -11,4 +11,6 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="cant_connect_error">Ошибка загрузки. Проверьте интернет подключение</string>
     <string name="progress_text">Идет загрузка данных...</string>
+    <string name="navigation_drawer_open">Открыть шторку</string>
+    <string name="navigation_drawer_close">Закрыть шторку</string>
 </resources>

@@ -13,7 +13,7 @@ import org.jsoup.select.Elements;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class Movie implements Parcelable {
+public class Movie {
     String title;
     String creationYear;
     List<String> genres;
@@ -23,6 +23,7 @@ public class Movie implements Parcelable {
     String description;
     String movieImageURL;
     String URL;
+    String initialSeries;
     JSONArray sources;
     Boolean isSerial;
 
@@ -36,37 +37,5 @@ public class Movie implements Parcelable {
         this.isSerial = isSerial;
     }
 
-    public Movie(Parcel parcel) {
-        Object[] array;
-        array = parcel.createStringArray();
-        this.title = (String) array[0];
-        this.creationYear = (String) array[1];;
-        this.genres = (List<String>) array[2];
-        this.description = (String) array[3];
-        this.movieImageURL = (String) array[4];
-        this.URL = (String) array[5];
-    }
 
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeArray(new Object[] { title, creationYear, genres, description,movieImageURL,URL});
-    }
-
-    public static final Creator<Movie> CREATOR = new Creator<Movie>() {
-        @Override
-        public Movie createFromParcel(Parcel parcel) {
-            return new Movie(parcel);
-        }
-
-        @Override
-        public Movie[] newArray(int i) {
-            return new Movie[i];
-        }
-    };
 }

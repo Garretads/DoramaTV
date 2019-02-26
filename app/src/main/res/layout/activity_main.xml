@@ -1,19 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <include layout="@layout/toolbar"/>
+
+
+    <android.support.v4.widget.DrawerLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/drawer_layout"
+        android:layout_below="@+id/toolbar_actionbar">
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/movie_list"
-        android:layout_below="@+id/toolbar_actionbar"
         android:scrollbars="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/drawer_activity_main"
+        android:fitsSystemWindows="true"/>
 
 
+</android.support.v4.widget.DrawerLayout>
 </RelativeLayout>

@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 public class SiteWorker {
     String currentContent;
     final static String SITE_URL = "http://doramatv.ru";
-    String editorChoice = "row tiles-row short";
+    final static String editorChoice = "row tiles-row short";
     Context context;
 
     public SiteWorker(Context context) {
@@ -78,7 +78,7 @@ public class SiteWorker {
     }
 
 
-    List<Movie> getEditorChoiceMovies() throws InterruptedException, ExecutionException {
+    static List<Movie> getEditorChoiceMovies() throws InterruptedException, ExecutionException {
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
         List<Movie> movieList;
@@ -98,9 +98,83 @@ public class SiteWorker {
             String title = element1.getElementsByTag("img").get(0).attr("alt");
             String imageURL = "";
             imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
+            //div class="subject-actions col-sm-7"
             movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,true));
         }
 
         return movieList;
     }
+
+    static List<Movie> getNewMovies() throws InterruptedException, ExecutionException {
+        //http://doramatv.ru/list?sortType=created
+        PageDownloader pageDownloader = new PageDownloader();
+        Document pageContent;
+        ArrayList<Movie> movieList = new ArrayList<>();
+
+        String addPath = "/list?sortType=created";
+        pageContent = pageDownloader.execute(SITE_URL+addPath).get();
+        Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
+        for (Element element : elements) {
+            Elements tempElements = element.getElementsByClass("tile-info").first().getElementsByTag("a");
+            if (tempElements.size() != 0) {
+                String genres;
+                if (tempElements.size() > 1) {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    for (Element element1 : tempElements)
+                        stringBuilder.append(element1.text() + ", ");
+                    genres = stringBuilder.toString().substring(0, stringBuilder.toString().lastIndexOf(", "));
+                }
+                else {
+                    genres = tempElements.first().text();
+                }
+
+                Element tempElement = element.getElementsByClass("img").first();
+                String url = SITE_URL + tempElement.getElementsByTag("a").get(0).attr("href");
+                tempElement = tempElement.getElementsByTag("img").first();
+                String title = tempElement.attr("title");
+                String imageURL = tempElement.attr("data-original");
+                tempElement = element.getElementsByClass("tags").first();
+                Boolean isSerial = tempElement.getElementsByClass("mangaSingle").isEmpty();
+                movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial));
+            }
+        }
+        return movieList;
+    }
+
+    static List<Movie> getBestMovies() throws InterruptedException, ExecutionException {
+        //http://doramatv.ru/list?sortType=created
+        PageDownloader pageDownloader = new PageDownloader();
+        Document pageContent;
+        ArrayList<Movie> movieList = new ArrayList<>();
+
+        String addPath = "/list";
+        pageContent = pageDownloader.execute(SITE_URL+addPath).get();
+        Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
+        for (Element element : elements) {
+            Elements tempElements = element.getElementsByClass("tile-info").first().getElementsByTag("a");
+            if (tempElements.size() != 0) {
+                String genres;
+                if (tempElements.size() > 1) {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    for (Element element1 : tempElements)
+                        stringBuilder.append(element1.text() + ", ");
+                    genres = stringBuilder.toString().substring(0, stringBuilder.toString().lastIndexOf(", "));
+                }
+                else {
+                    genres = tempElements.first().text();
+                }
+
+                Element tempElement = element.getElementsByClass("img").first();
+                String url = SITE_URL + tempElement.getElementsByTag("a").get(0).attr("href");
+                tempElement = tempElement.getElementsByTag("img").first();
+                String title = tempElement.attr("title");
+                String imageURL = tempElement.attr("data-original");
+                tempElement = element.getElementsByClass("tags").first();
+                Boolean isSerial = tempElement.getElementsByClass("mangaSingle").isEmpty();
+                movieList.add(new Movie(title, "1994", new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial));
+            }
+        }
+        return movieList;
+    }
+
 }

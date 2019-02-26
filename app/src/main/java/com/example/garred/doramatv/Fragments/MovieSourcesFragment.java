@@ -45,7 +45,7 @@ public class MovieSourcesFragment extends Fragment {
     private String mInfo;
     static String TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/";
     private ArrayAdapter arrayAdapter;
-    ArrayList seriesList;
+    JSONArray seriesList;
     ArrayList listViewList;
     ListView listView;
     JSONArray sourcesArray;
@@ -55,6 +55,7 @@ public class MovieSourcesFragment extends Fragment {
     Boolean isSerial;
     private Boolean seriesSelected = false;
     ProgressBottomSheet progressBottomSheet;
+    String initialSeries;
 
     private OnFragmentInteractionListener mListener;
 
@@ -83,9 +84,14 @@ public class MovieSourcesFragment extends Fragment {
                 URL = sourcesInfo.getString("URL");
                 accessToken = sourcesInfo.getString("access_token");
                 isSerial = sourcesInfo.getBoolean("isSerial");
-                seriesList = formSeriesList(URL,isSerial);
+                initialSeries = sourcesInfo.getString("initial_series");
+                seriesList = formSeriesList(URL,initialSeries);
                 listViewList = new ArrayList();
-                listViewList.addAll(seriesList);
+
+                for (int i=0;i<seriesList.length();i++) {
+                    listViewList.add(((JSONObject)seriesList.get(i)).getString("name"));
+                }
+
                 arrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1, listViewList);
                 arrayAdapter.setNotifyOnChange(true);
             } catch (JSONException e) {
@@ -108,13 +114,10 @@ public class MovieSourcesFragment extends Fragment {
                 try {
                     progressBottomSheet.show(getFragmentManager(),"progressBar");
                     if (!seriesSelected) {
-                        if (isSerial)
-                            sourcesArray = getSources(URL, i + 1);
-                        else
                             sourcesArray = getSources(URL, i);
 
                         ArrayList funSubList = new ArrayList();
-                        funSubList.add(seriesList.get(i));
+                        funSubList.add(((JSONObject)seriesList.get(i)).getString("name"));
                         for (int index=0; index<sourcesArray.length();index++) {
 
                             JSONObject jsonObject = (JSONObject)sourcesArray.get(index);
@@ -129,7 +132,11 @@ public class MovieSourcesFragment extends Fragment {
                         switch (i) {
                             case 0: {
                                 arrayAdapter.clear();
-                                arrayAdapter.addAll(seriesList);
+
+                                for (int index=0;index<seriesList.length();index++) {
+                                    arrayAdapter.add(((JSONObject)seriesList.get(index)).getString("name"));
+                                }
+
                                 arrayAdapter.notifyDataSetChanged();
                                 seriesSelected = false;
                                 break;
@@ -223,39 +230,35 @@ public class MovieSourcesFragment extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
-    static ArrayList formSeriesList(String URL,Boolean isSerial) {
-
-            /* Серия
-                    Источник (имя фансаба)
-                            id фильма в vk
-                                            ссылки с различным качеством
-
-                <select id=chapterSelectorSelect
-                Взять блок option, где имеется атрибут selected="selected". Его значение будет количеством выпущенных серий
-             */
-
+    static JSONArray formSeriesList(String URL, String initialSeries) {
+        JSONArray seriesList = new JSONArray();
 
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
-        ArrayList seriesNameList = new ArrayList();
         try {
-            if (isSerial)
-                pageContent = pageDownloader.execute(URL+"/series1").get();
-            else
-                pageContent = pageDownloader.execute(URL+"/series0").get();
-
+            pageContent = pageDownloader.execute(URL+initialSeries).get();
             Element element = pageContent.getElementById("chapterSelectorSelect");
             Elements elements = element.getElementsByTag("option");
-            for (Element element1 : elements)
-                seriesNameList.add(element1.text());
+            int index = 0;
+            for (Element element1 : elements) {
+                JSONObject object = new JSONObject();
+                object.put("name",element1.text());
+                String link = element1.attr("value");
+                link = link.substring(link.lastIndexOf("/"));
+                object.put("link",link);
+                seriesList.put(index,object);
+                index++;
+            }
 
 
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-        return seriesNameList;
+        return seriesList;
     }
 
     JSONArray getSources(String URL, int seriesIndex) throws InterruptedException,ExecutionException {
@@ -268,50 +271,49 @@ public class MovieSourcesFragment extends Fragment {
         JSONArray oneSeriesSources = new JSONArray();
         pageDownloader = new PageDownloader();
 
-        pageContent = pageDownloader.execute(URL+"/series"+seriesIndex).get();
-        Elements elements = pageContent.getElementsByClass("chapter-link");
+        try {
 
-        for (Element element1 : elements) {
-            JSONObject jsonObject = new JSONObject();
-            String subUnit;
-            String seriesID;
-            String oid;
-            String id;
-            String hash;
+            pageContent = pageDownloader.execute(URL + ((JSONObject) seriesList.get(seriesIndex)).getString("link")).get();
+            Elements elements = pageContent.getElementsByClass("chapter-link");
 
-            if (element1.getElementsByClass("person-link").first() != null)
-                subUnit = element1.getElementsByClass("person-link").first().text();
-            else
-                subUnit = "";
+            for (Element element1 : elements) {
+                JSONObject jsonObject = new JSONObject();
+                String subUnit;
+                String seriesID;
+                String oid;
+                String id;
+                String hash;
 
-            seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid");
+                if (element1.getElementsByClass("person-link").first() != null)
+                    subUnit = "Фансаб "+element1.getElementsByClass("person-link").first().text();
+                else
+                    subUnit = "Оригинал";
 
-            pageDownloader = new PageDownloader();
-            pageContent = pageDownloader.execute(TRAGUS_URL+seriesID).get();
+                seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid");
 
-            String tempURL = pageContent.getElementsByTag("iframe").first().toString();
+                pageDownloader = new PageDownloader();
+                pageContent = pageDownloader.execute(TRAGUS_URL + seriesID).get();
 
-            if (tempURL.contains("vk.com")) {
-                matcher = vkPattern.matcher(tempURL);
-                if (matcher.find()) {
-                    oid = matcher.group(1);
-                    id = matcher.group(2);
-                    hash = matcher.group(3);
+                String tempURL = pageContent.getElementsByTag("iframe").first().toString();
 
-                    try {
-                        jsonObject.put("sub_unit",subUnit);
-                        jsonObject.put("movie_id",oid+"_"+id);
-                        jsonObject.put("hash",hash);
+                if (tempURL.contains("vk.com")) {
+                    matcher = vkPattern.matcher(tempURL);
+                    if (matcher.find()) {
+                        oid = matcher.group(1);
+                        id = matcher.group(2);
+                        hash = matcher.group(3);
+
+                        jsonObject.put("sub_unit", subUnit);
+                        jsonObject.put("movie_id", oid + "_" + id);
+                        jsonObject.put("hash", hash);
                         oneSeriesSources.put(jsonObject);
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
                     }
-                }
-            }
-            else
-                continue;
+                } else
+                    continue;
 
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
         return oneSeriesSources;
     }

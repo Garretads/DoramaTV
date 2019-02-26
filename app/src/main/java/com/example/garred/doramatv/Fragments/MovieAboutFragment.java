@@ -16,6 +16,7 @@ import com.example.garred.doramatv.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.util.concurrent.ExecutionException;
 
@@ -32,18 +33,29 @@ public class MovieAboutFragment extends Fragment{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "title";
-    private static final String ARG_PARAM2 = "age";
-    private static final String ARG_PARAM3 = "genres";
-    private static final String ARG_PARAM4 = "description";
-    private static final String ARG_PARAM5 = "imageURL";
-    private static final String ARG_PARAM6 = "url";
+    private static final String ARG_PARAM2 = "genres";
+    private static final String ARG_PARAM3 = "production";
+    private static final String ARG_PARAM4 = "series_number";
+    private static final String ARG_PARAM5 = "duration";
+    private static final String ARG_PARAM6 = "age";
+    private static final String ARG_PARAM7 = "description";
+    private static final String ARG_PARAM8 = "imageURL";
+    private static final String ARG_PARAM9 = "url";
+
 
     private static final String AGE = "Год: ";
     private static final String GENRES = "Жанры: ";
+    private static final String PRODUCTION_COUNTRY = "Производство: ";
+    private static final String SERIES_NUMBER = "Серий: ";
+    private static final String DURATION = "Продолжительность: ";
+
 
     private String movieAge;
     private String movieTitle;
     private String movieGenres;
+    private String movieProduction;
+    private String movieSeriesNumber;
+    private String movieDuration;
     private String movieDescription;
     private String movieImageURL;
     private String movieURL;
@@ -63,11 +75,14 @@ public class MovieAboutFragment extends Fragment{
         Bundle args = new Bundle();
 
         args.putString(ARG_PARAM1, movieInfo.getString("title"));
-        args.putString(ARG_PARAM2, movieInfo.getString("age"));
-        args.putString(ARG_PARAM3, movieInfo.getString("genres").substring(1,movieInfo.getString("genres").length()-1));
-        args.putString(ARG_PARAM4, movieInfo.getString("description"));
-        args.putString(ARG_PARAM5, movieInfo.getString("movieImageIMG"));
-        args.putString(ARG_PARAM6, movieInfo.getString("movieURL"));
+        args.putString(ARG_PARAM2, movieInfo.getString("genres").substring(1,movieInfo.getString("genres").length()-1));
+        args.putString(ARG_PARAM3, movieInfo.getString("production"));
+        args.putString(ARG_PARAM4, movieInfo.getString("series_number"));
+        args.putString(ARG_PARAM5, movieInfo.getString("duration"));
+        args.putString(ARG_PARAM6, movieInfo.getString("age"));
+        args.putString(ARG_PARAM7, movieInfo.getString("description"));
+        args.putString(ARG_PARAM8, movieInfo.getString("movieImageIMG"));
+        args.putString(ARG_PARAM9, movieInfo.getString("movieURL"));
 
         fragment.setArguments(args);
 
@@ -79,11 +94,14 @@ public class MovieAboutFragment extends Fragment{
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             movieTitle = getArguments().getString(ARG_PARAM1);
-            movieAge = getArguments().getString(ARG_PARAM2);
-            movieGenres = getArguments().getString(ARG_PARAM3);
-            movieDescription = getArguments().getString(ARG_PARAM4);
-            movieImageURL = getArguments().getString(ARG_PARAM5);
-            movieURL = getArguments().getString(ARG_PARAM6);
+            movieGenres = getArguments().getString(ARG_PARAM2);
+            movieProduction = getArguments().getString(ARG_PARAM3);
+            movieSeriesNumber = getArguments().getString(ARG_PARAM4);
+            movieDuration = getArguments().getString(ARG_PARAM5);
+            movieAge = getArguments().getString(ARG_PARAM6);
+            movieDescription = getArguments().getString(ARG_PARAM7);
+            movieImageURL = getArguments().getString(ARG_PARAM8);
+            movieURL = getArguments().getString(ARG_PARAM9);
         }
 
         ImageDownloader imageDownloader = new ImageDownloader();
@@ -103,11 +121,17 @@ public class MovieAboutFragment extends Fragment{
         View view = inflater.inflate(R.layout.fragment_movie_about, container, false);
         TextView movieAgeView = view.findViewById(R.id.movie_age_text);
         TextView movieGenresView = view.findViewById(R.id.movie_genres_text);
+        TextView movieProductionCountryView = view.findViewById(R.id.movie_production_country_text);
+        TextView movieSeriesNumberView = view.findViewById(R.id.movie_series_number_text);
+        TextView movieDurationView = view.findViewById(R.id.movie_duration_text);
         ImageView imageView = view.findViewById(R.id.movie_image_about);
         TextView movieDescriptionView = view.findViewById(R.id.movie_description_text);
 
-        movieAgeView.setText(AGE + movieAge);
         movieGenresView.setText(GENRES + movieGenres);
+        movieProductionCountryView.setText(PRODUCTION_COUNTRY+movieProduction);
+        movieSeriesNumberView.setText(movieSeriesNumber);
+        movieDurationView.setText(movieDuration);
+        movieAgeView.setText(AGE + movieAge);
         movieDescriptionView.setText(movieDescription);
         imageView.setImageBitmap(image);
 

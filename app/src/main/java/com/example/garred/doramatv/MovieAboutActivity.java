@@ -21,6 +21,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.util.concurrent.ExecutionException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -37,10 +40,14 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
     String title;
     String age;
     String genres;
+    String production;
+    String seriesNumber;
+    String duration;
     String description;
     String imageURL;
     String movieURL;
     String accessToken;
+    String initialSeries;
     Boolean isSerial;
 
 
@@ -63,8 +70,15 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
 
             this.age = newMovieInfo.getString("age");
             this.description = newMovieInfo.getString("description");
+            this.initialSeries = newMovieInfo.getString("initial_series");
+            this.production = newMovieInfo.getString("production");
+            this.seriesNumber = newMovieInfo.getString("series_number");
+            this.duration = newMovieInfo.getString("duration");
 
             movieInfo.put("description",description);
+            movieInfo.put("production",production);
+            movieInfo.put("series_number",seriesNumber);
+            movieInfo.put("duration",duration);
             movieInfo.put("age",age);
 
         } catch (JSONException e) {
@@ -98,6 +112,7 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
             sourcesInfo.put("URL",movieURL);
             sourcesInfo.put("access_token",accessToken);
             sourcesInfo.put("isSerial",isSerial);
+            sourcesInfo.put("initial_series",initialSeries);
             mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме");
             mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники");
             viewPager.setAdapter(mFragmentAdapter);
@@ -143,8 +158,32 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
         Document pageContent;
 
         pageContent = pageDownloader.execute(URL).get();
-        String description = pageContent.getElementsByClass("manga-description").first().text();
+        Element element;
+        String initialSeries = pageContent.getElementsByClass("subject-actions col-sm-7").first().getElementsByTag("a").last().attr("href");
+        initialSeries = initialSeries.substring(initialSeries.lastIndexOf("/"));
+        element = pageContent.getElementsByClass("manga-description").first();
+        String description;
+        if (element != null)
+            description = element.text();
+        else
+            description = "";
         String age = pageContent.getElementsByClass("elem_year ").first().text();
+        // subject-meta col-sm-7
+        element = pageContent.getElementsByClass("subject-meta col-sm-7").first();
+
+        Elements elements = element.getElementsByTag("p");
+        element = elements.get(0);
+        String seriesNumber = element.text();
+
+        element = elements.get(1);
+        String duration = element.text();
+
+        String production = pageContent.getElementsByClass("elem_country ").first().text();
+
+        info.put("initial_series",initialSeries);
+        info.put("production",production);
+        info.put("series_number",seriesNumber);
+        info.put("duration",duration);
         info.put("description",description);
         info.put("age",age);
 
