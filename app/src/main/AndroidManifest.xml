@@ -11,6 +11,20 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1453289229022558~3850061937"/>
+
+        <activity
+            android:name=".GenresActivity"
+            android:label="@string/title_activity_genres"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ru.garretech.garred.doramatv.MainActivity" />
+        </activity>
         <activity
             android:name=".MovieAboutActivity"
             android:label="@string/title_activity_movie_about"
@@ -23,9 +37,12 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <meta-data android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
         </activity>
     </application>
+
 </manifest>

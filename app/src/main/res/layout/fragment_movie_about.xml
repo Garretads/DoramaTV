@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    tools:context=".Fragments.MovieAboutFragment"
+    tools:context=".fragments.MovieAboutFragment"
     android:id="@+id/movie_about_fragment">
 <ScrollView
     android:layout_width="match_parent"
@@ -12,7 +12,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <LinearLayout
@@ -33,44 +33,40 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
+                android:layout_marginStart="5dp"
                 android:layout_marginTop="10dp"
                 android:orientation="vertical"
+                android:paddingStart="5dp"
                 android:paddingEnd="5dp">
 
                 <TextView
                     android:id="@+id/movie_genres_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TextView"
                     android:textSize="18sp" />
 
                 <TextView
                     android:id="@+id/movie_production_country_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TextView"
                     android:textSize="18sp" />
 
                 <TextView
                     android:id="@+id/movie_series_number_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TextView"
                     android:textSize="18sp" />
 
                 <TextView
                     android:id="@+id/movie_duration_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TextView"
                     android:textSize="18sp" />
 
                 <TextView
                     android:id="@+id/movie_age_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TextView"
                     android:textSize="18sp" />
             </LinearLayout>
 
@@ -81,7 +77,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="5dp"
-            android:text="TextView"
             android:textSize="18sp" />
 
     </LinearLayout>

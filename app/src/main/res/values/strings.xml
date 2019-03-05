@@ -4,13 +4,16 @@
     <string name="tab_text_1">Описание</string>
     <string name="tab_text_2">Источники</string>
     <string name="action_settings">Настройки</string>
-    <string name="section_format">Hello World from section: %1$d</string>
-    <string name="search_go">Поиск</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="search_hint">Поиск дорам</string>
+    <string name="age_description">Год: </string>
+    <string name="genres_description">Жанры: </string>
+    <string name="production_country_description">Производство: </string>
     <string name="cant_connect_error">Ошибка загрузки. Проверьте интернет подключение</string>
-    <string name="progress_text">Идет загрузка данных...</string>
+    <string name="progress_text">Идет загрузка данных…</string>
     <string name="navigation_drawer_open">Открыть шторку</string>
     <string name="navigation_drawer_close">Закрыть шторку</string>
+    <string name="title_activity_genres">GenresActivity</string>
+
+    <string name="banner_ad_unit_id">ca-app-pub-1453289229022558/5432475024</string>
+    <string name="banner_ad_unit_id_test">/6499/example/banner</string>
 </resources>
