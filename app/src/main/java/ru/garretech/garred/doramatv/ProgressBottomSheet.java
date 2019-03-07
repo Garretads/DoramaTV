@@ -1,5 +1,6 @@
 package ru.garretech.garred.doramatv;
 
+import android.app.FragmentManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,5 +14,8 @@ public class ProgressBottomSheet extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.bottom_sheet_progress,container,false);
+    }
+
+    public void show(FragmentManager fragmentManager, String progress) {
     }
 }

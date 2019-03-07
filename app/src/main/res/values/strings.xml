@@ -8,6 +8,9 @@
     <string name="age_description">Год: </string>
     <string name="genres_description">Жанры: </string>
     <string name="production_country_description">Производство: </string>
+    <string name="editor_choice_title">Выбор редакции</string>
+    <string name="new_movie_title">Новинки</string>
+    <string name="best_movie_title">Лучшие</string>
     <string name="cant_connect_error">Ошибка загрузки. Проверьте интернет подключение</string>
     <string name="progress_text">Идет загрузка данных…</string>
     <string name="navigation_drawer_open">Открыть шторку</string>

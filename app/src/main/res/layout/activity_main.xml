@@ -19,7 +19,7 @@
         android:id="@+id/drawer_layout"
         android:layout_below="@+id/toolbar_actionbar">
 
-    <android.support.v7.widget.RecyclerView
+        <android.support.v7.widget.RecyclerView
         android:id="@+id/movie_list"
         android:scrollbars="vertical"
         android:layout_width="match_parent"
@@ -42,6 +42,14 @@
 
     </android.support.v4.widget.DrawerLayout>
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:visibility="gone" />
+
     <com.google.android.gms.ads.doubleclick.PublisherAdView
         android:id="@+id/ad_view"
         android:layout_width="match_parent"
@@ -50,5 +58,7 @@
         android:layout_alignParentBottom="true"
         android:layout_gravity="bottom"
         ads:adSize="BANNER"
-        ads:adUnitId="@string/banner_ad_unit_id_test" />
+        ads:adUnitId="@string/banner_ad_unit_id_test" >
+
+    </com.google.android.gms.ads.doubleclick.PublisherAdView>
 </RelativeLayout>

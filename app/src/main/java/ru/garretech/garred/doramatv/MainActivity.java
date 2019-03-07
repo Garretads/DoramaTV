@@ -3,7 +3,10 @@ package ru.garretech.garred.doramatv;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -16,12 +19,11 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.MobileAds;
+import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.google.android.gms.ads.doubleclick.PublisherAdRequest;
 import com.google.android.gms.ads.doubleclick.PublisherAdView;
 
@@ -35,26 +37,32 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import ru.garretech.garred.doramatv.tools.SiteWorker;
 
-public class MainActivity extends AppCompatActivity implements MovieTitleAdapter.OnMovieListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements QuickAdapter.OnItemClickListener,MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener {
     @BindView(R.id.movie_list) RecyclerView mRecyclerView;
     @BindView(R.id.toolbar_actionbar) Toolbar toolbar;
     @BindView(R.id.drawer_layout) DrawerLayout drawer;
     @BindView(R.id.nav_view) NavigationView navigationView;
     @BindView(R.id.ad_view) PublisherAdView adView;
+    @BindView(R.id.progressBar) ProgressBar progressBar;
 
     private RecyclerView.LayoutManager mLayoutManager;
     private SearchView searchView;
-    private MovieTitleAdapter mMovieAdapter;
+    private QuickAdapter newMovieAdapter;
     private List<Movie> editorChoiceList;
     private ArrayList<Movie> mMovieList;
     private int GENRES_CODE = 15;
+    ActionBarDrawerToggle toggle;
+    ProgressBottomSheet progressBottomSheet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        progressBottomSheet = new ProgressBottomSheet();
+        navigationView.setNavigationItemSelectedListener(this);
         setSupportActionBar(toolbar);
+        ConnectivityManager conMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
 
         // Ads block
         //MobileAds.initialize(this, "ca-app-pub-1453289229022558~3850061937");
@@ -63,55 +71,32 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
         // Start loading the ad in the background.
         adView.loadAd(adRequest);
 
-
-        mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mRecyclerView.setHasFixedSize(true);
+        toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
-        navigationView.setNavigationItemSelectedListener(this);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
 
         editorChoiceList = new ArrayList<>();
-        try {
-            editorChoiceList = SiteWorker.getEditorChoiceMoviesList();
-        } catch (InterruptedException e) {
-            Toast.makeText(getApplicationContext(),getText(R.string.cant_connect_error),Toast.LENGTH_SHORT).show();
-        } catch (ExecutionException e) {
-            Toast.makeText(getApplicationContext(),getText(R.string.cant_connect_error),Toast.LENGTH_SHORT).show();
-        }
+        if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
+                || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            try {
+                editorChoiceList = SiteWorker.getEditorChoiceMoviesList();
+                mMovieList = new ArrayList<>(editorChoiceList);
+                newMovieAdapter = new QuickAdapter(R.layout.fragment_movie, mMovieList);
+                mRecyclerView.setAdapter(newMovieAdapter);
+                newMovieAdapter.setOnItemClickListener(this);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        } else
+            showConnectionError();
 
-        mMovieList = new ArrayList<>(editorChoiceList);
-        mMovieAdapter = new MovieTitleAdapter(this, mMovieList,this);
-        mRecyclerView.setAdapter(mMovieAdapter);
-
-
-    }
-
-    // Слушатель нажатий на элементы RecyclerView из класса MovieTitleAdapter
-    @Override
-    public void onItemClick(int position) {
-        Movie selectedMovie = mMovieList.get(position);
-        Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
-        // Ща будем делать json объект
-        JSONObject jsonObject = new JSONObject();
-
-        try {
-            jsonObject.put("title",selectedMovie.title);
-            jsonObject.put("genres",selectedMovie.genres.toString());
-            jsonObject.put("movieImageIMG",selectedMovie.movieImageURL);
-            jsonObject.put("movieURL",selectedMovie.URL);
-            jsonObject.put("access_token",Settings.access_token());
-            jsonObject.put("isSerial",selectedMovie.isSerial);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        intent.putExtra("movieInfo",jsonObject.toString());
-        startActivity(intent);
     }
 
     @Override
@@ -168,18 +153,66 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
         try {
             switch (item.getItemId()) {
                 case R.id.nav_editorchoice: {
-                    updateDataList(SiteWorker.getEditorChoiceMoviesList());
-                    setTitle("Выбор редакции");
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                List<Movie> list = SiteWorker.getEditorChoiceMoviesList();
+                                updateDataList(list);
+                                if (progressBottomSheet.isVisible())
+                                    progressBottomSheet.dismiss();
+                                setTitle(getString(R.string.editor_choice_title));
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    },1000);
+                    newMovieAdapter.clearItems();
+                    progressBottomSheet.show(getSupportFragmentManager(),"progressBar");
                     break;
                 }
                 case R.id.nav_new: {
-                    updateDataList(SiteWorker.getMovieList(SiteWorker.NEW_MOVIES));
-                    setTitle("Новинки");
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                List<Movie> list = SiteWorker.getMovieList(SiteWorker.NEW_MOVIES,0,0);
+                                updateDataList(list);
+                                if (progressBottomSheet.isVisible())
+                                    progressBottomSheet.dismiss();
+                                setTitle(getString(R.string.new_movie_title));
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    },1000);
+                    newMovieAdapter.clearItems();
+                    progressBottomSheet.show(getSupportFragmentManager(),"progressBar");
                     break;
                 }
                 case R.id.nav_best: {
-                    updateDataList(SiteWorker.getMovieList(SiteWorker.BEST_MOVIES));
-                    setTitle("Лучшие");
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                List<Movie> list = SiteWorker.getMovieList(SiteWorker.BEST_MOVIES,0,0);
+                                updateDataList(list);
+                                if (progressBottomSheet.isVisible())
+                                    progressBottomSheet.dismiss();
+                                setTitle(getString(R.string.best_movie_title));
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    },1000);
+                    newMovieAdapter.clearItems();
+                    progressBottomSheet.show(getSupportFragmentManager(),"progressBar");
                     break;
                 }
                 case R.id.nav_genres: {
@@ -218,9 +251,7 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
     }
 
     void updateDataList(List<Movie> list) {
-        mMovieAdapter.mMovieDataset.clear();
-        mMovieAdapter.mMovieDataset.addAll(list);
-        mMovieAdapter.notifyDataSetChanged();
+        newMovieAdapter.setItems(list);
         mRecyclerView.scrollToPosition(0);
     }
 
@@ -237,12 +268,10 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == GENRES_CODE) {
             if (resultCode == RESULT_OK) {
-                // A contact was picked.  Here we will just display it
-                // to the user.
                 try {
-                    String resultPrefix = data.getStringExtra("genrePrefix");
-                    String genreName = data.getStringExtra("genreName");
-                    updateDataList(SiteWorker.getMovieList(resultPrefix));
+                    String resultPrefix = data.getStringExtra("link");
+                    String genreName = data.getStringExtra("name");
+                    updateDataList(SiteWorker.getMovieList(resultPrefix,0,0));
                     setTitle(genreName.substring(0,1).toUpperCase()+genreName.substring(1));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -278,5 +307,32 @@ public class MainActivity extends AppCompatActivity implements MovieTitleAdapter
             adView.destroy();
         }
         super.onDestroy();
+    }
+
+
+    @Override
+    public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
+        Movie selectedMovie = mMovieList.get(position);
+        Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
+        // Ща будем делать json объект
+        JSONObject jsonObject = new JSONObject();
+
+        try {
+            jsonObject.put("title",selectedMovie.title);
+            jsonObject.put("genres",selectedMovie.genres.toString());
+            jsonObject.put("movieImageIMG",selectedMovie.movieImageURL);
+            jsonObject.put("movieURL",selectedMovie.URL);
+            jsonObject.put("access_token",Settings.access_token());
+            jsonObject.put("isSerial",selectedMovie.isSerial);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        intent.putExtra("movieInfo",jsonObject.toString());
+        startActivity(intent);
+    }
+
+    void showConnectionError() {
+        Toast.makeText(getApplicationContext(), getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show();
     }
 }

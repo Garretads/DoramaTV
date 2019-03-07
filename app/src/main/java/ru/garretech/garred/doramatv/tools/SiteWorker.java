@@ -33,23 +33,12 @@ public class SiteWorker {
 
 
     public static List<Movie> getMoviesListFromSearch(String searchString) throws InterruptedException,ExecutionException {
-        ArrayList<Movie> movieList = new ArrayList<>();
         String URL_PREFIX = "/search";
-        /*
-        * Формируется post запрос на сервер. Полученные данные парсятся
-        * <div class="tile col-sm-6"> (карточки с результатами поиска)
-         * Если в div class="tile-info"> нет тега <strong>Книга</strong>
-         *  Из <div class=img> берется тег <a> точнее значение атрибута href
-         * Из img берутся значения аттриб data-original, title
-         *
-         * Из div class="tile-info" берем содержимое тега <a> (перечень жанров)
-         * div class=tags
-        * span class="mangaSingle" показатель полнометражки
-        * */
+
         SearchRequest searchRequest = new SearchRequest();
         Document pageContent = searchRequest.execute(SITE_URL+URL_PREFIX,searchString).get();
 
-        return movieListContentParse(pageContent);
+        return movieListContentParse(pageContent,0,0);
     }
 
 
@@ -72,7 +61,7 @@ public class SiteWorker {
             String title = element1.getElementsByTag("img").get(0).attr("alt");
             String imageURL;
             imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
-            //div class="subject-actions col-sm-7"
+
             movieList.add(new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,true));
         }
 
@@ -81,16 +70,8 @@ public class SiteWorker {
 
 
     public static JSONArray getGenresList() throws InterruptedException, ExecutionException, JSONException {
-        /*
-        * table class="table table-hover"
-        *
-        * Из тега <tbody> взять всех потомков <tr>
-        * Внутри потомка из тега td взять тэг <a> , взять значение его аттрибута href и его текст
-        *
-        *
-        *
-        *
-        * */
+
+
         JSONArray genresList = new JSONArray();
         String URL_PREFIX = "/list/genres/sort_name";
         PageDownloader pageDownloader = new PageDownloader();
@@ -115,12 +96,12 @@ public class SiteWorker {
         return genresList;
     }
 
-    public static List<Movie> getMovieList(String urlPrefix) throws InterruptedException, ExecutionException {
+    public static List<Movie> getMovieList(String urlPrefix,int limit,int offset) throws InterruptedException, ExecutionException {
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
 
         pageContent = pageDownloader.execute(SITE_URL+urlPrefix).get();
-        return movieListContentParse(pageContent);
+        return movieListContentParse(pageContent,limit,offset);
     }
 
     public static JSONObject getMovieInfo(String URL) throws InterruptedException,ExecutionException,JSONException {
@@ -139,7 +120,7 @@ public class SiteWorker {
         else
             description = "";
         String age = pageContent.getElementsByClass("elem_year ").first().text();
-        // subject-meta col-sm-7
+
         element = pageContent.getElementsByClass("subject-meta col-sm-7").first();
 
         Elements elements = element.getElementsByTag("p");
@@ -161,7 +142,7 @@ public class SiteWorker {
         return info;
     }
 
-    private static List<Movie> movieListContentParse(Document pageContent) {
+    private static List<Movie> movieListContentParse(Document pageContent,int limit, int offset) {
         ArrayList<Movie> movieList = new ArrayList<>();
         Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
         for (Element element : elements) {
@@ -249,6 +230,9 @@ public class SiteWorker {
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
         try {
+            if (initialSeries.equals("/")) {
+                return seriesList;
+            }
             pageContent = pageDownloader.execute(URL+initialSeries+ADULT_PREFIX).get();
             Element element = pageContent.getElementById("chapterSelectorSelect");
             Elements elements = element.getElementsByTag("option");

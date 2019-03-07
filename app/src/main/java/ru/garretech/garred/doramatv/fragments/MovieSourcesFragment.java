@@ -3,6 +3,7 @@ package ru.garretech.garred.doramatv.fragments;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,7 @@ import android.widget.ListView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -51,6 +53,7 @@ public class MovieSourcesFragment extends Fragment {
     private Boolean seriesSelected = false;
     ProgressBottomSheet progressBottomSheet;
     String initialSeries;
+    Boolean empty = false;
 
     private OnFragmentInteractionListener mListener;
 
@@ -83,8 +86,13 @@ public class MovieSourcesFragment extends Fragment {
                 seriesList = SiteWorker.formSeriesList(URL,initialSeries);
                 listViewList = new ArrayList();
 
-                for (int i=0;i<seriesList.length();i++) {
-                    listViewList.add(((JSONObject)seriesList.get(i)).getString("name"));
+                if (seriesList.length() == 0) {
+                    listViewList.add("Пусто");
+                    empty = true;
+                } else {
+                    for (int i = 0; i < seriesList.length(); i++) {
+                        listViewList.add(((JSONObject) seriesList.get(i)).getString("name"));
+                    }
                 }
 
                 arrayAdapter = new ArrayAdapter(getContext(),android.R.layout.simple_list_item_1, listViewList);
@@ -102,85 +110,111 @@ public class MovieSourcesFragment extends Fragment {
         listView = view.findViewById(R.id.sourcesListView);
         listView.setAdapter(arrayAdapter);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                try {
-                    progressBottomSheet.show(getFragmentManager(),"progressBar");
+        if (!empty) {
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, final int i, long l) {
                     if (!seriesSelected) {
-                            sourcesArray = SiteWorker.getSources(seriesList, URL, i);
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    sourcesArray = SiteWorker.getSources(seriesList, URL, i);
+                                    ArrayList funSubList = new ArrayList();
+                                    funSubList.add(((JSONObject) seriesList.get(i)).getString("name"));
+                                    for (int index = 0; index < sourcesArray.length(); index++) {
 
-                        ArrayList funSubList = new ArrayList();
-                        funSubList.add(((JSONObject)seriesList.get(i)).getString("name"));
-                        for (int index=0; index<sourcesArray.length();index++) {
-
-                            JSONObject jsonObject = (JSONObject)sourcesArray.get(index);
-                            funSubList.add(jsonObject.getString("sub_unit"));
-                        }
-                        arrayAdapter.clear();
-                        arrayAdapter.addAll(funSubList);
-                        arrayAdapter.notifyDataSetChanged();
-                        seriesSelected = true;
-                    }
-                    else {
+                                        JSONObject jsonObject = (JSONObject) sourcesArray.get(index);
+                                        funSubList.add(jsonObject.getString("sub_unit"));
+                                    }
+                                    arrayAdapter.clear();
+                                    arrayAdapter.addAll(funSubList);
+                                    arrayAdapter.notifyDataSetChanged();
+                                    seriesSelected = true;
+                                    if (progressBottomSheet.isVisible())
+                                        progressBottomSheet.dismiss();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } catch (ExecutionException e) {
+                                    e.printStackTrace();
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        },1000);
+                        progressBottomSheet.show(getFragmentManager(),"progressBar");
+                    } else {
                         switch (i) {
                             case 0: {
-                                arrayAdapter.clear();
+                                try {
 
-                                for (int index=0;index<seriesList.length();index++) {
-                                    arrayAdapter.add(((JSONObject)seriesList.get(index)).getString("name"));
+                                    arrayAdapter.clear();
+                                    for (int index = 0; index < seriesList.length(); index++) {
+                                        arrayAdapter.add(((JSONObject) seriesList.get(index)).getString("name"));
+                                    }
+
+                                    arrayAdapter.notifyDataSetChanged();
+                                    seriesSelected = false;
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
                                 }
-
-                                arrayAdapter.notifyDataSetChanged();
-                                seriesSelected = false;
                                 break;
                             }
                             default: {
                                 //Выбор качества, воспроизведение
                                 /*
-                                * Формируем запрос в vk api
-                                * https://api.vk.com/method/video.get?videos=-66384560_456239143&access_token=d053e5de82599c59b61a8a138cfe732d462a245623f8807ee3a4bf5a9dad3e22f1179377b0499001932f0&v=5.92
-                                *
-                                * Парсим ответ в JSONObject. Выцепляем оттуда
-                                *
-                                *
-                                *
-                                * */
-                                JSONObject jsonObject = (JSONObject) sourcesArray.get(i-1);
-                                String METHOD_NAME = "video.get";
-                                Uri.Builder builder = new Uri.Builder();
-                                builder.scheme("https")
-                                        .authority("api.vk.com")
-                                        .appendPath("method")
-                                        .appendPath(METHOD_NAME)
-                                        .appendQueryParameter("videos",jsonObject.getString("movie_id"))
-                                        .appendQueryParameter("access_token",accessToken)
-                                        .appendQueryParameter("v", Settings.version());
-                                builder.build();
+                                 * Формируем запрос в vk api
+                                 * https://api.vk.com/method/video.get?videos=-66384560_456239143&access_token=d053e5de82599c59b61a8a138cfe732d462a245623f8807ee3a4bf5a9dad3e22f1179377b0499001932f0&v=5.92
+                                 *
+                                 * Парсим ответ в JSONObject. Выцепляем оттуда
+                                 *
+                                 *
+                                 *
+                                 * */
+                                new Handler().postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            JSONObject jsonObject = (JSONObject) sourcesArray.get(i - 1);
+                                            String METHOD_NAME = "video.get";
+                                            Uri.Builder builder = new Uri.Builder();
+                                            builder.scheme("https")
+                                                    .authority("api.vk.com")
+                                                    .appendPath("method")
+                                                    .appendPath(METHOD_NAME)
+                                                    .appendQueryParameter("videos", jsonObject.getString("movie_id"))
+                                                    .appendQueryParameter("access_token", accessToken)
+                                                    .appendQueryParameter("v", Settings.version());
+                                            builder.build();
 
-                                VKRequest vkRequest = new VKRequest();
-                                JSONObject object = new JSONObject(vkRequest.execute(builder.toString()).get());
-                                object = (JSONObject) object.get("response");
-                                object = (JSONObject) ((JSONArray) object.get("items")).get(0);
-                                JSONObject fileLink = (JSONObject) object.get("files");
+                                            VKRequest vkRequest = new VKRequest();
+                                            JSONObject object = new JSONObject(vkRequest.execute(builder.toString()).get());
+                                            object = (JSONObject) object.get("response");
+                                            object = (JSONObject) ((JSONArray) object.get("items")).get(0);
+                                            JSONObject fileLink = (JSONObject) object.get("files");
 
-                                SelectQualityFragment selectQualityFragment = SelectQualityFragment.newInstance(fileLink);
-                                selectQualityFragment.show(getFragmentManager(), "Выберите качество");
+                                            SelectQualityFragment selectQualityFragment = SelectQualityFragment.newInstance(fileLink);
+                                            selectQualityFragment.show(getFragmentManager(), "Выберите качество");
+                                            if (progressBottomSheet.isVisible())
+                                                progressBottomSheet.dismiss();
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        } catch (ExecutionException e) {
+                                            e.printStackTrace();
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                },1000);
+                                progressBottomSheet.show(getFragmentManager(),"progressBar");
+
 
                             }
                         }
                     }
-
-                    progressBottomSheet.dismiss();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
-            }
-        });
+            });
+        }
         return view;
     }
 

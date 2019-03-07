@@ -4,10 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/colorPrimary">
+    android:background="@color/colorPrimaryDark">
 
     <ProgressBar
-        android:id="@+id/progressBar"
+        android:id="@+id/progress"
         style="?android:attr/progressBarStyleInverse"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -24,6 +24,8 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="20dp"
         android:text="@string/progress_text"
-        app:layout_constraintStart_toEndOf="@+id/progressBar"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@+id/progress"
         app:layout_constraintTop_toTopOf="parent" />
 </android.support.constraint.ConstraintLayout>

@@ -21,14 +21,7 @@ import ru.garretech.garred.doramatv.tools.ImageDownloader;
 import ru.garretech.garred.doramatv.R;
 
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link MovieAboutFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link MovieAboutFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+
 public class MovieAboutFragment extends Fragment{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER

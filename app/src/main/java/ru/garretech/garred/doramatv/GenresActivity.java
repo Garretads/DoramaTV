@@ -15,19 +15,23 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class GenresActivity extends AppCompatActivity{
     ArrayList<String> genresNameList;
     ArrayAdapter arrayAdapter;
-    ListView listView;
     JSONArray genresArray = null;
+    @BindView(R.id.genresListView) ListView listView;
+    @BindView(R.id.toolbar_actionbar) Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_genres);
+        ButterKnife.bind(this);
         setTitle("Жанры");
-        listView = findViewById(R.id.genresListView);
-        Toolbar toolbar = findViewById(R.id.toolbar_actionbar);
+
         if (toolbar != null) {
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -43,14 +47,15 @@ public class GenresActivity extends AppCompatActivity{
                 genresNameList.add(name.substring(0,1).toUpperCase()+name.substring(1));
             }
             arrayAdapter = new ArrayAdapter(getApplicationContext(),android.R.layout.simple_list_item_1,genresNameList);
+
             listView.setAdapter(arrayAdapter);
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                     try {
                         Intent data = new Intent();
-                        data.putExtra("genrePrefix",((JSONObject) genresArray.get(i)).getString("link"));
-                        data.putExtra("genreName",((JSONObject) genresArray.get(i)).getString("name"));
+                        data.putExtra("link",((JSONObject) genresArray.get(i)).getString("link"));
+                        data.putExtra("name",((JSONObject) genresArray.get(i)).getString("name"));
                         setResult(RESULT_OK,data);
                         finish();
                     } catch (JSONException e) {
