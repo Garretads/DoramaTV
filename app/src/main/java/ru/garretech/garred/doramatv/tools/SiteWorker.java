@@ -1,8 +1,8 @@
 package ru.garretech.garred.doramatv.tools;
 
-import ru.garretech.garred.doramatv.Movie;
-import ru.garretech.garred.doramatv.tools.PageDownloader;
-import ru.garretech.garred.doramatv.tools.SearchRequest;
+import android.net.Uri;
+
+import ru.garretech.garred.doramatv.model.Movie;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,7 +12,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,20 +27,40 @@ import java.util.regex.Pattern;
 *
 * */
 public class SiteWorker {
-    final public static String SITE_URL = "http://doramatv.ru";
-    final public static String editorChoice = "row tiles-row short";
-    final public static String NEW_MOVIES = "/list?sortType=created";
-    final public static String BEST_MOVIES = "/list";
-    final public static String TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/";
+    final private static String SITE_URL = "http://doramatv.ru";
+    final private static String SITE_URL1 = "doramatv.ru";
+    final private static String editorChoice = "row tiles-row short";
+    final public static String[] NEW_MOVIES_PARAMS = {"sortType","created"};
+    final public static String LIST_PREFIX = "list";
+    final public static String SEARCH_PREFIX = "search";
+    final public static String ONGOING_PREFIX = "list/tags/ongoing";
+    final public static String[] ONGOING_PARAMS = {"sortType","rate"};
+    final private static String OFFSET_PARAM = "offset";
+    final private static String TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/";
+    final public static int SIMPLE_QUERY = 0;
+    final public static int SEARCH_QUERY = 1;
+
+    /*
+    *  Сформировать ссылку запроса (или из поискового запроса или из выбранного жанра)
+    *  Загрузить контент по ссылке
+    *
+    *
+    * */
 
 
-    public static List<Movie> getMoviesListFromSearch(String searchString) throws InterruptedException,ExecutionException {
-        String URL_PREFIX = "/search";
+    private static int getSearchElementCount(Document pageContent) {
+        Pattern pattern = Pattern.compile("\\((\\d+)\\)");
+        Matcher matcher;
+        int resultAmount = 0;
 
-        SearchRequest searchRequest = new SearchRequest();
-        Document pageContent = searchRequest.execute(SITE_URL+URL_PREFIX,searchString).get();
+        Element element = pageContent.getElementById("mangaResults").getElementsByTag("h3").first();
 
-        return movieListContentParse(pageContent,0,0);
+        matcher = pattern.matcher(element.text());
+
+        if (matcher.find())
+            resultAmount = Integer.valueOf(matcher.group(1));
+
+        return resultAmount;
     }
 
 
@@ -88,6 +110,7 @@ public class SiteWorker {
             JSONObject jsonObject = new JSONObject();
             String genreName = tempElement.text();
             String genreLink = tempElement.attr("href");
+            genreLink = genreLink.substring(1);
             jsonObject.put("name",genreName);
             jsonObject.put("link",genreLink);
             genresList.put(index,jsonObject);
@@ -96,41 +119,67 @@ public class SiteWorker {
         return genresList;
     }
 
-    public static List<Movie> getMovieList(String urlPrefix,int limit,int offset) throws InterruptedException, ExecutionException {
-        PageDownloader pageDownloader = new PageDownloader();
-        Document pageContent;
 
-        pageContent = pageDownloader.execute(SITE_URL+urlPrefix).get();
-        return movieListContentParse(pageContent,limit,offset);
+
+    private static int getQueryElementCount(Document pageContent) {
+        Pattern pattern = Pattern.compile("(\\d+)");
+        Matcher matcher;
+        int resultAmount = 0;
+
+        Elements elements = pageContent.getElementsByTag("h4");
+        String patternText = null;
+
+        for (Element element : elements) {
+            if ( (elements = element.getElementsContainingText("Список")).size() != 0) {
+                patternText = elements.first().text();
+                break;
+            }
+        }
+        if (patternText != null) {
+            matcher = pattern.matcher(patternText);
+
+            if (matcher.find())
+                resultAmount = Integer.valueOf(matcher.group(1));
+        } else
+            resultAmount = 16870; // Текущее количество дорам на сайте
+        return resultAmount;
     }
 
     public static JSONObject getMovieInfo(String URL) throws InterruptedException,ExecutionException,JSONException {
         JSONObject info = new JSONObject();
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
+        String description = "";
+        String age = "";
+        String production = "";
 
         pageContent = pageDownloader.execute(URL).get();
-        Element element;
+        Element tempElement;
+        Elements tempElements;
         String initialSeries = pageContent.getElementsByClass("subject-actions col-sm-7").first().getElementsByTag("a").last().attr("href");
         initialSeries = initialSeries.substring(initialSeries.lastIndexOf("/"));
-        element = pageContent.getElementsByClass("manga-description").first();
-        String description;
-        if (element != null)
-            description = element.text();
-        else
-            description = "";
-        String age = pageContent.getElementsByClass("elem_year ").first().text();
 
-        element = pageContent.getElementsByClass("subject-meta col-sm-7").first();
+        tempElement = pageContent.getElementsByClass("manga-description").first();
+        if (tempElement != null)
+            description = tempElement.text();
 
-        Elements elements = element.getElementsByTag("p");
-        element = elements.get(0);
-        String seriesNumber = element.text();
+        tempElement = pageContent.getElementsByClass("elem_year ").first();
+        if (tempElement != null)
+            age = tempElement.text();
 
-        element = elements.get(1);
-        String duration = element.text();
+        tempElement = pageContent.getElementsByClass("elem_country ").first();
+        if (tempElement != null)
+            production = tempElement.text();
 
-        String production = pageContent.getElementsByClass("elem_country ").first().text();
+        tempElement = pageContent.getElementsByClass("subject-meta col-sm-7").first();
+        tempElements = tempElement.getElementsByTag("p");
+
+        tempElement = tempElements.get(0);
+        String seriesNumber = tempElement.text();
+
+        tempElement = tempElements.get(1);
+        String duration = tempElement.text();
+
 
         info.put("initial_series",initialSeries);
         info.put("production",production);
@@ -142,10 +191,15 @@ public class SiteWorker {
         return info;
     }
 
-    private static List<Movie> movieListContentParse(Document pageContent,int limit, int offset) {
+    private static List<Movie> movieListContentParse(Document pageContent,int limit) {
         ArrayList<Movie> movieList = new ArrayList<>();
         Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
+        int iteration = 0;
         for (Element element : elements) {
+
+            if (limit != 0 && iteration > limit - 1)
+                break;
+
             Elements tempElements = element.getElementsByClass("tile-info").first().getElementsByTag("a");
             if (tempElements.size() != 0) {
                 String genres;
@@ -169,6 +223,7 @@ public class SiteWorker {
                 tempElement = element.getElementsByClass("tags").first();
                 Boolean isSerial = tempElement.getElementsByClass("mangaSingle").isEmpty();
                 movieList.add(new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial));
+                iteration++;
             }
         }
         return movieList;
@@ -184,7 +239,7 @@ public class SiteWorker {
         JSONArray oneSeriesSources = new JSONArray();
         pageDownloader = new PageDownloader();
 
-        pageContent = pageDownloader.execute(URL + ((JSONObject) seriesList.get(seriesIndex)).getString("link")+ADULT_PREFIX).get();
+        pageContent = pageDownloader.execute(URL + ((JSONObject) seriesList.get(seriesIndex)).getString("link") + ADULT_PREFIX).get();
         Elements elements = pageContent.getElementsByClass("chapter-link");
 
         for (Element element1 : elements) {
@@ -204,8 +259,12 @@ public class SiteWorker {
 
             pageDownloader = new PageDownloader();
             pageContent = pageDownloader.execute(SiteWorker.TRAGUS_URL + seriesID).get();
+            Element tempElement = pageContent.getElementsByTag("iframe").first();
 
-            String tempURL = pageContent.getElementsByTag("iframe").first().toString();
+            if (tempElement == null)
+                continue;
+
+            String tempURL = tempElement.toString();
 
             if (tempURL.contains("vk.com")) {
                 matcher = vkPattern.matcher(tempURL);
@@ -247,7 +306,6 @@ public class SiteWorker {
                 index++;
             }
 
-
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -256,5 +314,120 @@ public class SiteWorker {
             e.printStackTrace();
         }
         return seriesList;
+    }
+
+    public static Uri.Builder getStandartUri() {
+        Uri.Builder builder = new Uri.Builder();
+        builder.scheme("http")
+                .authority(SITE_URL1);
+        return builder;
+    }
+
+    public class RequestQuery {
+        private int requestType;
+        private int queryAmount = -1;
+        private int limit;
+        private String path;
+        private int currentOffset = 0;
+        private Uri.Builder uriQuery;
+        private List<Movie> movieList;
+        private HashMap<String,String> parameters;
+
+        public RequestQuery(int requestType, String path, HashMap<String,String> params, int limit) {
+            this.requestType = requestType;
+            this.limit = limit;
+            this.path = path;
+            this.parameters = params;
+        }
+
+        public RequestQuery(int requestType, String path, HashMap<String,String> params) {
+            this.requestType = requestType;
+            this.limit = 15;
+            this.path = path;
+            this.parameters = params;
+        }
+
+        public RequestQuery(int requestType, String path) {
+            this.requestType = requestType;
+            this.limit = 15;
+            this.path = path;
+            parameters = new HashMap<>();
+        }
+
+
+        public List<Movie> getNextQuery() throws ExecutionException, InterruptedException {
+            if (queryAmount == -1 || currentOffset+limit < queryAmount) {
+                switch (requestType) {
+                    case SIMPLE_QUERY: {
+                        PageDownloader pageDownloader = new PageDownloader();
+                        uriQuery = getStandartUri();
+
+                        if (path.contains("/")) {
+                            String[] pathArray = path.split("/");
+
+                            for (String s : pathArray) {
+                                uriQuery.appendPath(s);
+                            }
+                        } else {
+                            uriQuery.appendPath(path);
+                        }
+
+
+                        parameters.put(OFFSET_PARAM, String.valueOf(currentOffset));
+
+                        for (Map.Entry<String, String> cursor : parameters.entrySet()) {
+                            uriQuery.appendQueryParameter(cursor.getKey(), cursor.getValue());
+                        }
+
+                        Document pageContent = pageDownloader.execute(uriQuery.toString()).get();
+
+                        if (queryAmount == -1)
+                            queryAmount = getQueryElementCount(pageContent);
+
+                        movieList = movieListContentParse(pageContent, limit);
+
+
+                        currentOffset += movieList.size();
+                        return movieList;
+                    }
+
+                    case SEARCH_QUERY: {
+
+                        SearchRequest searchRequest = new SearchRequest();
+
+                        uriQuery = getStandartUri();
+                        uriQuery.appendPath(path);
+
+                        parameters.put(OFFSET_PARAM, String.valueOf(currentOffset));
+
+                        Document pageContent = searchRequest.execute(uriQuery.toString(),parameters.get("q"),parameters.get(OFFSET_PARAM)).get();
+
+                        if (queryAmount == -1)
+                            queryAmount = getSearchElementCount(pageContent);
+
+                        movieList = movieListContentParse(pageContent, limit);
+
+                        currentOffset += movieList.size();
+                        return movieList;
+                    }
+                    default:
+                        return new ArrayList<>();
+                }
+            }
+            else
+                return new ArrayList<>();
+        }
+
+
+        public int queryAmount() {
+            return queryAmount;
+        }
+
+        public int limit() {
+            return limit;
+        }
+
+        public int offset() { return currentOffset;}
+
     }
 }

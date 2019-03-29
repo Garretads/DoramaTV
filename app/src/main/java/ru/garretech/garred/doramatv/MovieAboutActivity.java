@@ -2,11 +2,7 @@ package ru.garretech.garred.doramatv;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.support.v4.view.ViewPager;
@@ -14,6 +10,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import ru.garretech.garred.doramatv.adapters.MovieAboutPagerAdapter;
 import ru.garretech.garred.doramatv.fragments.MovieAboutFragment;
 import ru.garretech.garred.doramatv.fragments.MovieSourcesFragment;
 
@@ -21,17 +18,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import ru.garretech.garred.doramatv.tools.SiteWorker;
 
 public class MovieAboutActivity extends AppCompatActivity implements MovieAboutFragment.OnFragmentInteractionListener, MovieSourcesFragment.OnFragmentInteractionListener {
 
 
-    @BindView(R.id.toolbar ) Toolbar toolbar;
+    @BindView(R.id.toolbar) Toolbar toolbar;
     @BindView(R.id.container) ViewPager mViewPager;
     @BindView(R.id.tabs) TabLayout tabLayout;
     MovieAboutPagerAdapter mFragmentAdapter;
@@ -58,37 +51,23 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
         ButterKnife.bind(this);
         Intent intent = getIntent();
         try {
-            movieInfo = new JSONObject(intent.getStringExtra("movieInfo"));
+            movieInfo = new JSONObject(intent.getStringExtra("movie_info"));
             this.title = movieInfo.getString("title");
             this.genres = movieInfo.getString("genres").substring(1,movieInfo.getString("genres").length()-1);
-            this.imageURL = movieInfo.getString("movieImageIMG");
-            this.movieURL = movieInfo.getString("movieURL");
+            this.imageURL = movieInfo.getString("image_url");
+            this.movieURL = movieInfo.getString("url");
             this.accessToken = movieInfo.getString("access_token");
-            this.isSerial = movieInfo.getBoolean("isSerial");
-
-            JSONObject newMovieInfo = SiteWorker.getMovieInfo(movieURL);
-
-            this.age = newMovieInfo.getString("age");
-            this.description = newMovieInfo.getString("description");
-            this.initialSeries = newMovieInfo.getString("initial_series");
-            this.production = newMovieInfo.getString("production");
-            this.seriesNumber = newMovieInfo.getString("series_number");
-            this.duration = newMovieInfo.getString("duration");
-
-            movieInfo.put("description",description);
-            movieInfo.put("production",production);
-            movieInfo.put("series_number",seriesNumber);
-            movieInfo.put("duration",duration);
-            movieInfo.put("age",age);
+            this.isSerial = movieInfo.getBoolean("is_serial");
+            this.age = movieInfo.getString("age");
+            this.description = movieInfo.getString("description");
+            this.initialSeries = movieInfo.getString("initial_series");
+            this.production = movieInfo.getString("production");
+            this.seriesNumber = movieInfo.getString("series_number");
+            this.duration = movieInfo.getString("duration");
 
         } catch (JSONException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
-
 
         setupViewPager(mViewPager);
         tabLayout.setupWithViewPager(mViewPager);
@@ -105,9 +84,9 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
 
         try {
             JSONObject sourcesInfo = new JSONObject();
-            sourcesInfo.put("URL",movieURL);
+            sourcesInfo.put("url",movieURL);
             sourcesInfo.put("access_token",accessToken);
-            sourcesInfo.put("isSerial",isSerial);
+            sourcesInfo.put("is_serial",isSerial);
             sourcesInfo.put("initial_series",initialSeries);
             mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме");
             mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники");
@@ -122,6 +101,12 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
 
 
     @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_movie_about, menu);
@@ -133,13 +118,13 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case R.id.action_settings: {
+                Intent intent = new Intent(MovieAboutActivity.this,SettingsActivity.class);
+                startActivity(intent);
+                break;
+            }
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -150,34 +135,3 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
 
 }
 
-class MovieAboutPagerAdapter extends FragmentStatePagerAdapter {
-
-    private final List<Fragment> mFragmentList = new ArrayList<>();
-    private final List<String> mFragmentTitleList = new ArrayList<>();
-
-    MovieAboutPagerAdapter(FragmentManager fm) {
-        super(fm);
-    }
-
-    @Override
-    public Fragment getItem(int position) {
-        return mFragmentList.get(position);
-    }
-
-    @Override
-    public int getCount() {
-        return mFragmentList.size();
-    }
-
-    @Nullable
-    @Override
-    public CharSequence getPageTitle(int position) {
-        return mFragmentTitleList.get(position);
-    }
-
-    void addFragment(Fragment fragment, String title) {
-        mFragmentList.add(fragment);
-        mFragmentTitleList.add(title);
-    }
-
-}

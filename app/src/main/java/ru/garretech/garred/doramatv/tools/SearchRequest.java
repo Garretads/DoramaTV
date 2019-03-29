@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class SearchRequest extends AsyncTask<String,Void,Document>  {
 
@@ -25,7 +26,7 @@ public class SearchRequest extends AsyncTask<String,Void,Document>  {
         Document content = null;
         try {
             String myURL = strings[0];
-            String parameters = "q="+strings[1];
+            String parameters = "q="+strings[1]+"&offset="+strings[2];
             byte[] data;
             InputStream is;
             try {
@@ -37,7 +38,7 @@ public class SearchRequest extends AsyncTask<String,Void,Document>  {
 
                 conn.setRequestProperty("Content-Length", "" + Integer.toString(parameters.getBytes().length));
                 OutputStream os = conn.getOutputStream();
-                data = parameters.getBytes("UTF-8");
+                data = parameters.getBytes(StandardCharsets.UTF_8);
                 os.write(data);
                 data = null;
 
@@ -56,7 +57,7 @@ public class SearchRequest extends AsyncTask<String,Void,Document>  {
                         baos.write(buffer, 0, bytesRead);
                     }
                     data = baos.toByteArray();
-                    String requestedContent = new String(data, "UTF-8");
+                    String requestedContent = new String(data, StandardCharsets.UTF_8);
                     content = Jsoup.parse(requestedContent);
                 }
 

@@ -5,16 +5,19 @@
         <menu>
         <item
             android:id="@+id/nav_editorchoice"
-            android:title="Выбор редакции" />
+            android:title="@string/editor_choice_title" />
         <item
             android:id="@+id/nav_new"
-            android:title="Новинки" />
+            android:title="@string/best_movie_title" />
         <item
             android:id="@+id/nav_best"
-            android:title="Лучшие" />
+            android:title="@string/best_movie_title" />
+        <item
+            android:id="@+id/nav_ongoing"
+            android:title="@string/ongoing_title" />
         <item
             android:id="@+id/nav_genres"
-            android:title="По жанрам" />
+            android:title="@string/genres_title" />
         </menu>
     </item>
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,7 +20,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
-import ru.garretech.garred.doramatv.ProgressBottomSheet;
 import ru.garretech.garred.doramatv.R;
 import ru.garretech.garred.doramatv.Settings;
 import ru.garretech.garred.doramatv.tools.SiteWorker;
@@ -79,9 +79,9 @@ public class MovieSourcesFragment extends Fragment {
             try {
                 progressBottomSheet = new ProgressBottomSheet();
                 sourcesInfo = new JSONObject(getArguments().getString(ARG_PARAM1));
-                URL = sourcesInfo.getString("URL");
+                URL = sourcesInfo.getString("url");
                 accessToken = sourcesInfo.getString("access_token");
-                isSerial = sourcesInfo.getBoolean("isSerial");
+                isSerial = sourcesInfo.getBoolean("is_serial");
                 initialSeries = sourcesInfo.getString("initial_series");
                 seriesList = SiteWorker.formSeriesList(URL,initialSeries);
                 listViewList = new ArrayList();
@@ -104,11 +104,12 @@ public class MovieSourcesFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_movie_sources, container, false);
         listView = view.findViewById(R.id.sourcesListView);
         listView.setAdapter(arrayAdapter);
+        final String backSymbolText = "<-- ";
 
         if (!empty) {
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -121,7 +122,7 @@ public class MovieSourcesFragment extends Fragment {
                                 try {
                                     sourcesArray = SiteWorker.getSources(seriesList, URL, i);
                                     ArrayList funSubList = new ArrayList();
-                                    funSubList.add(((JSONObject) seriesList.get(i)).getString("name"));
+                                    funSubList.add(backSymbolText + ((JSONObject) seriesList.get(i)).getString("name"));
                                     for (int index = 0; index < sourcesArray.length(); index++) {
 
                                         JSONObject jsonObject = (JSONObject) sourcesArray.get(index);
@@ -179,7 +180,7 @@ public class MovieSourcesFragment extends Fragment {
                                             String METHOD_NAME = "video.get";
                                             Uri.Builder builder = new Uri.Builder();
                                             builder.scheme("https")
-                                                    .authority("api.vk.com")
+                                                      .authority("api.vk.com")
                                                     .appendPath("method")
                                                     .appendPath(METHOD_NAME)
                                                     .appendQueryParameter("videos", jsonObject.getString("movie_id"))

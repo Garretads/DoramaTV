@@ -72,8 +72,8 @@ public class MovieAboutFragment extends Fragment{
         args.putString(ARG_PARAM5, movieInfo.getString("duration"));
         args.putString(ARG_PARAM6, movieInfo.getString("age"));
         args.putString(ARG_PARAM7, movieInfo.getString("description"));
-        args.putString(ARG_PARAM8, movieInfo.getString("movieImageIMG"));
-        args.putString(ARG_PARAM9, movieInfo.getString("movieURL"));
+        args.putString(ARG_PARAM8, movieInfo.getString("image_url"));
+        args.putString(ARG_PARAM9, movieInfo.getString("url"));
 
         fragment.setArguments(args);
 

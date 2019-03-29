@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -19,9 +20,9 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class GenresActivity extends AppCompatActivity{
-    ArrayList<String> genresNameList;
-    ArrayAdapter arrayAdapter;
-    JSONArray genresArray = null;
+    private ArrayList<String> genresNameList;
+    private ArrayAdapter arrayAdapter;
+    private JSONArray genresArray = null;
     @BindView(R.id.genresListView) ListView listView;
     @BindView(R.id.toolbar_actionbar) Toolbar toolbar;
 
@@ -30,7 +31,7 @@ public class GenresActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_genres);
         ButterKnife.bind(this);
-        setTitle("Жанры");
+        setTitle(getString(R.string.genres_title));
 
         if (toolbar != null) {
             setSupportActionBar(toolbar);
@@ -66,6 +67,19 @@ public class GenresActivity extends AppCompatActivity{
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_genres, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
 }
