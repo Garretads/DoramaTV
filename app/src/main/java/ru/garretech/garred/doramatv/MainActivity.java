@@ -4,6 +4,9 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -42,25 +45,26 @@ import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet;
 import ru.garretech.garred.doramatv.model.Movie;
 import ru.garretech.garred.doramatv.tools.SiteWorker;
 
-public class MainActivity extends AppCompatActivity implements RecyclerAdapter.OnItemClickListener,MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener {
+public class MainActivity extends AppCompatActivity implements RecyclerAdapter.OnItemClickListener,
+                                                                MenuItem.OnActionExpandListener,
+                                                                NavigationView.OnNavigationItemSelectedListener,
+                                                                BaseQuickAdapter.RequestLoadMoreListener,
+                                                                BaseQuickAdapter.UpFetchListener{
     @BindView(R.id.movie_list) RecyclerView mRecyclerView;
     @BindView(R.id.toolbar_actionbar) Toolbar toolbar;
     @BindView(R.id.drawer_layout) DrawerLayout drawer;
     @BindView(R.id.nav_view) NavigationView navigationView;
     @BindView(R.id.progressBar) ProgressBar progressBar;
 
-    private RecyclerView.LayoutManager mLayoutManager;
     private SearchView searchView;
     private RecyclerAdapter newMovieAdapter;
-    private DividerItemDecoration mDividerItemDecoration;
-    private ActionBarDrawerToggle toggle;
     private ProgressBottomSheet progressBottomSheet;
     private ConnectivityManager conMgr;
     private SiteWorker mSiteworker;
     private SiteWorker.RequestQuery requestQuery;
     private Boolean hasConnection = true;
 
-    private int GENRES_CODE = 15;
+    private final int GENRES_CODE = 15;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,11 +77,20 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         setSupportActionBar(toolbar);
         conMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
 
+        Drawable mDivider;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mDivider = getApplicationContext().getDrawable(R.drawable.line_divider);
+            CustomDivider mDividerItemDecoration = new CustomDivider(mDivider, 10, 10);
+            mRecyclerView.addItemDecoration(mDividerItemDecoration);
+        }
 
-        mLayoutManager = new LinearLayoutManager(this);
+       /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            mDividerItemDecoration.setDrawable(getApplicationContext().getDrawable(R.drawable.line_divider));*/
+
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setHasFixedSize(true);
-        toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -101,13 +114,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             },0);
 
             newMovieAdapter = new RecyclerAdapter(R.layout.fragment_movie, new ArrayList<Movie>());
-
-            mDividerItemDecoration = new DividerItemDecoration(mRecyclerView.getContext(), DividerItemDecoration.HORIZONTAL);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                mDividerItemDecoration.setDrawable(getApplicationContext().getDrawable(R.drawable.line_divider));
-
-            mRecyclerView.addItemDecoration(mDividerItemDecoration);
+            //newMovieAdapter.setPreLoadNumber(Settings.max_loaded_in_screen() - 3);
 
             mRecyclerView.setAdapter(newMovieAdapter);
             newMovieAdapter.setOnItemClickListener(this);
@@ -245,7 +252,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
                                     HashMap<String,String> params = new HashMap<>();
                                     params.put(SiteWorker.NEW_MOVIES_PARAMS[0],SiteWorker.NEW_MOVIES_PARAMS[1]);
-
                                     requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
                                     List<Movie> list = requestQuery.getNextQuery();
                                     updateDataList(list);
@@ -353,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
     }
 
-    void updateDataList(List<Movie> list) {
+    private void updateDataList(List<Movie> list) {
 
         newMovieAdapter.setItems(list);
         mRecyclerView.scrollToPosition(0);
@@ -503,5 +509,54 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             }
 
         }, 1000);
+    }
+
+    @Override
+    public void onUpFetch() {
+
+    }
+
+    class CustomDivider extends RecyclerView.ItemDecoration {
+        final Drawable mDivider;
+        final int topOffset;
+        final int bottomOffset;
+
+       CustomDivider(Drawable divider,int topOffset, int bottomOffset) {
+           mDivider = divider;
+           this.topOffset = topOffset;
+           this.bottomOffset = bottomOffset;
+       }
+
+        @Override
+        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+            super.getItemOffsets(outRect, view, parent, state);
+
+            outRect.top = topOffset;
+            outRect.bottom = bottomOffset;
+        }
+
+      /*   @Override
+        public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mDivider != null) {
+                int dividerLeft = parent.getPaddingLeft();
+                int dividerRight = parent.getWidth() - parent.getPaddingRight();
+
+                int childCount = parent.getChildCount();
+                for (int i = 0; i < childCount - 1; i++) {
+                    View child = parent.getChildAt(i);
+
+                    RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
+
+                    int dividerTop = child.getBottom() + params.bottomMargin;
+                    int dividerBottom = dividerTop + mDivider.getIntrinsicHeight();
+
+                    mDivider.setBounds(dividerLeft, dividerTop, dividerRight, dividerBottom);
+                    mDivider.draw(c);
+                }
+            } else {
+                super.onDraw(c, parent, state);
+            }
+        }*/
     }
 }

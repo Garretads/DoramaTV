@@ -41,18 +41,7 @@ public class RecyclerAdapter extends BaseQuickAdapter<Movie,BaseViewHolder> {
 
     @Override
     protected void convert(BaseViewHolder helper, Movie item) {
-        helper.setText(R.id.movie_title,item.getTitle());
-
-        Bitmap image;
-        ImageDownloader imageDownloader = new ImageDownloader();
-        try {
-            image = imageDownloader.execute(item.getMovieImageURL()).get();
-            helper.setImageBitmap(R.id.movie_photo,image);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        helper.setText(R.id.movie_title, item.getTitle());
+        helper.setImageBitmap(R.id.movie_photo, item.getImage());
     }
-
 }

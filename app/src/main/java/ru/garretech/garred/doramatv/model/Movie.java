@@ -1,15 +1,21 @@
 package ru.garretech.garred.doramatv.model;
 
+import android.graphics.Bitmap;
+
 import org.json.JSONArray;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import ru.garretech.garred.doramatv.tools.ImageDownloader;
 
 public class Movie {
     private String title;
-    String creationYear;
+    private String creationYear;
     private List<String> genres;
-    List<String> mainActors;
-    List<String> actors;
-    List<String> producers;
+    private List<String> mainActors;
+    private List<String> actors;
+    private List<String> producers;
+    private Bitmap image;
     private String description;
     private String movieImageURL;
     private String URL;
@@ -25,6 +31,9 @@ public class Movie {
         this.isSerial = isSerial;
     }
 
+    public void setImage(Bitmap image) {
+        this.image = image;
+    }
 
     public String getTitle() {
         return title;
@@ -45,6 +54,8 @@ public class Movie {
     public String getURL() {
         return URL;
     }
+
+    public Bitmap getImage() { return image; }
 
 
     public JSONArray getSources() {

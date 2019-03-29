@@ -13,6 +13,7 @@ public class Settings {
     private static String api_response_type = "token";
     private static String version = "5.92";
     private static String access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531";
+    private static int max_loaded_in_screen = 15;
 
     public static String vk_api_id() {
         return client_id;
@@ -37,5 +38,9 @@ public class Settings {
     }
     public static String api_secret_key() {
         return api_secret_key;
+    }
+
+    public static int max_loaded_in_screen() {
+        return max_loaded_in_screen;
     }
 }

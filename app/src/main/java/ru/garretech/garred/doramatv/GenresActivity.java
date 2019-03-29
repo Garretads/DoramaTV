@@ -2,13 +2,17 @@ package ru.garretech.garred.doramatv;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,8 +24,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class GenresActivity extends AppCompatActivity{
-    private ArrayList<String> genresNameList;
-    private ArrayAdapter arrayAdapter;
     private JSONArray genresArray = null;
     @BindView(R.id.genresListView) ListView listView;
     @BindView(R.id.toolbar_actionbar) Toolbar toolbar;
@@ -39,7 +41,7 @@ public class GenresActivity extends AppCompatActivity{
         }
 
         final Intent intent = getIntent();
-        genresNameList = new ArrayList<>();
+        ArrayList<String> genresNameList = new ArrayList<>();
         try {
             genresArray = new JSONArray(intent.getStringExtra("genres"));
 
@@ -47,7 +49,15 @@ public class GenresActivity extends AppCompatActivity{
                 String name = ((JSONObject) genresArray.get(i)).getString("name");
                 genresNameList.add(name.substring(0,1).toUpperCase()+name.substring(1));
             }
-            arrayAdapter = new ArrayAdapter(getApplicationContext(),android.R.layout.simple_list_item_1,genresNameList);
+            ArrayAdapter arrayAdapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, genresNameList) {
+                @Override
+                public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                    View view = super.getView(position, convertView, parent);
+                    TextView text = view.findViewById(android.R.id.text1);
+                    text.setTextColor(getResources().getColor(android.R.color.white));
+                    return view;
+                }
+            };
 
             listView.setAdapter(arrayAdapter);
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

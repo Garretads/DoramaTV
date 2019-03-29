@@ -2,6 +2,7 @@ package ru.garretech.garred.doramatv.tools;
 
 import android.net.Uri;
 
+import ru.garretech.garred.doramatv.Settings;
 import ru.garretech.garred.doramatv.model.Movie;
 
 import org.json.JSONArray;
@@ -69,6 +70,8 @@ public class SiteWorker {
         Document pageContent;
         List<Movie> movieList;
         pageContent = pageDownloader.execute(SITE_URL).get();
+        ImageDownloader imageDownloader;
+        Movie movie;
 
         Element element = pageContent.getElementsByClass(editorChoice).first();
         Elements editorChoiceElements = element.getElementsByClass("simple-tile ");
@@ -83,8 +86,11 @@ public class SiteWorker {
             String title = element1.getElementsByTag("img").get(0).attr("alt");
             String imageURL;
             imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
+            movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,true);
+            imageDownloader = new ImageDownloader();
+            movie.setImage(imageDownloader.execute(imageURL).get());
 
-            movieList.add(new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,true));
+            movieList.add(movie);
         }
 
         return movieList;
@@ -194,6 +200,8 @@ public class SiteWorker {
     private static List<Movie> movieListContentParse(Document pageContent,int limit) {
         ArrayList<Movie> movieList = new ArrayList<>();
         Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
+        ImageDownloader imageDownloader = new ImageDownloader();
+        Movie movie;
         int iteration = 0;
         for (Element element : elements) {
 
@@ -222,7 +230,19 @@ public class SiteWorker {
                 String imageURL = tempElement.attr("data-original");
                 tempElement = element.getElementsByClass("tags").first();
                 Boolean isSerial = tempElement.getElementsByClass("mangaSingle").isEmpty();
-                movieList.add(new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial));
+
+                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial);
+
+                try {
+                    imageDownloader = new ImageDownloader();
+                    movie.setImage(imageDownloader.execute(imageURL).get());
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                movieList.add(movie);
                 iteration++;
             }
         }
@@ -342,14 +362,14 @@ public class SiteWorker {
 
         public RequestQuery(int requestType, String path, HashMap<String,String> params) {
             this.requestType = requestType;
-            this.limit = 15;
+            this.limit = Settings.max_loaded_in_screen();
             this.path = path;
             this.parameters = params;
         }
 
         public RequestQuery(int requestType, String path) {
             this.requestType = requestType;
-            this.limit = 15;
+            this.limit = Settings.max_loaded_in_screen();
             this.path = path;
             parameters = new HashMap<>();
         }
