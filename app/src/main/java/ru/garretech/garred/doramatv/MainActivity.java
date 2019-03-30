@@ -4,7 +4,6 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -16,9 +15,9 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -41,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import ru.garretech.garred.doramatv.adapters.RecyclerAdapter;
+import ru.garretech.garred.doramatv.fragments.CustomLoadMoreView;
 import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet;
 import ru.garretech.garred.doramatv.model.Movie;
 import ru.garretech.garred.doramatv.tools.SiteWorker;
@@ -49,12 +49,13 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                                                 MenuItem.OnActionExpandListener,
                                                                 NavigationView.OnNavigationItemSelectedListener,
                                                                 BaseQuickAdapter.RequestLoadMoreListener,
-                                                                BaseQuickAdapter.UpFetchListener{
+                                                                SwipeRefreshLayout.OnRefreshListener {
     @BindView(R.id.movie_list) RecyclerView mRecyclerView;
     @BindView(R.id.toolbar_actionbar) Toolbar toolbar;
     @BindView(R.id.drawer_layout) DrawerLayout drawer;
     @BindView(R.id.nav_view) NavigationView navigationView;
     @BindView(R.id.progressBar) ProgressBar progressBar;
+    @BindView(R.id.swipe_container) SwipeRefreshLayout swipeContainer;
 
     private SearchView searchView;
     private RecyclerAdapter newMovieAdapter;
@@ -71,30 +72,46 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        conMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         ButterKnife.bind(this);
         progressBottomSheet = new ProgressBottomSheet();
         navigationView.setNavigationItemSelectedListener(this);
-        setSupportActionBar(toolbar);
-        conMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        swipeContainer.setOnRefreshListener(this);
 
-        Drawable mDivider;
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mDivider = getApplicationContext().getDrawable(R.drawable.line_divider);
+            Drawable mDivider = getApplicationContext().getDrawable(R.drawable.line_divider);
             CustomDivider mDividerItemDecoration = new CustomDivider(mDivider, 10, 10);
             mRecyclerView.addItemDecoration(mDividerItemDecoration);
         }
 
-       /* if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            mDividerItemDecoration.setDrawable(getApplicationContext().getDrawable(R.drawable.line_divider));*/
 
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLayoutManager);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this) {
+            @Override
+            public boolean supportsPredictiveItemAnimations() {
+                return false;
+            }
+        });
         mRecyclerView.setHasFixedSize(true);
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_menu);
+
+        newMovieAdapter = new RecyclerAdapter(R.layout.fragment_movie, new ArrayList<Movie>());
+        //newMovieAdapter.setPreLoadNumber(Settings.max_loaded_in_screen() - 3);
+
+        mRecyclerView.setAdapter(newMovieAdapter);
+        newMovieAdapter.setOnItemClickListener(this);
+        newMovieAdapter.setOnLoadMoreListener(this,mRecyclerView);
+        newMovieAdapter.setEnableLoadMore(false);
+        newMovieAdapter.setLoadMoreView(new CustomLoadMoreView());
+        mSiteworker = new SiteWorker();
+
 
         if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
                 || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
@@ -103,7 +120,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 @Override
                 public void run() {
                     try {
-                        List<Movie> list = SiteWorker.getEditorChoiceMoviesList();
+                        requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                        List<Movie> list = requestQuery.getNextQuery();
                         updateDataList(list);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -112,15 +130,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     }
                 }
             },0);
-
-            newMovieAdapter = new RecyclerAdapter(R.layout.fragment_movie, new ArrayList<Movie>());
-            //newMovieAdapter.setPreLoadNumber(Settings.max_loaded_in_screen() - 3);
-
-            mRecyclerView.setAdapter(newMovieAdapter);
-            newMovieAdapter.setOnItemClickListener(this);
-            newMovieAdapter.setOnLoadMoreListener(this,mRecyclerView);
-            newMovieAdapter.setEnableLoadMore(false);
-            mSiteworker = new SiteWorker();
         } else
             showConnectionError();
     }
@@ -167,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             }
                         }
                     }, 1000);
-                    newMovieAdapter.clearItems();
+                    newMovieAdapter.clear();
                     progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
 
                     if (!searchView.isIconified()) {
@@ -228,7 +237,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             @Override
                             public void run() {
                                 try {
-                                    List<Movie> list = SiteWorker.getEditorChoiceMoviesList();
+                                    requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                                    List<Movie> list = requestQuery.getNextQuery();
                                     updateDataList(list);
                                     newMovieAdapter.setEnableLoadMore(false);
                                     if (progressBottomSheet.isVisible())
@@ -241,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 }
                             }
                         }, 500);
-                        newMovieAdapter.clearItems();
+                        newMovieAdapter.clear();
                         break;
                     }
                     case R.id.nav_new: {
@@ -266,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 }
                             }
                         }, 1000);
-                        newMovieAdapter.clearItems();
+                        newMovieAdapter.clear();
                         progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
                         break;
                     }
@@ -290,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 }
                             }
                         }, 1000);
-                        newMovieAdapter.clearItems();
+                        newMovieAdapter.clear();
                         progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
                         break;
                     }
@@ -317,7 +327,42 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 }
                             }
                         }, 1000);
-                        newMovieAdapter.clearItems();
+
+                        newMovieAdapter.clear();
+                        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                        break;
+                    }
+
+                    case R.id.nav_random: {
+
+                        final Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
+
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                JSONObject jsonObject = null;
+
+                                try {
+                                    jsonObject = SiteWorker.getMovieInfo(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX);
+                                    jsonObject.put("access_token",Settings.access_token());
+
+                                    intent.putExtra("movie_info",jsonObject.toString());
+
+                                    if (progressBottomSheet.isVisible())
+                                        progressBottomSheet.dismiss();
+
+                                    startActivity(intent);
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } catch (ExecutionException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }, 500);
                         progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
                         break;
                     }
@@ -359,11 +404,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
     }
 
-    private void updateDataList(List<Movie> list) {
-
-        newMovieAdapter.setItems(list);
-        mRecyclerView.scrollToPosition(0);
-    }
 
     @Override
     public void onBackPressed() {
@@ -400,7 +440,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                         }
                     }
                 },1000);
-                newMovieAdapter.clearItems();
+                newMovieAdapter.clear();
             }
         }
     }
@@ -451,11 +491,12 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                         jsonObject.put("image_url",selectedMovie.getMovieImageURL());
                         jsonObject.put("url",selectedMovie.getURL());
                         jsonObject.put("access_token",Settings.access_token());
-                        jsonObject.put("is_serial",selectedMovie.getSerial());
 
                         intent.putExtra("movie_info",jsonObject.toString());
+
                         if (progressBottomSheet.isVisible())
                             progressBottomSheet.dismiss();
+
                         startActivity(intent);
 
                     } catch (JSONException e) {
@@ -468,14 +509,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             }
         }, 500);
         progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
-        // Ща будем делать json объект
 
     }
 
-    void showConnectionError() {
-        hasConnection = false;
-        Toast.makeText(getApplicationContext(), getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     public void onLoadMoreRequested() {
@@ -483,12 +519,12 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         mRecyclerView.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (newMovieAdapter.getData().size() >= requestQuery.queryAmount()) {
-                    //Data are all loaded.
+                if (requestQuery.offset() >= requestQuery.queryAmount()) {
+                    //Data was fully loaded.
                     newMovieAdapter.loadMoreEnd();
                 } else {
                     if (hasConnection) {
-                        //Successfully get more data
+                        //Successfully got more data
                         try {
                             newMovieAdapter.addData(requestQuery.getNextQuery());
                             newMovieAdapter.loadMoreComplete();
@@ -511,10 +547,53 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         }, 1000);
     }
 
-    @Override
-    public void onUpFetch() {
 
+    @Override
+    public void onRefresh() {
+        swipeContainer.setRefreshing(false);
+        if (requestQuery != null) {
+            requestQuery.resetOffset();
+
+            try {
+                List<Movie> list = requestQuery.getNextQuery();
+                updateDataList(list);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+
+            try {
+                requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                List<Movie> list = requestQuery.getNextQuery();
+                updateDataList(list);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
+
+
+
+    private void updateDataList(List<Movie> list) {
+
+        newMovieAdapter.addAll(list);
+        mRecyclerView.getRecycledViewPool().clear();
+        mRecyclerView.scrollToPosition(0);
+    }
+
+    void showConnectionError() {
+        hasConnection = false;
+        Toast.makeText(getApplicationContext(), getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show();
+    }
+
+
+
 
     class CustomDivider extends RecyclerView.ItemDecoration {
         final Drawable mDivider;

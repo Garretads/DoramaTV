@@ -49,7 +49,6 @@ public class MovieSourcesFragment extends Fragment {
     JSONObject sourcesInfo;
     String URL;
     String accessToken;
-    Boolean isSerial;
     private Boolean seriesSelected = false;
     ProgressBottomSheet progressBottomSheet;
     String initialSeries;
@@ -81,7 +80,6 @@ public class MovieSourcesFragment extends Fragment {
                 sourcesInfo = new JSONObject(getArguments().getString(ARG_PARAM1));
                 URL = sourcesInfo.getString("url");
                 accessToken = sourcesInfo.getString("access_token");
-                isSerial = sourcesInfo.getBoolean("is_serial");
                 initialSeries = sourcesInfo.getString("initial_series");
                 seriesList = SiteWorker.formSeriesList(URL,initialSeries);
                 listViewList = new ArrayList();

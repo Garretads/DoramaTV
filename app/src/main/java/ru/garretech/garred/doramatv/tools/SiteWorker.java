@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 *
 * */
 public class SiteWorker {
-    final private static String SITE_URL = "http://doramatv.ru";
+    final public static String SITE_URL = "http://doramatv.ru";
     final private static String SITE_URL1 = "doramatv.ru";
     final private static String editorChoice = "row tiles-row short";
     final public static String[] NEW_MOVIES_PARAMS = {"sortType","created"};
@@ -36,10 +36,12 @@ public class SiteWorker {
     final public static String SEARCH_PREFIX = "search";
     final public static String ONGOING_PREFIX = "list/tags/ongoing";
     final public static String[] ONGOING_PARAMS = {"sortType","rate"};
+    final public static String RANDOM_MOVIE_PREFIX = "/internal/random";
     final private static String OFFSET_PARAM = "offset";
     final private static String TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/";
     final public static int SIMPLE_QUERY = 0;
     final public static int SEARCH_QUERY = 1;
+    final public static int EDITOR_CHOICE_QUERY = 2;
 
     /*
     *  Сформировать ссылку запроса (или из поискового запроса или из выбранного жанра)
@@ -49,7 +51,7 @@ public class SiteWorker {
     * */
 
 
-    private static int getSearchElementCount(Document pageContent) {
+    private static int getMaxSearchElementCount(Document pageContent) {
         Pattern pattern = Pattern.compile("\\((\\d+)\\)");
         Matcher matcher;
         int resultAmount = 0;
@@ -86,7 +88,7 @@ public class SiteWorker {
             String title = element1.getElementsByTag("img").get(0).attr("alt");
             String imageURL;
             imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
-            movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,true);
+            movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url);
             imageDownloader = new ImageDownloader();
             movie.setImage(imageDownloader.execute(imageURL).get());
 
@@ -127,7 +129,7 @@ public class SiteWorker {
 
 
 
-    private static int getQueryElementCount(Document pageContent) {
+    private static int getMaxQueryElementCount(Document pageContent) {
         Pattern pattern = Pattern.compile("(\\d+)");
         Matcher matcher;
         int resultAmount = 0;
@@ -151,10 +153,21 @@ public class SiteWorker {
         return resultAmount;
     }
 
+    private static int getCurrentListElementCount(Document pageContent) {
+        Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
+        return elements.size();
+    }
+
     public static JSONObject getMovieInfo(String URL) throws InterruptedException,ExecutionException,JSONException {
         JSONObject info = new JSONObject();
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
+        String name = "";
+        String eng_name = "";
+        String original_name = "";
+        String image_url = "";
+        String url = "";
+        ArrayList<String> genres = new ArrayList<>();
         String description = "";
         String age = "";
         String production = "";
@@ -165,9 +178,35 @@ public class SiteWorker {
         String initialSeries = pageContent.getElementsByClass("subject-actions col-sm-7").first().getElementsByTag("a").last().attr("href");
         initialSeries = initialSeries.substring(initialSeries.lastIndexOf("/"));
 
+        tempElement = pageContent.getElementsByAttributeValue("itemprop","url").first();
+        if (tempElement != null)
+            url = tempElement.attr("content");
+
+        tempElement = pageContent.getElementsByClass("name").first();
+        if (tempElement != null)
+            name = tempElement.text();
+
+        tempElement = pageContent.getElementsByClass("eng-name").first();
+        if (tempElement != null)
+            eng_name = tempElement.text();
+
+        tempElement = pageContent.getElementsByClass("original-name").first();
+        if (tempElement != null)
+            original_name = tempElement.text();
+
+        tempElements = pageContent.getElementsByClass("elem_genre ");
+        for (Element element1 : tempElements) {
+            genres.add(element1.tagName("a").text());
+        }
+
         tempElement = pageContent.getElementsByClass("manga-description").first();
         if (tempElement != null)
             description = tempElement.text();
+
+        tempElement = pageContent.getElementsByClass("picture-fotorama").first();
+        tempElement = tempElement.getElementsByTag("img").first();
+        if (tempElement != null)
+            image_url = tempElement.attr("data-thumb");
 
         tempElement = pageContent.getElementsByClass("elem_year ").first();
         if (tempElement != null)
@@ -187,6 +226,10 @@ public class SiteWorker {
         String duration = tempElement.text();
 
 
+        info.put("title",name + " | " + eng_name + " | " + original_name);
+        info.put("url",url);
+        info.put("genres",genres.toString());
+        info.put("image_url",image_url);
         info.put("initial_series",initialSeries);
         info.put("production",production);
         info.put("series_number",seriesNumber);
@@ -197,10 +240,11 @@ public class SiteWorker {
         return info;
     }
 
-    private static List<Movie> movieListContentParse(Document pageContent,int limit) {
+    private static HashMap<String,Object> movieListContentParse(Document pageContent,int limit) {
         ArrayList<Movie> movieList = new ArrayList<>();
+        HashMap<String,Object> result = new HashMap<>();
         Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
-        ImageDownloader imageDownloader = new ImageDownloader();
+        ImageDownloader imageDownloader;
         Movie movie;
         int iteration = 0;
         for (Element element : elements) {
@@ -208,6 +252,7 @@ public class SiteWorker {
             if (limit != 0 && iteration > limit - 1)
                 break;
 
+            // Отсев книг и манги из результатов поиска
             Elements tempElements = element.getElementsByClass("tile-info").first().getElementsByTag("a");
             if (tempElements.size() != 0) {
                 String genres;
@@ -229,9 +274,8 @@ public class SiteWorker {
                 String title = tempElement.attr("title");
                 String imageURL = tempElement.attr("data-original");
                 tempElement = element.getElementsByClass("tags").first();
-                Boolean isSerial = tempElement.getElementsByClass("mangaSingle").isEmpty();
 
-                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url,isSerial);
+                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url);
 
                 try {
                     imageDownloader = new ImageDownloader();
@@ -243,10 +287,12 @@ public class SiteWorker {
                 }
 
                 movieList.add(movie);
-                iteration++;
             }
+            iteration++;
         }
-        return movieList;
+        result.put("list",movieList);
+        result.put("offset",Integer.valueOf(iteration));
+        return result;
     }
 
     public static JSONArray getSources(JSONArray seriesList, String URL, int seriesIndex) throws InterruptedException,ExecutionException, JSONException {
@@ -374,9 +420,16 @@ public class SiteWorker {
             parameters = new HashMap<>();
         }
 
+        public RequestQuery(int requestType) {
+            this.requestType = requestType;
+            this.limit = Settings.max_loaded_in_screen();
+            this.path = "";
+            parameters = new HashMap<>();
+        }
+
 
         public List<Movie> getNextQuery() throws ExecutionException, InterruptedException {
-            if (queryAmount == -1 || currentOffset+limit < queryAmount) {
+            if (queryAmount == -1 || currentOffset < queryAmount) {
                 switch (requestType) {
                     case SIMPLE_QUERY: {
                         PageDownloader pageDownloader = new PageDownloader();
@@ -402,12 +455,13 @@ public class SiteWorker {
                         Document pageContent = pageDownloader.execute(uriQuery.toString()).get();
 
                         if (queryAmount == -1)
-                            queryAmount = getQueryElementCount(pageContent);
+                            queryAmount = getMaxQueryElementCount(pageContent);
 
-                        movieList = movieListContentParse(pageContent, limit);
+                        HashMap result = movieListContentParse(pageContent, limit);
+                        movieList = (List<Movie>) result.get("list");
 
 
-                        currentOffset += movieList.size();
+                        currentOffset += (Integer) result.get("offset");
                         return movieList;
                     }
 
@@ -423,12 +477,20 @@ public class SiteWorker {
                         Document pageContent = searchRequest.execute(uriQuery.toString(),parameters.get("q"),parameters.get(OFFSET_PARAM)).get();
 
                         if (queryAmount == -1)
-                            queryAmount = getSearchElementCount(pageContent);
+                            queryAmount = getMaxSearchElementCount(pageContent);
 
-                        movieList = movieListContentParse(pageContent, limit);
+                        HashMap result = movieListContentParse(pageContent, limit);
 
-                        currentOffset += movieList.size();
+                        movieList = (List<Movie>) result.get("list");
+
+                        currentOffset += (Integer) result.get("offset");
                         return movieList;
+                    }
+
+                    case EDITOR_CHOICE_QUERY: {
+                        queryAmount = 5;
+                        currentOffset = 5;
+                        return getEditorChoiceMoviesList();
                     }
                     default:
                         return new ArrayList<>();
@@ -448,6 +510,14 @@ public class SiteWorker {
         }
 
         public int offset() { return currentOffset;}
+
+        public List<Movie> getList() {
+            return movieList;
+        }
+
+        public void resetOffset() {
+            currentOffset = 0;
+        }
 
     }
 }

@@ -41,7 +41,6 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
     String movieURL;
     String accessToken;
     String initialSeries;
-    Boolean isSerial;
 
 
     @Override
@@ -57,7 +56,6 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
             this.imageURL = movieInfo.getString("image_url");
             this.movieURL = movieInfo.getString("url");
             this.accessToken = movieInfo.getString("access_token");
-            this.isSerial = movieInfo.getBoolean("is_serial");
             this.age = movieInfo.getString("age");
             this.description = movieInfo.getString("description");
             this.initialSeries = movieInfo.getString("initial_series");
@@ -86,7 +84,6 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
             JSONObject sourcesInfo = new JSONObject();
             sourcesInfo.put("url",movieURL);
             sourcesInfo.put("access_token",accessToken);
-            sourcesInfo.put("is_serial",isSerial);
             sourcesInfo.put("initial_series",initialSeries);
             mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме");
             mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники");

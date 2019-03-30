@@ -18,6 +18,7 @@
     <string name="new_movie_title">Новинки</string>
     <string name="best_movie_title">Лучшие</string>
     <string name="ongoing_title">Онгоинг</string>
+    <string name="random_movie_title">Случайная дорама</string>
     <string name="genres_title">Жанры</string>
     <string name="cant_connect_error">Ошибка загрузки. Проверьте интернет подключение</string>
     <string name="progress_text">Идет загрузка данных…</string>
@@ -97,4 +98,6 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
+    <string name="loading">Загрузка</string>
+    <string name="load_failed">Загрузка неудачна</string>
 </resources>

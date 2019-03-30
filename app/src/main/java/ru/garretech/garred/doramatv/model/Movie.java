@@ -20,15 +20,13 @@ public class Movie {
     private String movieImageURL;
     private String URL;
     private JSONArray sources;
-    private Boolean isSerial;
 
-    public Movie(String title, List<String> genres,String description,String movieImageURL,String movieURL,Boolean isSerial) {
+    public Movie(String title, List<String> genres,String description,String movieImageURL,String movieURL) {
         this.title = title;
         this.URL = movieURL;
         this.genres = genres;
         this.description = description;
         this.movieImageURL = movieImageURL;
-        this.isSerial = isSerial;
     }
 
     public void setImage(Bitmap image) {
@@ -62,7 +60,4 @@ public class Movie {
         return sources;
     }
 
-    public Boolean getSerial() {
-        return isSerial;
-    }
 }

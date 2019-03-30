@@ -26,7 +26,7 @@ public class RecyclerAdapter extends BaseQuickAdapter<Movie,BaseViewHolder> {
         super(layoutResId, data);
     }
 
-    public void setItems(Collection<Movie> movies) {
+    public void addAll(Collection<Movie> movies) {
         getData().clear();
         for (Movie movie:movies) {
             getData().add(movie);
@@ -34,7 +34,7 @@ public class RecyclerAdapter extends BaseQuickAdapter<Movie,BaseViewHolder> {
         }
     }
 
-    public void clearItems() {
+    public void clear() {
         getData().clear();
         notifyDataSetChanged();
     }
