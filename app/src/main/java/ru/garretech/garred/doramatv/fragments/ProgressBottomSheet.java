@@ -11,6 +11,8 @@ import android.view.ViewGroup;
 import ru.garretech.garred.doramatv.R;
 
 public class ProgressBottomSheet extends BottomSheetDialogFragment {
+
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

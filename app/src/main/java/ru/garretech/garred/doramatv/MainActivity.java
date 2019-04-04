@@ -71,6 +71,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mSiteworker = new SiteWorker();
+
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         conMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         ButterKnife.bind(this);
@@ -103,14 +105,11 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         toggle.syncState();
 
         newMovieAdapter = new RecyclerAdapter(R.layout.fragment_movie, new ArrayList<Movie>());
-        //newMovieAdapter.setPreLoadNumber(Settings.max_loaded_in_screen() - 3);
-
         mRecyclerView.setAdapter(newMovieAdapter);
         newMovieAdapter.setOnItemClickListener(this);
         newMovieAdapter.setOnLoadMoreListener(this,mRecyclerView);
         newMovieAdapter.setEnableLoadMore(false);
         newMovieAdapter.setLoadMoreView(new CustomLoadMoreView());
-        mSiteworker = new SiteWorker();
 
 
         if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
@@ -151,8 +150,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
                 // Поиск дорам
 
-                if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
-                        || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+                if (hasConnection()) {
 
                     new Handler().postDelayed(new Runnable() {
                         @Override
@@ -165,10 +163,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 requestQuery = mSiteworker.new RequestQuery(SiteWorker.SEARCH_QUERY,SiteWorker.SEARCH_PREFIX,params);
                                 List<Movie> list = requestQuery.getNextQuery();
                                 updateDataList(list);
-                                newMovieAdapter.setEnableLoadMore(true);
                                 if (progressBottomSheet.isVisible())
-                                    progressBottomSheet.dismiss();
-                                setTitle(queryString);
+                                    progressBottomSheet.dismissAllowingStateLoss();
+                                setTitle("Поиск: " + queryString);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             } catch (ExecutionException e) {
@@ -177,7 +174,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                         }
                     }, 1000);
                     newMovieAdapter.clear();
-                    progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                    if (!progressBottomSheet.isAdded()) {
+                        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                    }
 
                     if (!searchView.isIconified()) {
                         searchView.setIconified(true);
@@ -227,178 +226,220 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
-                || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
 
-            try {
-                switch (item.getItemId()) {
-                    case R.id.nav_editorchoice: {
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
-                                    List<Movie> list = requestQuery.getNextQuery();
-                                    updateDataList(list);
-                                    newMovieAdapter.setEnableLoadMore(false);
-                                    if (progressBottomSheet.isVisible())
-                                        progressBottomSheet.dismiss();
-                                    setTitle(getString(R.string.editor_choice_title));
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, 500);
-                        newMovieAdapter.clear();
-                        break;
-                    }
-                    case R.id.nav_new: {
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-
-                                    HashMap<String,String> params = new HashMap<>();
-                                    params.put(SiteWorker.NEW_MOVIES_PARAMS[0],SiteWorker.NEW_MOVIES_PARAMS[1]);
-                                    requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
-                                    List<Movie> list = requestQuery.getNextQuery();
-                                    updateDataList(list);
-                                    newMovieAdapter.setEnableLoadMore(true);
-                                    if (progressBottomSheet.isVisible())
-                                        progressBottomSheet.dismiss();
-                                    setTitle(getString(R.string.new_movie_title));
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, 1000);
-                        newMovieAdapter.clear();
-                        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
-                        break;
-                    }
-                    case R.id.nav_best: {
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-
-                                    requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX);
-                                    List<Movie> list = requestQuery.getNextQuery();
-                                    updateDataList(list);
-                                    newMovieAdapter.setEnableLoadMore(true);
-                                    if (progressBottomSheet.isVisible())
-                                        progressBottomSheet.dismiss();
-                                    setTitle(getString(R.string.best_movie_title));
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, 1000);
-                        newMovieAdapter.clear();
-                        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
-                        break;
-                    }
-
-                    case R.id.nav_ongoing: {
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    HashMap<String,String> params = new HashMap<>();
-                                    params.put(SiteWorker.ONGOING_PARAMS[0],SiteWorker.ONGOING_PARAMS[1]);
-
-                                    requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.ONGOING_PREFIX,params);
-                                    List<Movie> list = requestQuery.getNextQuery();
-                                    updateDataList(list);
-                                    newMovieAdapter.setEnableLoadMore(true);
-                                    if (progressBottomSheet.isVisible())
-                                        progressBottomSheet.dismiss();
-                                    setTitle(getString(R.string.ongoing_title));
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, 1000);
-
-                        newMovieAdapter.clear();
-                        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
-                        break;
-                    }
-
-                    case R.id.nav_random: {
-
-                        final Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
-
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-
-                                JSONObject jsonObject = null;
-
-                                try {
-                                    jsonObject = SiteWorker.getMovieInfo(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX);
-                                    jsonObject.put("access_token",Settings.access_token());
-
-                                    intent.putExtra("movie_info",jsonObject.toString());
-
-                                    if (progressBottomSheet.isVisible())
-                                        progressBottomSheet.dismiss();
-
-                                    startActivity(intent);
-
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, 500);
-                        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
-                        break;
-                    }
-
-                    case R.id.nav_genres: {
-                        JSONArray jsonArray = SiteWorker.getGenresList();
-                        Intent intent = new Intent(MainActivity.this, GenresActivity.class);
-                        intent.putExtra("genres", jsonArray.toString());
-                        startActivityForResult(intent, GENRES_CODE);
-                        break;
-                    }
-                    case R.id.nav_favourites: {
-                        Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
-                        break;
-                    }
-                    case R.id.nav_history: {
-                        Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
-                        break;
-                    }
-                    case R.id.nav_about: {
-                        Intent intent = new Intent(MainActivity.this,AboutApplicationActivity.class);
-                        startActivity(intent);
-                        break;
-                    }
-                    default:
-                        break;
+        switch (item.getItemId()) {
+            case R.id.nav_editorchoice: {
+                if (!hasConnection()) {
+                    showConnectionError();
+                    break;
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                            List<Movie> list = requestQuery.getNextQuery();
+                            updateDataList(list);
+                            //newMovieAdapter.setEnableLoadMore(false);
+                            if (progressBottomSheet.isVisible())
+                                progressBottomSheet.dismissAllowingStateLoss();
+                            setTitle(getString(R.string.editor_choice_title));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            showConnectionError();
+                        } catch (NullPointerException e) {
+                            showConnectionError();
+                        }
+                    }
+                }, 500);
+                newMovieAdapter.clear();
+                break;
             }
-        } else
-            showConnectionError();
+            case R.id.nav_new: {
+                if (!hasConnection()) {
+                    showConnectionError();
+                    break;
+                }
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+
+                            HashMap<String,String> params = new HashMap<>();
+                            params.put(SiteWorker.NEW_MOVIES_PARAMS[0],SiteWorker.NEW_MOVIES_PARAMS[1]);
+                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
+                            List<Movie> list = requestQuery.getNextQuery();
+                            updateDataList(list);
+                            //newMovieAdapter.setEnableLoadMore(true);
+                            if (progressBottomSheet.isVisible())
+                                progressBottomSheet.dismissAllowingStateLoss();
+                            setTitle(getString(R.string.new_movie_title));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            showConnectionError();
+                        } catch (NullPointerException e) {
+                            showConnectionError();
+                        }
+                    }
+                }, 1000);
+                newMovieAdapter.clear();
+                if (!progressBottomSheet.isAdded()) {
+                    progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                }
+                break;
+            }
+            case R.id.nav_best: {
+                if (!hasConnection()) {
+                    showConnectionError();
+                    break;
+                }
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+
+                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX);
+                            List<Movie> list = requestQuery.getNextQuery();
+                            updateDataList(list);
+                            //newMovieAdapter.setEnableLoadMore(true);
+                            if (progressBottomSheet.isVisible())
+                                progressBottomSheet.dismissAllowingStateLoss();
+                            setTitle(getString(R.string.best_movie_title));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                           showConnectionError();
+                        } catch (NullPointerException e) {
+                            showConnectionError();
+                        }
+                    }
+                }, 1000);
+                newMovieAdapter.clear();
+                if (!progressBottomSheet.isAdded()) {
+                    progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                }
+                break;
+            }
+
+            case R.id.nav_ongoing: {
+                if (!hasConnection()) {
+                    showConnectionError();
+                    break;
+                }
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            HashMap<String,String> params = new HashMap<>();
+                            params.put(SiteWorker.ONGOING_PARAMS[0],SiteWorker.ONGOING_PARAMS[1]);
+
+                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.ONGOING_PREFIX,params);
+                            List<Movie> list = requestQuery.getNextQuery();
+                            updateDataList(list);
+                            //newMovieAdapter.setEnableLoadMore(true);
+                            if (progressBottomSheet.isVisible())
+                                progressBottomSheet.dismissAllowingStateLoss();
+                            setTitle(getString(R.string.ongoing_title));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            showConnectionError();
+                        } catch (NullPointerException e) {
+                            showConnectionError();
+                        }
+                    }
+                }, 1000);
+
+                newMovieAdapter.clear();
+                if (!progressBottomSheet.isAdded()) {
+                    progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                }
+                break;
+            }
+
+            case R.id.nav_random: {
+                if (!hasConnection()) {
+                    showConnectionError();
+                    break;
+                }
+
+                final Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        JSONObject jsonObject = null;
+
+                        try {
+                            jsonObject = SiteWorker.getMovieInfo(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX);
+                            jsonObject.put("access_token",Settings.access_token());
+
+                            intent.putExtra("movie_info",jsonObject.toString());
+
+                            if (progressBottomSheet.isVisible())
+                                progressBottomSheet.dismissAllowingStateLoss();
+
+                            startActivity(intent);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            showConnectionError();
+                        }
+                    }
+                }, 500);
+                if (!progressBottomSheet.isAdded()) {
+                    progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+                }
+                break;
+            }
+
+            case R.id.nav_genres: {
+                if (!hasConnection()) {
+                    showConnectionError();
+                    break;
+                }
+
+                try {
+
+                    JSONArray jsonArray = SiteWorker.getGenresList();
+                    Intent intent = new Intent(MainActivity.this, GenresActivity.class);
+                    intent.putExtra("genres", jsonArray.toString());
+                    startActivityForResult(intent, GENRES_CODE);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+            case R.id.nav_favourites: {
+                Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
+                break;
+            }
+            case R.id.nav_history: {
+                Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
+                break;
+            }
+            case R.id.nav_about: {
+                Intent intent = new Intent(MainActivity.this,AboutApplicationActivity.class);
+                startActivity(intent);
+                break;
+            }
+            default:
+                break;
+            }
         drawer.closeDrawer(GravityCompat.START);
         return true;
 
@@ -429,9 +470,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,resultPrefix);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
-                            newMovieAdapter.setEnableLoadMore(true);
+                            //newMovieAdapter.setEnableLoadMore(true);
                             if (progressBottomSheet.isVisible())
-                                progressBottomSheet.dismiss();
+                                progressBottomSheet.dismissAllowingStateLoss();
                             setTitle(genreName.substring(0,1).toUpperCase()+genreName.substring(1));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -477,22 +518,21 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
     public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
         final Movie selectedMovie = newMovieAdapter.getData().get(position);
         final Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
+        if (hasConnection()) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
 
                     JSONObject jsonObject;
-
                     try {
                         jsonObject = SiteWorker.getMovieInfo(selectedMovie.getURL());
-                        jsonObject.put("title",selectedMovie.getTitle());
-                        jsonObject.put("genres",selectedMovie.getGenres().toString());
-                        jsonObject.put("image_url",selectedMovie.getMovieImageURL());
-                        jsonObject.put("url",selectedMovie.getURL());
-                        jsonObject.put("access_token",Settings.access_token());
+                        jsonObject.put("title", selectedMovie.getTitle());
+                        jsonObject.put("genres", selectedMovie.getGenres().toString());
+                        jsonObject.put("image_url", selectedMovie.getMovieImageURL());
+                        jsonObject.put("url", selectedMovie.getURL());
+                        jsonObject.put("access_token", Settings.access_token());
 
-                        intent.putExtra("movie_info",jsonObject.toString());
+                        intent.putExtra("movie_info", jsonObject.toString());
 
                         if (progressBottomSheet.isVisible())
                             progressBottomSheet.dismiss();
@@ -504,11 +544,17 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
-                        e.printStackTrace();
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
                     }
+                }
+            }, 500);
+            if (!progressBottomSheet.isAdded()) {
+                progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
             }
-        }, 500);
-        progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
+        } else
+            showConnectionError();
 
     }
 
@@ -521,7 +567,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             public void run() {
                 if (requestQuery.offset() >= requestQuery.queryAmount()) {
                     //Data was fully loaded.
-                    newMovieAdapter.loadMoreEnd();
+                    newMovieAdapter.setEnableLoadMore(false);
                 } else {
                     if (hasConnection) {
                         //Successfully got more data
@@ -531,7 +577,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            showConnectionError();
+                        } catch (NullPointerException e) {
+                            showConnectionError();
                         }
                         //mCurrentCounter = newMovieAdapter.getData().size();
                     } else {
@@ -560,7 +608,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             } catch (ExecutionException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                showConnectionError();
+            } catch (NullPointerException e) {
+                showConnectionError();
             }
 
         } else {
@@ -572,7 +622,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             } catch (ExecutionException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                showConnectionError();
+            } catch (NullPointerException e) {
+                showConnectionError();
             }
 
         }
@@ -585,11 +637,22 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         newMovieAdapter.addAll(list);
         mRecyclerView.getRecycledViewPool().clear();
         mRecyclerView.scrollToPosition(0);
+
+        if (requestQuery.offset() < requestQuery.queryAmount())
+            newMovieAdapter.setEnableLoadMore(true);
     }
 
     void showConnectionError() {
         hasConnection = false;
         Toast.makeText(getApplicationContext(), getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show();
+    }
+
+    Boolean hasConnection() {
+        if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
+                || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            return true;
+        } else
+            return false;
     }
 
 
@@ -613,6 +676,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             outRect.top = topOffset;
             outRect.bottom = bottomOffset;
         }
+
 
       /*   @Override
         public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {

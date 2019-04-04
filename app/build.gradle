@@ -14,8 +14,8 @@ android {
         applicationId "ru.garretech.garred.doramatv"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 4
-        versionName "0.9 beta"
+        versionCode 7
+        versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WatchDorama</string>
+    <string name="app_name">СмотриДораму</string>
     <string name="version_label">Версия: </string>
     <string name="about_application">О приложении</string>
     <string name="email_text_label">Email для предложений:</string>
@@ -99,5 +99,5 @@
 
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="loading">Загрузка</string>
-    <string name="load_failed">Загрузка неудачна</string>
+    <string name="load_failed">Загрузка неудачна. Повторить</string>
 </resources>

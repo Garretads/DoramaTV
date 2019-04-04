@@ -1,6 +1,7 @@
 package ru.garretech.garred.doramatv.tools;
 
 import android.net.Uri;
+import android.util.Log;
 
 import ru.garretech.garred.doramatv.Settings;
 import ru.garretech.garred.doramatv.model.Movie;
@@ -67,34 +68,36 @@ public class SiteWorker {
     }
 
 
-    public static List<Movie> getEditorChoiceMoviesList() throws InterruptedException, ExecutionException {
+    public static List<Movie> getEditorChoiceMoviesList() throws InterruptedException, ExecutionException, NullPointerException {
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
-        List<Movie> movieList;
+        List<Movie> movieList = new ArrayList<>();
         pageContent = pageDownloader.execute(SITE_URL).get();
         ImageDownloader imageDownloader;
         Movie movie;
 
-        Element element = pageContent.getElementsByClass(editorChoice).first();
-        Elements editorChoiceElements = element.getElementsByClass("simple-tile ");
-        movieList = new ArrayList<>();
+        Elements tempElements = pageContent.getElementsByClass(editorChoice);
+        if (tempElements == null)
+            throw new NullPointerException();
+        else {
+            Elements editorChoiceElements = tempElements.first().getElementsByClass("simple-tile ");
 
-        for (int i = 0; i < editorChoiceElements.size(); i++) {
-            Element element1 = editorChoiceElements.get(i);
-            String genres = element1.attr("title");
-            genres = genres.substring(genres.indexOf(". ") + 2);
-            String url = SITE_URL + element1.getElementsByTag("a").get(0).attr("href");
-            url = url.substring(0, url.lastIndexOf('/'));
-            String title = element1.getElementsByTag("img").get(0).attr("alt");
-            String imageURL;
-            imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
-            movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url);
-            imageDownloader = new ImageDownloader();
-            movie.setImage(imageDownloader.execute(imageURL).get());
+            for (int i = 0; i < editorChoiceElements.size(); i++) {
+                Element element1 = editorChoiceElements.get(i);
+                String genres = element1.attr("title");
+                genres = genres.substring(genres.indexOf(". ") + 2);
+                String url = SITE_URL + element1.getElementsByTag("a").get(0).attr("href");
+                url = url.substring(0, url.lastIndexOf('/'));
+                String title = element1.getElementsByTag("img").get(0).attr("alt");
+                String imageURL;
+                imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
+                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url);
+                imageDownloader = new ImageDownloader();
+                movie.setImage(imageDownloader.execute(imageURL).get());
 
-            movieList.add(movie);
+                movieList.add(movie);
+            }
         }
-
         return movieList;
     }
 
@@ -158,7 +161,7 @@ public class SiteWorker {
         return elements.size();
     }
 
-    public static JSONObject getMovieInfo(String URL) throws InterruptedException,ExecutionException,JSONException {
+    public static JSONObject getMovieInfo(String URL) throws InterruptedException,ExecutionException,JSONException,NullPointerException {
         JSONObject info = new JSONObject();
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
@@ -296,18 +299,32 @@ public class SiteWorker {
     }
 
     public static JSONArray getSources(JSONArray seriesList, String URL, int seriesIndex) throws InterruptedException,ExecutionException, JSONException {
+
+        /*
+        * class=right controls_447318 hide hidden-xs hidden-sm
+        *
+            Перевод: Озвучка
+
+        * */
         Pattern vkPattern = Pattern.compile("oid=(.?[\\d]+).+id=([\\d]+).+hash=(.+)\" a");
+        final String VOICE = "Озвучка";
+        final String SUBS = "Сабы";
+        final String SUBS_NORMAL = "Субтитры";
+        String TRANSLATION_PATTERN = "right controls_447318 hide hidden-xs hidden-sm";
         Matcher matcher;
         String ADULT_PREFIX = "?mtr=1";
         PageDownloader pageDownloader;
         Document pageContent;
+        Element tempElement;
+        Elements tempElements;
+        String translation = null;
 
         JSONArray oneSeriesSources = new JSONArray();
         pageDownloader = new PageDownloader();
 
         pageContent = pageDownloader.execute(URL + ((JSONObject) seriesList.get(seriesIndex)).getString("link") + ADULT_PREFIX).get();
-        Elements elements = pageContent.getElementsByClass("chapter-link");
-
+        //Elements elements = pageContent.getElementsByClass("chapter-link");
+        Elements elements = pageContent.getElementsByClass("chapter");
         for (Element element1 : elements) {
             JSONObject jsonObject = new JSONObject();
             String subUnit;
@@ -321,11 +338,17 @@ public class SiteWorker {
             else
                 subUnit = "Оригинал";
 
+
+            if (element1.text().contains(VOICE))
+                translation = VOICE;
+            else if (element1.text().contains(SUBS))
+                translation = SUBS_NORMAL;
+
             seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid");
 
             pageDownloader = new PageDownloader();
             pageContent = pageDownloader.execute(SiteWorker.TRAGUS_URL + seriesID).get();
-            Element tempElement = pageContent.getElementsByTag("iframe").first();
+            tempElement = pageContent.getElementsByTag("iframe").first();
 
             if (tempElement == null)
                 continue;
@@ -339,7 +362,10 @@ public class SiteWorker {
                     id = matcher.group(2);
                     hash = matcher.group(3);
 
-                    jsonObject.put("sub_unit", subUnit);
+                    if (translation != null)
+                        jsonObject.put("sub_unit", subUnit + " (" + translation + ")");
+                    else
+                        jsonObject.put("sub_unit", subUnit);
                     jsonObject.put("movie_id", oid + "_" + id);
                     jsonObject.put("hash", hash);
                     oneSeriesSources.put(jsonObject);
@@ -428,7 +454,7 @@ public class SiteWorker {
         }
 
 
-        public List<Movie> getNextQuery() throws ExecutionException, InterruptedException {
+        public List<Movie> getNextQuery() throws ExecutionException, InterruptedException,NullPointerException {
             if (queryAmount == -1 || currentOffset < queryAmount) {
                 switch (requestType) {
                     case SIMPLE_QUERY: {
