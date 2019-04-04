@@ -20,6 +20,7 @@ import org.json.JSONObject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import ru.garretech.garred.doramatv.model.Movie;
 
 public class MovieAboutActivity extends AppCompatActivity implements MovieAboutFragment.OnFragmentInteractionListener, MovieSourcesFragment.OnFragmentInteractionListener {
 
@@ -41,6 +42,7 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
     String movieURL;
     String accessToken;
     String initialSeries;
+    Movie currentMovie;
 
 
     @Override
@@ -51,6 +53,21 @@ public class MovieAboutActivity extends AppCompatActivity implements MovieAboutF
         Intent intent = getIntent();
         try {
             movieInfo = new JSONObject(intent.getStringExtra("movie_info"));
+            /*Bundle bundle = intent.getBundleExtra("bundle");
+            currentMovie = (Movie) bundle.getSerializable("movie");
+
+            this.title = currentMovie.getTitle();
+            this.genres = currentMovie.getGenres().toString().substring(1,currentMovie.getGenres().toString().length()-1);
+            this.imageURL = currentMovie.getMovieImageURL();
+            this.movieURL = currentMovie.getURL();
+            this.age = currentMovie.getProductionYear();
+            this.description = currentMovie.getDescription();
+            this.initialSeries = currentMovie.getInitialSeries();
+            this.production = currentMovie.getProductionCountry();
+            this.seriesNumber = currentMovie.getSeriesNumber();
+            this.duration = currentMovie.getDuration();
+
+            this.accessToken = movieInfo.getString("access_token");*/
             this.title = movieInfo.getString("title");
             this.genres = movieInfo.getString("genres").substring(1,movieInfo.getString("genres").length()-1);
             this.imageURL = movieInfo.getString("image_url");

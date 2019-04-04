@@ -1,5 +1,8 @@
 package ru.garretech.garred.doramatv.tools;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
 
@@ -12,6 +15,14 @@ import org.json.JSONObject;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,7 +62,6 @@ public class SiteWorker {
     *
     * */
 
-
     private static int getMaxSearchElementCount(Document pageContent) {
         Pattern pattern = Pattern.compile("\\((\\d+)\\)");
         Matcher matcher;
@@ -68,7 +78,7 @@ public class SiteWorker {
     }
 
 
-    public static List<Movie> getEditorChoiceMoviesList() throws InterruptedException, ExecutionException, NullPointerException {
+    public static List<Movie> getEditorChoiceMoviesList(Context context) throws InterruptedException, ExecutionException, NullPointerException {
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
         List<Movie> movieList = new ArrayList<>();
@@ -91,9 +101,23 @@ public class SiteWorker {
                 String title = element1.getElementsByTag("img").get(0).attr("alt");
                 String imageURL;
                 imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
-                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url);
-                imageDownloader = new ImageDownloader();
-                movie.setImage(imageDownloader.execute(imageURL).get());
+                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), imageURL, url);
+
+                Bitmap image = getCachedImage(context,imageURL);
+
+                if (image == null) {
+                    try {
+                        imageDownloader = new ImageDownloader();
+                        image = imageDownloader.execute(imageURL).get();
+                        saveImage(context, image, imageURL);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                    Log.d("STATUS: ",imageURL+" found");
+                movie.setImage(image);
 
                 movieList.add(movie);
             }
@@ -243,7 +267,7 @@ public class SiteWorker {
         return info;
     }
 
-    private static HashMap<String,Object> movieListContentParse(Document pageContent,int limit) {
+    private static HashMap<String,Object> movieListContentParse(Context context, Document pageContent,int limit) {
         ArrayList<Movie> movieList = new ArrayList<>();
         HashMap<String,Object> result = new HashMap<>();
         Elements elements = pageContent.getElementsByClass("tile col-sm-6 ");
@@ -278,17 +302,24 @@ public class SiteWorker {
                 String imageURL = tempElement.attr("data-original");
                 tempElement = element.getElementsByClass("tags").first();
 
-                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), "", imageURL, url);
+                movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), imageURL, url);
 
-                try {
-                    imageDownloader = new ImageDownloader();
-                    movie.setImage(imageDownloader.execute(imageURL).get());
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
 
+                Bitmap image = getCachedImage(context,imageURL);
+
+                if (image == null) {
+                    try {
+                        imageDownloader = new ImageDownloader();
+                        image = imageDownloader.execute(imageURL).get();
+                        saveImage(context, image, imageURL);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                    Log.d("STATUS: ",imageURL+" found");
+                movie.setImage(image);
                 movieList.add(movie);
             }
             iteration++;
@@ -424,29 +455,34 @@ public class SiteWorker {
         private Uri.Builder uriQuery;
         private List<Movie> movieList;
         private HashMap<String,String> parameters;
+        private Context context;
 
-        public RequestQuery(int requestType, String path, HashMap<String,String> params, int limit) {
+        public RequestQuery(Context context,int requestType, String path, HashMap<String,String> params, int limit) {
+            this.context = context;
             this.requestType = requestType;
             this.limit = limit;
             this.path = path;
             this.parameters = params;
         }
 
-        public RequestQuery(int requestType, String path, HashMap<String,String> params) {
+        public RequestQuery(Context context, int requestType, String path, HashMap<String,String> params) {
+            this.context = context;
             this.requestType = requestType;
             this.limit = Settings.max_loaded_in_screen();
             this.path = path;
             this.parameters = params;
         }
 
-        public RequestQuery(int requestType, String path) {
+        public RequestQuery(Context context, int requestType, String path) {
+            this.context = context;
             this.requestType = requestType;
             this.limit = Settings.max_loaded_in_screen();
             this.path = path;
             parameters = new HashMap<>();
         }
 
-        public RequestQuery(int requestType) {
+        public RequestQuery(Context context, int requestType) {
+            this.context = context;
             this.requestType = requestType;
             this.limit = Settings.max_loaded_in_screen();
             this.path = "";
@@ -483,7 +519,7 @@ public class SiteWorker {
                         if (queryAmount == -1)
                             queryAmount = getMaxQueryElementCount(pageContent);
 
-                        HashMap result = movieListContentParse(pageContent, limit);
+                        HashMap result = movieListContentParse(context, pageContent, limit);
                         movieList = (List<Movie>) result.get("list");
 
 
@@ -505,7 +541,7 @@ public class SiteWorker {
                         if (queryAmount == -1)
                             queryAmount = getMaxSearchElementCount(pageContent);
 
-                        HashMap result = movieListContentParse(pageContent, limit);
+                        HashMap result = movieListContentParse(context, pageContent, limit);
 
                         movieList = (List<Movie>) result.get("list");
 
@@ -516,7 +552,7 @@ public class SiteWorker {
                     case EDITOR_CHOICE_QUERY: {
                         queryAmount = 5;
                         currentOffset = 5;
-                        return getEditorChoiceMoviesList();
+                        return getEditorChoiceMoviesList(context);
                     }
                     default:
                         return new ArrayList<>();
@@ -545,5 +581,54 @@ public class SiteWorker {
             currentOffset = 0;
         }
 
+    }
+
+    private static String transformFileName(String url) {
+        String[] pathParts = url.split("/");
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(pathParts[pathParts.length-3]);
+        stringBuilder.append(pathParts[pathParts.length-2]);
+        stringBuilder.append(pathParts[pathParts.length-1]);
+        return stringBuilder.toString();
+    }
+
+    public static void saveImage(Context context, Bitmap image, String url) {
+        try {
+
+            File f = new File(context.getCacheDir(), transformFileName(url));
+            f.createNewFile();
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            image.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+            byte[] bitmapdata = bos.toByteArray();
+
+//write the bytes in file
+            FileOutputStream fos = new FileOutputStream(f);
+            fos.write(bitmapdata);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Bitmap getCachedImage(Context context, String url)  {
+        Bitmap image = null;
+        try {
+
+            File f = new File(context.getCacheDir(), transformFileName(url));
+            FileInputStream fis = new FileInputStream(f);
+
+            image = BitmapFactory.decodeStream(fis);
+            fis.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return image;
     }
 }

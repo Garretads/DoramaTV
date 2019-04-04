@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -33,6 +34,12 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -112,20 +119,21 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         newMovieAdapter.setLoadMoreView(new CustomLoadMoreView());
 
 
-        if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
-                || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+        if (hasConnection()) {
 
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
                         List<Movie> list = requestQuery.getNextQuery();
                         updateDataList(list);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
-                        e.printStackTrace();
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
                     }
                 }
             },0);
@@ -160,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 HashMap<String,String> params = new HashMap<>();
                                 params.put("q",queryString);
 
-                                requestQuery = mSiteworker.new RequestQuery(SiteWorker.SEARCH_QUERY,SiteWorker.SEARCH_PREFIX,params);
+                                requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SEARCH_QUERY,SiteWorker.SEARCH_PREFIX,params);
                                 List<Movie> list = requestQuery.getNextQuery();
                                 updateDataList(list);
                                 if (progressBottomSheet.isVisible())
@@ -169,7 +177,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             } catch (ExecutionException e) {
-                                e.printStackTrace();
+                                showConnectionError();
+                            } catch (NullPointerException e) {
+                                showConnectionError();
                             }
                         }
                     }, 1000);
@@ -238,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     @Override
                     public void run() {
                         try {
-                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
                             //newMovieAdapter.setEnableLoadMore(false);
@@ -270,7 +280,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
                             HashMap<String,String> params = new HashMap<>();
                             params.put(SiteWorker.NEW_MOVIES_PARAMS[0],SiteWorker.NEW_MOVIES_PARAMS[1]);
-                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
+                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
                             //newMovieAdapter.setEnableLoadMore(true);
@@ -303,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     public void run() {
                         try {
 
-                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX);
+                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
                             //newMovieAdapter.setEnableLoadMore(true);
@@ -339,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             HashMap<String,String> params = new HashMap<>();
                             params.put(SiteWorker.ONGOING_PARAMS[0],SiteWorker.ONGOING_PARAMS[1]);
 
-                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,SiteWorker.ONGOING_PREFIX,params);
+                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.ONGOING_PREFIX,params);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
                             //newMovieAdapter.setEnableLoadMore(true);
@@ -467,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     @Override
                     public void run() {
                         try {
-                            requestQuery = mSiteworker.new RequestQuery(SiteWorker.SIMPLE_QUERY,resultPrefix);
+                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,resultPrefix);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
                             //newMovieAdapter.setEnableLoadMore(true);
@@ -524,14 +534,45 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 public void run() {
 
                     JSONObject jsonObject;
+
+                     /*
+                        info.put("title",name + " | " + eng_name + " | " + original_name);
+                        info.put("url",url);
+                        info.put("genres",genres.toString());
+                        info.put("image_url",image_url);
+                        info.put("initial_series",initialSeries);
+                        info.put("production",production);
+                        info.put("series_number",seriesNumber);
+                        info.put("duration",duration);
+                        info.put("description",description);
+                        info.put("age",age);
+*/
                     try {
                         jsonObject = SiteWorker.getMovieInfo(selectedMovie.getURL());
-                        jsonObject.put("title", selectedMovie.getTitle());
-                        jsonObject.put("genres", selectedMovie.getGenres().toString());
-                        jsonObject.put("image_url", selectedMovie.getMovieImageURL());
-                        jsonObject.put("url", selectedMovie.getURL());
+                        /*
+                        * this.title = title;
+                            this.URL = movieURL;
+                            this.genres = genres;
+                            this.movieImageURL = movieImageURL;
+                        * */
+                        selectedMovie.setTitle(jsonObject.getString("title"));
+                        selectedMovie.setInitialSeries(jsonObject.getString("initial_series"));
+                        selectedMovie.setProductionCountry(jsonObject.getString("production"));
+                        selectedMovie.setSeriesNumber(jsonObject.getString("series_number"));
+                        selectedMovie.setDuration(jsonObject.getString("duration"));
+                        selectedMovie.setDescription(jsonObject.getString("description"));
+                        selectedMovie.setProductionYear(jsonObject.getString("age"));
+                        //jsonObject.put("title", selectedMovie.getTitle());
+                        //jsonObject.put("genres", selectedMovie.getGenres().toString());
+                        //jsonObject.put("image_url", selectedMovie.getMovieImageURL());
+                        //jsonObject.put("url", selectedMovie.getURL());
                         jsonObject.put("access_token", Settings.access_token());
 
+                        Bundle bundle = new Bundle();
+
+                        bundle.putSerializable("movie",selectedMovie);
+
+                        intent.putExtra("bundle",bundle);
                         intent.putExtra("movie_info", jsonObject.toString());
 
                         if (progressBottomSheet.isVisible())
@@ -616,7 +657,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         } else {
 
             try {
-                requestQuery = mSiteworker.new RequestQuery(SiteWorker.EDITOR_CHOICE_QUERY);
+                requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
                 List<Movie> list = requestQuery.getNextQuery();
                 updateDataList(list);
             } catch (ExecutionException e) {
@@ -702,4 +743,37 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             }
         }*/
     }
+
+    void SaveImage(Bitmap image, String url) {
+        String[] pathParts = url.split("/");
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(pathParts[pathParts.length-3]);
+        stringBuilder.append(pathParts[pathParts.length-2]);
+        stringBuilder.append(pathParts[pathParts.length-1]);
+
+        try {
+
+            File f = new File(getApplicationContext().getCacheDir(), stringBuilder.toString());
+            f.createNewFile();
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            image.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+            byte[] bitmapdata = bos.toByteArray();
+
+//write the bytes in file
+            FileOutputStream fos = new FileOutputStream(f);
+            fos.write(bitmapdata);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*Bitmap getImage(String uri) {
+
+        return new Bitmap.;
+    }*/
 }

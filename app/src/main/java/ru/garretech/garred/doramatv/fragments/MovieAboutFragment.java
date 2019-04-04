@@ -17,9 +17,10 @@ import org.json.JSONObject;
 
 import java.util.concurrent.ExecutionException;
 
+import butterknife.BindView;
 import ru.garretech.garred.doramatv.tools.ImageDownloader;
 import ru.garretech.garred.doramatv.R;
-
+import ru.garretech.garred.doramatv.tools.SiteWorker;
 
 
 public class MovieAboutFragment extends Fragment{
@@ -95,13 +96,18 @@ public class MovieAboutFragment extends Fragment{
             movieURL = getArguments().getString(ARG_PARAM9);
         }
 
-        ImageDownloader imageDownloader = new ImageDownloader();
-        try {
-            image = imageDownloader.execute(movieImageURL).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        image = SiteWorker.getCachedImage(getContext(),movieImageURL);
+
+        if (image == null) {
+
+            ImageDownloader imageDownloader = new ImageDownloader();
+            try {
+                image = imageDownloader.execute(movieImageURL).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 
