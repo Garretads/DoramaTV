@@ -1,4 +1,4 @@
-package ru.garretech.garred.doramatv;
+package ru.garretech.garred.doramatv.activities;
 
 import android.app.SearchManager;
 import android.content.Context;
@@ -23,6 +23,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,21 +36,30 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
+
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Completable;
+import io.reactivex.CompletableObserver;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
+import ru.garretech.garred.doramatv.R;
+import ru.garretech.garred.doramatv.Settings;
 import ru.garretech.garred.doramatv.adapters.RecyclerAdapter;
+import ru.garretech.garred.doramatv.database.AppDataSource;
 import ru.garretech.garred.doramatv.fragments.CustomLoadMoreView;
 import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet;
 import ru.garretech.garred.doramatv.model.Movie;
+import ru.garretech.garred.doramatv.tools.ImageDownloader;
 import ru.garretech.garred.doramatv.tools.SiteWorker;
 
 public class MainActivity extends AppCompatActivity implements RecyclerAdapter.OnItemClickListener,
@@ -71,14 +81,66 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
     private SiteWorker mSiteworker;
     private SiteWorker.RequestQuery requestQuery;
     private Boolean hasConnection = true;
+    private AppDataSource appDataSource;
+    private Observable<List<Movie>> observable;
+    private CompletableObserver getCachedMoviesObserver;
 
     private final int GENRES_CODE = 15;
+
+    enum ACTIVITY_STATE {
+        ONLINE,
+        CACHED
+    }
+
+    private ACTIVITY_STATE activityState = ACTIVITY_STATE.CACHED;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mSiteworker = new SiteWorker();
+        appDataSource = new AppDataSource(getApplicationContext());
+        getCachedMoviesObserver = new CompletableObserver() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+            @Override
+            public void onComplete() {
+                observable
+                        .subscribeOn(Schedulers.io())
+                        .map( movies -> {
+                            for (Movie movie : movies) {
+                                Bitmap image;
+                                try {
+                                    image = SiteWorker.getCachedImage(getApplicationContext(),movie.getMovieImageURL());
+                                } catch (FileNotFoundException e) {
+                                    ImageDownloader imageDownloader = new ImageDownloader();
+                                    image = imageDownloader.execute(movie.getMovieImageURL()).get();
+                                    SiteWorker.saveImage(getApplicationContext(), image, movie.getMovieImageURL());
+                                }
+                                movie.setImage(image);
+                            }
+                            return movies;
+                        })
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Consumer<List<Movie>>() {
+                            @Override
+                            public void accept(List<Movie> movies) throws Exception {
+                                requestQuery = null;
+                                updateDataList(movies);
+                                setTitle(getString(R.string.action_favorite));
+                            }
+                        });
+                Log.d("Task", "get favorites completable completed");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+        };
+
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         conMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -120,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
 
         if (hasConnection()) {
-
+            activityState = ACTIVITY_STATE.ONLINE;
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -157,9 +219,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             public boolean onQueryTextSubmit(final String queryString) {
 
                 // Поиск дорам
-
                 if (hasConnection()) {
-
+                    activityState = ACTIVITY_STATE.ONLINE;
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -210,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings: {
-                Intent intent = new Intent(MainActivity.this,SettingsActivity.class);
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
                 break;
             }
@@ -243,7 +304,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     showConnectionError();
                     break;
                 }
-
+                activityState = ACTIVITY_STATE.ONLINE;
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -251,7 +312,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
-                            //newMovieAdapter.setEnableLoadMore(false);
                             if (progressBottomSheet.isVisible())
                                 progressBottomSheet.dismissAllowingStateLoss();
                             setTitle(getString(R.string.editor_choice_title));
@@ -272,7 +332,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     showConnectionError();
                     break;
                 }
-
+                activityState = ACTIVITY_STATE.ONLINE;
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -283,7 +343,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
-                            //newMovieAdapter.setEnableLoadMore(true);
                             if (progressBottomSheet.isVisible())
                                 progressBottomSheet.dismissAllowingStateLoss();
                             setTitle(getString(R.string.new_movie_title));
@@ -307,7 +366,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     showConnectionError();
                     break;
                 }
-
+                activityState = ACTIVITY_STATE.ONLINE;
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -316,7 +375,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
-                            //newMovieAdapter.setEnableLoadMore(true);
                             if (progressBottomSheet.isVisible())
                                 progressBottomSheet.dismissAllowingStateLoss();
                             setTitle(getString(R.string.best_movie_title));
@@ -341,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     showConnectionError();
                     break;
                 }
-
+                activityState = ACTIVITY_STATE.ONLINE;
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -352,7 +410,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.ONGOING_PREFIX,params);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
-                            //newMovieAdapter.setEnableLoadMore(true);
                             if (progressBottomSheet.isVisible())
                                 progressBottomSheet.dismissAllowingStateLoss();
                             setTitle(getString(R.string.ongoing_title));
@@ -372,7 +429,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 }
                 break;
             }
-
             case R.id.nav_random: {
                 if (!hasConnection()) {
                     showConnectionError();
@@ -389,7 +445,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
                         try {
                             jsonObject = SiteWorker.getMovieInfo(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX);
-                            jsonObject.put("access_token",Settings.access_token());
+                            jsonObject.put("access_token", Settings.access_token());
 
                             intent.putExtra("movie_info",jsonObject.toString());
 
@@ -403,6 +459,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         } catch (ExecutionException e) {
+                            showConnectionError();
+                        } catch (NullPointerException e) {
                             showConnectionError();
                         }
                     }
@@ -418,9 +476,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     showConnectionError();
                     break;
                 }
-
+                activityState = ACTIVITY_STATE.ONLINE;
                 try {
-
                     JSONArray jsonArray = SiteWorker.getGenresList();
                     Intent intent = new Intent(MainActivity.this, GenresActivity.class);
                     intent.putExtra("genres", jsonArray.toString());
@@ -428,14 +485,28 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
-                    e.printStackTrace();
+                    showConnectionError();
                 } catch (JSONException e) {
                     e.printStackTrace();
+                } catch (NullPointerException e) {
+                    showConnectionError();
                 }
                 break;
             }
             case R.id.nav_favourites: {
-                Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
+
+                //List<Movie> favoritesMovies = appDataSource.getListOfFavorites();
+                activityState = ACTIVITY_STATE.CACHED;
+                Completable.fromCallable(new Callable<Object>() {
+                    @Override
+                    public Object call() throws Exception {
+                        observable = appDataSource.getListOfFavorites();
+                        return null;
+                    }
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getCachedMoviesObserver);
+
+                //Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
                 break;
             }
             case R.id.nav_history: {
@@ -443,7 +514,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 break;
             }
             case R.id.nav_about: {
-                Intent intent = new Intent(MainActivity.this,AboutApplicationActivity.class);
+                Intent intent = new Intent(MainActivity.this, AboutApplicationActivity.class);
                 startActivity(intent);
                 break;
             }
@@ -480,7 +551,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,resultPrefix);
                             List<Movie> list = requestQuery.getNextQuery();
                             updateDataList(list);
-                            //newMovieAdapter.setEnableLoadMore(true);
                             if (progressBottomSheet.isVisible())
                                 progressBottomSheet.dismissAllowingStateLoss();
                             setTitle(genreName.substring(0,1).toUpperCase()+genreName.substring(1));
@@ -535,18 +605,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
                     JSONObject jsonObject;
 
-                     /*
-                        info.put("title",name + " | " + eng_name + " | " + original_name);
-                        info.put("url",url);
-                        info.put("genres",genres.toString());
-                        info.put("image_url",image_url);
-                        info.put("initial_series",initialSeries);
-                        info.put("production",production);
-                        info.put("series_number",seriesNumber);
-                        info.put("duration",duration);
-                        info.put("description",description);
-                        info.put("age",age);
-*/
                     try {
                         jsonObject = SiteWorker.getMovieInfo(selectedMovie.getURL());
                         /*
@@ -602,75 +660,89 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
     @Override
     public void onLoadMoreRequested() {
+        if (activityState == ACTIVITY_STATE.ONLINE) {
+            if (requestQuery != null) {
+                mRecyclerView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (requestQuery.offset() >= requestQuery.queryAmount()) {
+                            // Все данные загружены
+                            newMovieAdapter.setEnableLoadMore(false);
+                        } else {
+                            if (hasConnection) {
+                                try {
+                                    newMovieAdapter.addData(requestQuery.getNextQuery());
+                                    newMovieAdapter.loadMoreComplete();
+                                } catch (ExecutionException e) {
+                                    e.printStackTrace();
+                                } catch (InterruptedException e) {
+                                    showConnectionError();
+                                } catch (NullPointerException e) {
+                                    showConnectionError();
+                                }
+                            } else {
+                                //Get more data failed
+                                hasConnection = true;
+                                Toast.makeText(MainActivity.this, R.string.cant_connect_error, Toast.LENGTH_LONG).show();
+                                newMovieAdapter.loadMoreFail();
 
-        mRecyclerView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (requestQuery.offset() >= requestQuery.queryAmount()) {
-                    //Data was fully loaded.
-                    newMovieAdapter.setEnableLoadMore(false);
-                } else {
-                    if (hasConnection) {
-                        //Successfully got more data
-                        try {
-                            newMovieAdapter.addData(requestQuery.getNextQuery());
-                            newMovieAdapter.loadMoreComplete();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            showConnectionError();
-                        } catch (NullPointerException e) {
-                            showConnectionError();
+                            }
                         }
-                        //mCurrentCounter = newMovieAdapter.getData().size();
-                    } else {
-                        //Get more data failed
-                        hasConnection = true;
-                        Toast.makeText(MainActivity.this, R.string.cant_connect_error, Toast.LENGTH_LONG).show();
-                        newMovieAdapter.loadMoreFail();
-
                     }
-                }
-            }
 
-        }, 1000);
+                }, 1000);
+            } else
+                newMovieAdapter.setEnableLoadMore(false);
+        } else
+            newMovieAdapter.setEnableLoadMore(false);
     }
 
 
     @Override
     public void onRefresh() {
         swipeContainer.setRefreshing(false);
-        if (requestQuery != null) {
-            requestQuery.resetOffset();
+        if (activityState == ACTIVITY_STATE.ONLINE) {
+            if (requestQuery != null) {
+                requestQuery.resetOffset();
 
-            try {
-                List<Movie> list = requestQuery.getNextQuery();
-                updateDataList(list);
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                showConnectionError();
-            } catch (NullPointerException e) {
-                showConnectionError();
+                try {
+                    List<Movie> list = requestQuery.getNextQuery();
+                    updateDataList(list);
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    showConnectionError();
+                } catch (NullPointerException e) {
+                    showConnectionError();
+                }
+
+            } else {
+
+                try {
+                    requestQuery = mSiteworker.new RequestQuery(getApplicationContext(), SiteWorker.EDITOR_CHOICE_QUERY);
+                    List<Movie> list = requestQuery.getNextQuery();
+                    updateDataList(list);
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    showConnectionError();
+                } catch (NullPointerException e) {
+                    showConnectionError();
+                }
+
             }
-
         } else {
-
-            try {
-                requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
-                List<Movie> list = requestQuery.getNextQuery();
-                updateDataList(list);
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                showConnectionError();
-            } catch (NullPointerException e) {
-                showConnectionError();
-            }
-
+            activityState = ACTIVITY_STATE.CACHED;
+            Completable.fromCallable(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    observable = appDataSource.getListOfFavorites();
+                    return null;
+                }
+            }).subscribeOn(Schedulers.io())
+            .subscribe(getCachedMoviesObserver);
         }
     }
-
 
 
     private void updateDataList(List<Movie> list) {
@@ -679,7 +751,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         mRecyclerView.getRecycledViewPool().clear();
         mRecyclerView.scrollToPosition(0);
 
-        if (requestQuery.offset() < requestQuery.queryAmount())
+        if (requestQuery != null && requestQuery.offset() < requestQuery.queryAmount())
             newMovieAdapter.setEnableLoadMore(true);
     }
 
@@ -695,7 +767,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         } else
             return false;
     }
-
 
 
 
@@ -718,62 +789,5 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             outRect.bottom = bottomOffset;
         }
 
-
-      /*   @Override
-        public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mDivider != null) {
-                int dividerLeft = parent.getPaddingLeft();
-                int dividerRight = parent.getWidth() - parent.getPaddingRight();
-
-                int childCount = parent.getChildCount();
-                for (int i = 0; i < childCount - 1; i++) {
-                    View child = parent.getChildAt(i);
-
-                    RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();
-
-                    int dividerTop = child.getBottom() + params.bottomMargin;
-                    int dividerBottom = dividerTop + mDivider.getIntrinsicHeight();
-
-                    mDivider.setBounds(dividerLeft, dividerTop, dividerRight, dividerBottom);
-                    mDivider.draw(c);
-                }
-            } else {
-                super.onDraw(c, parent, state);
-            }
-        }*/
     }
-
-    void SaveImage(Bitmap image, String url) {
-        String[] pathParts = url.split("/");
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(pathParts[pathParts.length-3]);
-        stringBuilder.append(pathParts[pathParts.length-2]);
-        stringBuilder.append(pathParts[pathParts.length-1]);
-
-        try {
-
-            File f = new File(getApplicationContext().getCacheDir(), stringBuilder.toString());
-            f.createNewFile();
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            image.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
-            byte[] bitmapdata = bos.toByteArray();
-
-//write the bytes in file
-            FileOutputStream fos = new FileOutputStream(f);
-            fos.write(bitmapdata);
-            fos.flush();
-            fos.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /*Bitmap getImage(String uri) {
-
-        return new Bitmap.;
-    }*/
 }

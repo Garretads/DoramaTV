@@ -1,4 +1,4 @@
-package ru.garretech.garred.doramatv;
+package ru.garretech.garred.doramatv.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import ru.garretech.garred.doramatv.R;
 
 public class GenresActivity extends AppCompatActivity{
     private JSONArray genresArray = null;

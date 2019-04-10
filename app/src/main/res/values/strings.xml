@@ -100,4 +100,5 @@
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="loading">Загрузка</string>
     <string name="load_failed">Загрузка неудачна. Повторить</string>
+    <string name="action_favorite">Избранное</string>
 </resources>

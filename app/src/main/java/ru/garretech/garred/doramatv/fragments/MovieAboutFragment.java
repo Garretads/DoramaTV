@@ -1,5 +1,6 @@
 package ru.garretech.garred.doramatv.fragments;
 
+import android.arch.persistence.room.PrimaryKey;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -15,6 +16,8 @@ import android.widget.TextView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 import butterknife.BindView;
@@ -96,19 +99,21 @@ public class MovieAboutFragment extends Fragment{
             movieURL = getArguments().getString(ARG_PARAM9);
         }
 
-        image = SiteWorker.getCachedImage(getContext(),movieImageURL);
-
-        if (image == null) {
-
+        try {
+            image = SiteWorker.getCachedImage(getContext(),movieImageURL);
+        } catch (FileNotFoundException e) {
             ImageDownloader imageDownloader = new ImageDownloader();
             try {
                 image = imageDownloader.execute(movieImageURL).get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (ExecutionException e1) {
+                e1.printStackTrace();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
     }
 
     @Override

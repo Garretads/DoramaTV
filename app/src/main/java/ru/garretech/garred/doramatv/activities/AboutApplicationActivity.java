@@ -1,4 +1,4 @@
-package ru.garretech.garred.doramatv;
+package ru.garretech.garred.doramatv.activities;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,6 +9,8 @@ import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import ru.garretech.garred.doramatv.BuildConfig;
+import ru.garretech.garred.doramatv.R;
 
 public class AboutApplicationActivity extends AppCompatActivity {
     @BindView(R.id.version_text) TextView versionTextView;

@@ -1,4 +1,4 @@
-package ru.garretech.garred.doramatv;
+package ru.garretech.garred.doramatv.activities;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -21,6 +21,8 @@ import android.view.MenuItem;
 import android.support.v4.app.NavUtils;
 
 import java.util.List;
+
+import ru.garretech.garred.doramatv.R;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On

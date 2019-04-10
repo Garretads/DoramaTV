@@ -1,4 +1,4 @@
-package ru.garretech.garred.doramatv;
+package ru.garretech.garred.doramatv.activities;
 
 import android.content.res.Configuration;
 import android.os.Bundle;

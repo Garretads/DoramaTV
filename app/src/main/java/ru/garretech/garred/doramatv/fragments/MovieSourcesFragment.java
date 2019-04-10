@@ -1,6 +1,8 @@
 package ru.garretech.garred.doramatv.fragments;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -53,6 +56,7 @@ public class MovieSourcesFragment extends Fragment {
     ProgressBottomSheet progressBottomSheet;
     String initialSeries;
     Boolean empty = false;
+    private ConnectivityManager conMgr;
 
     private OnFragmentInteractionListener mListener;
 
@@ -77,6 +81,7 @@ public class MovieSourcesFragment extends Fragment {
         if (getArguments() != null) {
             try {
                 progressBottomSheet = new ProgressBottomSheet();
+                conMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
                 sourcesInfo = new JSONObject(getArguments().getString(ARG_PARAM1));
                 URL = sourcesInfo.getString("url");
                 accessToken = sourcesInfo.getString("access_token");
@@ -113,103 +118,114 @@ public class MovieSourcesFragment extends Fragment {
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, final int i, long l) {
-                    if (!seriesSelected) {
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    sourcesArray = SiteWorker.getSources(seriesList, URL, i);
-                                    ArrayList funSubList = new ArrayList();
-                                    funSubList.add(backSymbolText + ((JSONObject) seriesList.get(i)).getString("name"));
-                                    for (int index = 0; index < sourcesArray.length(); index++) {
+                    if (hasConnection()) {
+                        if (!seriesSelected) {
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        sourcesArray = SiteWorker.getSources(seriesList, URL, i);
+                                        ArrayList funSubList = new ArrayList();
+                                        funSubList.add(backSymbolText + ((JSONObject) seriesList.get(i)).getString("name"));
+                                        for (int index = 0; index < sourcesArray.length(); index++) {
 
-                                        JSONObject jsonObject = (JSONObject) sourcesArray.get(index);
-                                        funSubList.add(jsonObject.getString("sub_unit"));
-                                    }
-                                    arrayAdapter.clear();
-                                    arrayAdapter.addAll(funSubList);
-                                    arrayAdapter.notifyDataSetChanged();
-                                    seriesSelected = true;
-                                    if (progressBottomSheet.isVisible())
-                                        progressBottomSheet.dismiss();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        },1000);
-                        progressBottomSheet.show(getFragmentManager(),"progressBar");
-                    } else {
-                        switch (i) {
-                            case 0: {
-                                try {
-
-                                    arrayAdapter.clear();
-                                    for (int index = 0; index < seriesList.length(); index++) {
-                                        arrayAdapter.add(((JSONObject) seriesList.get(index)).getString("name"));
-                                    }
-
-                                    arrayAdapter.notifyDataSetChanged();
-                                    seriesSelected = false;
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                                break;
-                            }
-                            default: {
-                                //Выбор качества, воспроизведение
-                                /*
-                                 * Формируем запрос в vk api
-                                 * https://api.vk.com/method/video.get?videos=-66384560_456239143&access_token=d053e5de82599c59b61a8a138cfe732d462a245623f8807ee3a4bf5a9dad3e22f1179377b0499001932f0&v=5.92
-                                 *
-                                 * Парсим ответ в JSONObject. Выцепляем оттуда
-                                 *
-                                 *
-                                 *
-                                 * */
-                                new Handler().postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            JSONObject jsonObject = (JSONObject) sourcesArray.get(i - 1);
-                                            String METHOD_NAME = "video.get";
-                                            Uri.Builder builder = new Uri.Builder();
-                                            builder.scheme("https")
-                                                      .authority("api.vk.com")
-                                                    .appendPath("method")
-                                                    .appendPath(METHOD_NAME)
-                                                    .appendQueryParameter("videos", jsonObject.getString("movie_id"))
-                                                    .appendQueryParameter("access_token", accessToken)
-                                                    .appendQueryParameter("v", Settings.version());
-                                            builder.build();
-
-                                            VKRequest vkRequest = new VKRequest();
-                                            JSONObject object = new JSONObject(vkRequest.execute(builder.toString()).get());
-                                            object = (JSONObject) object.get("response");
-                                            object = (JSONObject) ((JSONArray) object.get("items")).get(0);
-                                            JSONObject fileLink = (JSONObject) object.get("files");
-
-                                            SelectQualityFragment selectQualityFragment = SelectQualityFragment.newInstance(fileLink);
-                                            selectQualityFragment.show(getFragmentManager(), "Выберите качество");
-                                            if (progressBottomSheet.isVisible())
-                                                progressBottomSheet.dismiss();
-                                        } catch (InterruptedException e) {
-                                            e.printStackTrace();
-                                        } catch (ExecutionException e) {
-                                            e.printStackTrace();
-                                        } catch (JSONException e) {
-                                            e.printStackTrace();
+                                            JSONObject jsonObject = (JSONObject) sourcesArray.get(index);
+                                            funSubList.add(jsonObject.getString("sub_unit"));
                                         }
+                                        arrayAdapter.clear();
+                                        arrayAdapter.addAll(funSubList);
+                                        arrayAdapter.notifyDataSetChanged();
+                                        seriesSelected = true;
+                                        if (progressBottomSheet.isVisible())
+                                            progressBottomSheet.dismiss();
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    } catch (ExecutionException e) {
+                                        e.printStackTrace();
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    } catch (NullPointerException e) {
+                                        showConnectionError();
                                     }
-                                },1000);
-                                progressBottomSheet.show(getFragmentManager(),"progressBar");
+                                }
+                            }, 1000);
+                            if (!progressBottomSheet.isAdded()) {
+                                progressBottomSheet.show(getFragmentManager(), "progressBar");
+                            }
+                        } else {
+                            switch (i) {
+                                case 0: {
+                                    try {
 
+                                        arrayAdapter.clear();
+                                        for (int index = 0; index < seriesList.length(); index++) {
+                                            arrayAdapter.add(((JSONObject) seriesList.get(index)).getString("name"));
+                                        }
 
+                                        arrayAdapter.notifyDataSetChanged();
+                                        seriesSelected = false;
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                                }
+                                default: {
+                                    //Выбор качества, воспроизведение
+                                    /*
+                                     * Формируем запрос в vk api
+                                     * https://api.vk.com/method/video.get?videos=-66384560_456239143&access_token=d053e5de82599c59b61a8a138cfe732d462a245623f8807ee3a4bf5a9dad3e22f1179377b0499001932f0&v=5.92
+                                     *
+                                     * Парсим ответ в JSONObject. Выцепляем оттуда
+                                     *
+                                     *
+                                     *
+                                     * */
+                                    new Handler().postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                JSONObject jsonObject = (JSONObject) sourcesArray.get(i - 1);
+                                                String METHOD_NAME = "video.get";
+                                                Uri.Builder builder = new Uri.Builder();
+                                                builder.scheme("https")
+                                                        .authority("api.vk.com")
+                                                        .appendPath("method")
+                                                        .appendPath(METHOD_NAME)
+                                                        .appendQueryParameter("videos", jsonObject.getString("movie_id"))
+                                                        .appendQueryParameter("access_token", accessToken)
+                                                        .appendQueryParameter("v", Settings.version());
+                                                builder.build();
+
+                                                VKRequest vkRequest = new VKRequest();
+                                                JSONObject object = new JSONObject(vkRequest.execute(builder.toString()).get());
+                                                object = (JSONObject) object.get("response");
+                                                object = (JSONObject) ((JSONArray) object.get("items")).get(0);
+                                                JSONObject fileLink = (JSONObject) object.get("files");
+
+                                                SelectQualityFragment selectQualityFragment = SelectQualityFragment.newInstance(fileLink);
+                                                selectQualityFragment.show(getFragmentManager(), "Выберите качество");
+                                                if (progressBottomSheet.isVisible())
+                                                    progressBottomSheet.dismiss();
+                                            } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                            } catch (ExecutionException e) {
+                                                e.printStackTrace();
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            } catch (NullPointerException e) {
+                                                showConnectionError();
+                                            }
+                                        }
+                                    }, 1000);
+                                    if (!progressBottomSheet.isAdded()) {
+                                        progressBottomSheet.show(getFragmentManager(), "progressBar");
+                                    }
+
+                                }
                             }
                         }
+                    } else {
+                        showConnectionError();
                     }
                 }
             });
@@ -256,5 +272,17 @@ public class MovieSourcesFragment extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
+    void showConnectionError() {
+        if (progressBottomSheet.isVisible())
+            progressBottomSheet.dismiss();
+        Toast.makeText(getContext(), getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show();
+    }
 
+    Boolean hasConnection() {
+        if (conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED
+                || conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            return true;
+        } else
+            return false;
+    }
 }

@@ -5,7 +5,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
+import ru.garretech.garred.doramatv.R;
 import ru.garretech.garred.doramatv.Settings;
 import ru.garretech.garred.doramatv.model.Movie;
 
@@ -103,22 +105,29 @@ public class SiteWorker {
                 imageURL = element1.getElementsByTag("img").get(0).attr("data-original");
                 movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), imageURL, url);
 
-                Bitmap image = getCachedImage(context,imageURL);
-
-                if (image == null) {
+                Bitmap image = null;
+                try {
+                    image = getCachedImage(context,imageURL);
+                    Log.d("STATUS: ",imageURL+" found");
+                } catch (FileNotFoundException e) {
                     try {
                         imageDownloader = new ImageDownloader();
                         image = imageDownloader.execute(imageURL).get();
                         saveImage(context, image, imageURL);
-                    } catch (ExecutionException e) {
+                    } catch (ExecutionException e1) {
                         e.printStackTrace();
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException e1) {
                         e.printStackTrace();
+                    } catch (FileNotFoundException e1) {
+                        e1.printStackTrace();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
                     }
-                } else
-                    Log.d("STATUS: ",imageURL+" found");
-                movie.setImage(image);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
+                movie.setImage(image);
                 movieList.add(movie);
             }
         }
@@ -126,7 +135,7 @@ public class SiteWorker {
     }
 
 
-    public static JSONArray getGenresList() throws InterruptedException, ExecutionException, JSONException {
+    public static JSONArray getGenresList() throws InterruptedException, ExecutionException, JSONException, NullPointerException {
 
 
         JSONArray genresList = new JSONArray();
@@ -304,21 +313,27 @@ public class SiteWorker {
 
                 movie = new Movie(title, new ArrayList<>(Arrays.asList(genres.split(", "))), imageURL, url);
 
-
-                Bitmap image = getCachedImage(context,imageURL);
-
-                if (image == null) {
+                Bitmap image = null;
+                try {
+                    image = getCachedImage(context,imageURL);
+                    Log.d("STATUS: ",imageURL+" found");
+                } catch (FileNotFoundException e) {
                     try {
                         imageDownloader = new ImageDownloader();
                         image = imageDownloader.execute(imageURL).get();
                         saveImage(context, image, imageURL);
-                    } catch (ExecutionException e) {
+                    } catch (ExecutionException e1) {
                         e.printStackTrace();
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException e1) {
                         e.printStackTrace();
+                    } catch (FileNotFoundException e1) {
+                        e1.printStackTrace();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
                     }
-                } else
-                    Log.d("STATUS: ",imageURL+" found");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 movie.setImage(image);
                 movieList.add(movie);
             }
@@ -329,7 +344,7 @@ public class SiteWorker {
         return result;
     }
 
-    public static JSONArray getSources(JSONArray seriesList, String URL, int seriesIndex) throws InterruptedException,ExecutionException, JSONException {
+    public static JSONArray getSources(JSONArray seriesList, String URL, int seriesIndex) throws InterruptedException,ExecutionException, JSONException, NullPointerException {
 
         /*
         * class=right controls_447318 hide hidden-xs hidden-sm
@@ -365,7 +380,7 @@ public class SiteWorker {
             String hash;
 
             if (element1.getElementsByClass("person-link").first() != null)
-                subUnit = "Фансаб "+element1.getElementsByClass("person-link").first().text();
+                subUnit = "Фансаб " + element1.getElementsByClass("person-link").first().text();
             else
                 subUnit = "Оригинал";
 
@@ -397,6 +412,7 @@ public class SiteWorker {
                         jsonObject.put("sub_unit", subUnit + " (" + translation + ")");
                     else
                         jsonObject.put("sub_unit", subUnit);
+
                     jsonObject.put("movie_id", oid + "_" + id);
                     jsonObject.put("hash", hash);
                     oneSeriesSources.put(jsonObject);
@@ -434,6 +450,8 @@ public class SiteWorker {
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
             e.printStackTrace();
         }
         return seriesList;
@@ -592,43 +610,32 @@ public class SiteWorker {
         return stringBuilder.toString();
     }
 
-    public static void saveImage(Context context, Bitmap image, String url) {
-        try {
+    public static void saveImage(Context context, Bitmap image, String url) throws FileNotFoundException, IOException {
 
-            File f = new File(context.getCacheDir(), transformFileName(url));
-            f.createNewFile();
+        File f = new File(context.getCacheDir(), transformFileName(url));
+        f.createNewFile();
 
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            image.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
-            byte[] bitmapdata = bos.toByteArray();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+        byte[] bitmapdata = bos.toByteArray();
 
 //write the bytes in file
-            FileOutputStream fos = new FileOutputStream(f);
-            fos.write(bitmapdata);
-            fos.flush();
-            fos.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        FileOutputStream fos = new FileOutputStream(f);
+        fos.write(bitmapdata);
+        fos.flush();
+        fos.close();
     }
 
-    public static Bitmap getCachedImage(Context context, String url)  {
+    public static Bitmap getCachedImage(Context context, String url) throws FileNotFoundException,IOException {
         Bitmap image = null;
-        try {
 
-            File f = new File(context.getCacheDir(), transformFileName(url));
-            FileInputStream fis = new FileInputStream(f);
+        File f = new File(context.getCacheDir(), transformFileName(url));
+        FileInputStream fis = new FileInputStream(f);
 
-            image = BitmapFactory.decodeStream(fis);
-            fis.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        image = BitmapFactory.decodeStream(fis);
+        fis.close();
 
         return image;
     }
+
 }

@@ -4,15 +4,17 @@ import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
+import android.arch.persistence.room.TypeConverter;
+import android.arch.persistence.room.TypeConverters;
 import android.graphics.Bitmap;
+import android.support.annotation.NonNull;
 
-import org.json.JSONArray;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
-import ru.garretech.garred.doramatv.tools.ImageDownloader;
+import ru.garretech.garred.doramatv.tools.ListConverter;
 
 @Entity
 public class Movie implements Serializable {
@@ -22,6 +24,7 @@ public class Movie implements Serializable {
     @ColumnInfo(name = "production_year")
     private String productionYear;
 
+    @TypeConverters(ListConverter.class)
     private List<String> genres;
     //private List<String> mainActors;
     //private List<String> actors;
@@ -48,7 +51,7 @@ public class Movie implements Serializable {
     @ColumnInfo(name = "initial_series")
     private String initialSeries;
 
-    @PrimaryKey
+    @PrimaryKey @NonNull
     private String URL;
 
     /*info.put("title",name + " | " + eng_name + " | " + original_name);
@@ -63,9 +66,9 @@ public class Movie implements Serializable {
                         info.put("age",age);
 */
 
-    public Movie(String title, List<String> genres, String movieImageURL, String movieURL) {
+    public Movie(String title, List<String> genres, String movieImageURL, String URL) {
         this.title = title;
-        this.URL = movieURL;
+        this.URL = URL;
         this.genres = genres;
         this.movieImageURL = movieImageURL;
     }
@@ -165,4 +168,6 @@ public class Movie implements Serializable {
     public void setInitialSeries(String initialSeries) {
         this.initialSeries = initialSeries;
     }
+
 }
+
