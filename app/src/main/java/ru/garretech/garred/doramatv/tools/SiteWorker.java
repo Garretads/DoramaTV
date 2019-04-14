@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 
+import io.reactivex.Observable;
 import ru.garretech.garred.doramatv.R;
 import ru.garretech.garred.doramatv.Settings;
 import ru.garretech.garred.doramatv.model.Movie;
@@ -80,7 +81,7 @@ public class SiteWorker {
     }
 
 
-    public static List<Movie> getEditorChoiceMoviesList(Context context) throws InterruptedException, ExecutionException, NullPointerException {
+    public static Observable<List<Movie>> getEditorChoiceMoviesList(Context context) throws InterruptedException, ExecutionException, NullPointerException {
         PageDownloader pageDownloader = new PageDownloader();
         Document pageContent;
         List<Movie> movieList = new ArrayList<>();
@@ -131,7 +132,7 @@ public class SiteWorker {
                 movieList.add(movie);
             }
         }
-        return movieList;
+        return Observable.fromArray(movieList);
     }
 
 
@@ -508,7 +509,7 @@ public class SiteWorker {
         }
 
 
-        public List<Movie> getNextQuery() throws ExecutionException, InterruptedException,NullPointerException {
+        public Observable<List<Movie>> getNextQuery() throws ExecutionException, InterruptedException,NullPointerException {
             if (queryAmount == -1 || currentOffset < queryAmount) {
                 switch (requestType) {
                     case SIMPLE_QUERY: {
@@ -542,7 +543,7 @@ public class SiteWorker {
 
 
                         currentOffset += (Integer) result.get("offset");
-                        return movieList;
+                        return Observable.fromArray(movieList);
                     }
 
                     case SEARCH_QUERY: {
@@ -564,7 +565,7 @@ public class SiteWorker {
                         movieList = (List<Movie>) result.get("list");
 
                         currentOffset += (Integer) result.get("offset");
-                        return movieList;
+                        return Observable.fromArray(movieList);
                     }
 
                     case EDITOR_CHOICE_QUERY: {
@@ -573,11 +574,11 @@ public class SiteWorker {
                         return getEditorChoiceMoviesList(context);
                     }
                     default:
-                        return new ArrayList<>();
+                        return Observable.empty();
                 }
             }
             else
-                return new ArrayList<>();
+                return Observable.empty();
         }
 
 

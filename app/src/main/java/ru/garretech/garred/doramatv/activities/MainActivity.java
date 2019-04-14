@@ -23,7 +23,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,7 +40,6 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -83,7 +81,10 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
     private Boolean hasConnection = true;
     private AppDataSource appDataSource;
     private Observable<List<Movie>> observable;
-    private CompletableObserver getCachedMoviesObserver;
+    private CompletableObserver getListMoviesObserver;
+    private CompletableObserver getOnLoadMoreObserver;
+    private Consumer<List<Movie>> onLoadMoreConsumer;
+    private Consumer<List<Movie>> updateListConsumer;
 
     private final int GENRES_CODE = 15;
 
@@ -100,7 +101,20 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         setContentView(R.layout.activity_main);
         mSiteworker = new SiteWorker();
         appDataSource = new AppDataSource(getApplicationContext());
-        getCachedMoviesObserver = new CompletableObserver() {
+
+        updateListConsumer = movies -> {
+            //requestQuery = null;
+            updateDataList(movies);
+            if (progressBottomSheet.isVisible())
+                progressBottomSheet.dismissAllowingStateLoss();
+        };
+
+        onLoadMoreConsumer = movies -> {
+            newMovieAdapter.addData(movies);
+            newMovieAdapter.loadMoreComplete();
+        };
+
+        getListMoviesObserver = new CompletableObserver() {
             @Override
             public void onSubscribe(Disposable d) {
 
@@ -124,15 +138,42 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             return movies;
                         })
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Consumer<List<Movie>>() {
-                            @Override
-                            public void accept(List<Movie> movies) throws Exception {
-                                requestQuery = null;
-                                updateDataList(movies);
-                                setTitle(getString(R.string.action_favorite));
+                        .subscribe(updateListConsumer);
+                //Log.d("Task", "get favorites completable completed");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+        };
+
+        getOnLoadMoreObserver = new CompletableObserver() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+            @Override
+            public void onComplete() {
+                observable
+                        .subscribeOn(Schedulers.io())
+                        .map( movies -> {
+                            for (Movie movie : movies) {
+                                Bitmap image;
+                                try {
+                                    image = SiteWorker.getCachedImage(getApplicationContext(),movie.getMovieImageURL());
+                                } catch (FileNotFoundException e) {
+                                    ImageDownloader imageDownloader = new ImageDownloader();
+                                    image = imageDownloader.execute(movie.getMovieImageURL()).get();
+                                    SiteWorker.saveImage(getApplicationContext(), image, movie.getMovieImageURL());
+                                }
+                                movie.setImage(image);
                             }
-                        });
-                Log.d("Task", "get favorites completable completed");
+                            return movies;
+                        })
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(onLoadMoreConsumer);
+                //Log.d("Task", "get favorites completable completed");
             }
 
             @Override
@@ -183,7 +224,23 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
         if (hasConnection()) {
             activityState = ACTIVITY_STATE.ONLINE;
-            new Handler().postDelayed(new Runnable() {
+
+            Completable.fromCallable(() -> {
+                try {
+                    requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
+                    observable = requestQuery.getNextQuery();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    showConnectionError();
+                } catch (NullPointerException e) {
+                    showConnectionError();
+                }
+                return null;
+            }).subscribeOn(Schedulers.io())
+                    .subscribe(getListMoviesObserver);
+
+            /*new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -198,7 +255,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                         showConnectionError();
                     }
                 }
-            },0);
+            },0);*/
         } else
             showConnectionError();
     }
@@ -221,7 +278,27 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 // Поиск дорам
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE;
-                    new Handler().postDelayed(new Runnable() {
+
+                    Completable.fromCallable(() -> {
+                        try {
+                            HashMap<String,String> params = new HashMap<>();
+                            params.put("q",queryString);
+
+                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SEARCH_QUERY,SiteWorker.SEARCH_PREFIX,params);
+                            observable = requestQuery.getNextQuery();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            showConnectionError();
+                        } catch (NullPointerException e) {
+                            showConnectionError();
+                        }
+                        return null;
+                    }).subscribeOn(Schedulers.io())
+                            .subscribe(getListMoviesObserver);
+
+                    setTitle("Поиск: " + queryString);
+                    /*new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -243,7 +320,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                                 showConnectionError();
                             }
                         }
-                    }, 1000);
+                    }, 1000);*/
                     newMovieAdapter.clear();
                     if (!progressBottomSheet.isAdded()) {
                         progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
@@ -305,26 +382,25 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     break;
                 }
                 activityState = ACTIVITY_STATE.ONLINE;
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.EDITOR_CHOICE_QUERY);
-                            List<Movie> list = requestQuery.getNextQuery();
-                            updateDataList(list);
-                            if (progressBottomSheet.isVisible())
-                                progressBottomSheet.dismissAllowingStateLoss();
-                            setTitle(getString(R.string.editor_choice_title));
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            showConnectionError();
-                        } catch (NullPointerException e) {
-                            showConnectionError();
-                        }
+
+                Completable.fromCallable(() -> {
+                    try {
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(), SiteWorker.EDITOR_CHOICE_QUERY);
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
                     }
-                }, 500);
-                newMovieAdapter.clear();
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
+
+
+                //newMovieAdapter.clear();
+                setTitle(getString(R.string.editor_choice_title));
                 break;
             }
             case R.id.nav_new: {
@@ -333,7 +409,26 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     break;
                 }
                 activityState = ACTIVITY_STATE.ONLINE;
-                new Handler().postDelayed(new Runnable() {
+
+                Completable.fromCallable(() -> {
+                    try {
+                        HashMap<String,String> params = new HashMap<>();
+                        params.put(SiteWorker.NEW_MOVIES_PARAMS[0],SiteWorker.NEW_MOVIES_PARAMS[1]);
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX,params);
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
+                    }
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
+
+                setTitle(getString(R.string.new_movie_title));
+                /*new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -354,7 +449,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             showConnectionError();
                         }
                     }
-                }, 1000);
+                }, 1000);*/
                 newMovieAdapter.clear();
                 if (!progressBottomSheet.isAdded()) {
                     progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
@@ -367,7 +462,24 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     break;
                 }
                 activityState = ACTIVITY_STATE.ONLINE;
-                new Handler().postDelayed(new Runnable() {
+
+                Completable.fromCallable(() -> {
+                    try {
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.LIST_PREFIX);
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
+                    }
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
+
+                setTitle(getString(R.string.best_movie_title));
+                /*new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -386,7 +498,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             showConnectionError();
                         }
                     }
-                }, 1000);
+                }, 1000);*/
                 newMovieAdapter.clear();
                 if (!progressBottomSheet.isAdded()) {
                     progressBottomSheet.show(getSupportFragmentManager(), "progressBar");
@@ -400,7 +512,27 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                     break;
                 }
                 activityState = ACTIVITY_STATE.ONLINE;
-                new Handler().postDelayed(new Runnable() {
+
+                Completable.fromCallable(() -> {
+                    try {
+                        HashMap<String,String> params = new HashMap<>();
+                        params.put(SiteWorker.ONGOING_PARAMS[0],SiteWorker.ONGOING_PARAMS[1]);
+
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,SiteWorker.ONGOING_PREFIX,params);
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
+                    }
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
+
+                setTitle(getString(R.string.ongoing_title));
+               /* new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -421,7 +553,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             showConnectionError();
                         }
                     }
-                }, 1000);
+                }, 1000);*/
 
                 newMovieAdapter.clear();
                 if (!progressBottomSheet.isAdded()) {
@@ -497,15 +629,13 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
 
                 //List<Movie> favoritesMovies = appDataSource.getListOfFavorites();
                 activityState = ACTIVITY_STATE.CACHED;
-                Completable.fromCallable(new Callable<Object>() {
-                    @Override
-                    public Object call() throws Exception {
-                        observable = appDataSource.getListOfFavorites();
-                        return null;
-                    }
+                Completable.fromCallable(() -> {
+                    observable = appDataSource.getListOfFavorites();
+                    return null;
                 }).subscribeOn(Schedulers.io())
-                        .subscribe(getCachedMoviesObserver);
+                        .subscribe(getListMoviesObserver);
 
+                setTitle(getString(R.string.action_favorite));
                 //Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
                 break;
             }
@@ -544,7 +674,23 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                 final String genreName = data.getStringExtra("name");
                 progressBottomSheet = new ProgressBottomSheet();
 
-                new Handler().postDelayed(new Runnable() {
+                Completable.fromCallable(() -> {
+                    try {
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(),SiteWorker.SIMPLE_QUERY,resultPrefix);
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
+                    }
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
+
+                setTitle(genreName.substring(0,1).toUpperCase()+genreName.substring(1));
+                /*new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -560,7 +706,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
                             e.printStackTrace();
                         }
                     }
-                },1000);
+                },1000);*/
                 newMovieAdapter.clear();
             }
         }
@@ -599,54 +745,46 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         final Movie selectedMovie = newMovieAdapter.getData().get(position);
         final Intent intent = new Intent(MainActivity.this, MovieAboutActivity.class);
         if (hasConnection()) {
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
+            new Handler().postDelayed(() -> {
 
-                    JSONObject jsonObject;
+                JSONObject jsonObject;
 
-                    try {
-                        jsonObject = SiteWorker.getMovieInfo(selectedMovie.getURL());
-                        /*
-                        * this.title = title;
-                            this.URL = movieURL;
-                            this.genres = genres;
-                            this.movieImageURL = movieImageURL;
-                        * */
-                        selectedMovie.setTitle(jsonObject.getString("title"));
-                        selectedMovie.setInitialSeries(jsonObject.getString("initial_series"));
-                        selectedMovie.setProductionCountry(jsonObject.getString("production"));
-                        selectedMovie.setSeriesNumber(jsonObject.getString("series_number"));
-                        selectedMovie.setDuration(jsonObject.getString("duration"));
-                        selectedMovie.setDescription(jsonObject.getString("description"));
-                        selectedMovie.setProductionYear(jsonObject.getString("age"));
-                        //jsonObject.put("title", selectedMovie.getTitle());
-                        //jsonObject.put("genres", selectedMovie.getGenres().toString());
-                        //jsonObject.put("image_url", selectedMovie.getMovieImageURL());
-                        //jsonObject.put("url", selectedMovie.getURL());
-                        jsonObject.put("access_token", Settings.access_token());
+                try {
+                    jsonObject = SiteWorker.getMovieInfo(selectedMovie.getURL());
 
-                        Bundle bundle = new Bundle();
+                    selectedMovie.setTitle(jsonObject.getString("title"));
+                    selectedMovie.setInitialSeries(jsonObject.getString("initial_series"));
+                    selectedMovie.setProductionCountry(jsonObject.getString("production"));
+                    selectedMovie.setSeriesNumber(jsonObject.getString("series_number"));
+                    selectedMovie.setDuration(jsonObject.getString("duration"));
+                    selectedMovie.setDescription(jsonObject.getString("description"));
+                    selectedMovie.setProductionYear(jsonObject.getString("age"));
+                    //jsonObject.put("title", selectedMovie.getTitle());
+                    //jsonObject.put("genres", selectedMovie.getGenres().toString());
+                    //jsonObject.put("image_url", selectedMovie.getMovieImageURL());
+                    //jsonObject.put("url", selectedMovie.getURL());
+                    jsonObject.put("access_token", Settings.access_token());
 
-                        bundle.putSerializable("movie",selectedMovie);
+                    Bundle bundle = new Bundle();
 
-                        intent.putExtra("bundle",bundle);
-                        intent.putExtra("movie_info", jsonObject.toString());
+                    bundle.putSerializable("movie",selectedMovie);
 
-                        if (progressBottomSheet.isVisible())
-                            progressBottomSheet.dismiss();
+                    intent.putExtra("bundle",bundle);
+                    intent.putExtra("movie_info", jsonObject.toString());
 
-                        startActivity(intent);
+                    if (progressBottomSheet.isVisible())
+                        progressBottomSheet.dismiss();
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        showConnectionError();
-                    } catch (NullPointerException e) {
-                        showConnectionError();
-                    }
+                    startActivity(intent);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    showConnectionError();
+                } catch (NullPointerException e) {
+                    showConnectionError();
                 }
             }, 500);
             if (!progressBottomSheet.isAdded()) {
@@ -662,35 +800,37 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
     public void onLoadMoreRequested() {
         if (activityState == ACTIVITY_STATE.ONLINE) {
             if (requestQuery != null) {
-                mRecyclerView.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (requestQuery.offset() >= requestQuery.queryAmount()) {
-                            // Все данные загружены
-                            newMovieAdapter.setEnableLoadMore(false);
-                        } else {
-                            if (hasConnection) {
+
+
+
+                    if (requestQuery.offset() >= requestQuery.queryAmount()) {
+                        // Все данные загружены
+                        newMovieAdapter.setEnableLoadMore(false);
+                    } else {
+                        if (hasConnection) {
+
+                            Completable.fromCallable(() -> {
                                 try {
-                                    newMovieAdapter.addData(requestQuery.getNextQuery());
-                                    newMovieAdapter.loadMoreComplete();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
+                                    observable = requestQuery.getNextQuery();
                                 } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } catch (ExecutionException e) {
                                     showConnectionError();
                                 } catch (NullPointerException e) {
                                     showConnectionError();
                                 }
-                            } else {
-                                //Get more data failed
-                                hasConnection = true;
-                                Toast.makeText(MainActivity.this, R.string.cant_connect_error, Toast.LENGTH_LONG).show();
-                                newMovieAdapter.loadMoreFail();
+                                return null;
+                            }).subscribeOn(Schedulers.io())
+                                    .subscribe(getOnLoadMoreObserver);
 
-                            }
+                        } else {
+                            //Get more data failed
+                            hasConnection = true;
+                            Toast.makeText(MainActivity.this, R.string.cant_connect_error, Toast.LENGTH_LONG).show();
+                            newMovieAdapter.loadMoreFail();
+
                         }
                     }
-
-                }, 1000);
             } else
                 newMovieAdapter.setEnableLoadMore(false);
         } else
@@ -705,44 +845,49 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
             if (requestQuery != null) {
                 requestQuery.resetOffset();
 
-                try {
-                    List<Movie> list = requestQuery.getNextQuery();
-                    updateDataList(list);
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    showConnectionError();
-                } catch (NullPointerException e) {
-                    showConnectionError();
-                }
+                Completable.fromCallable(() -> {
+                    try {
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
+                    }
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
+
 
             } else {
 
-                try {
-                    requestQuery = mSiteworker.new RequestQuery(getApplicationContext(), SiteWorker.EDITOR_CHOICE_QUERY);
-                    List<Movie> list = requestQuery.getNextQuery();
-                    updateDataList(list);
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    showConnectionError();
-                } catch (NullPointerException e) {
-                    showConnectionError();
-                }
+                Completable.fromCallable(() -> {
+                    try {
+                        requestQuery = mSiteworker.new RequestQuery(getApplicationContext(), SiteWorker.EDITOR_CHOICE_QUERY);
 
+                        observable = requestQuery.getNextQuery();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        showConnectionError();
+                    } catch (NullPointerException e) {
+                        showConnectionError();
+                    }
+                    return null;
+                }).subscribeOn(Schedulers.io())
+                        .subscribe(getListMoviesObserver);
             }
         } else {
             activityState = ACTIVITY_STATE.CACHED;
-            Completable.fromCallable(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    observable = appDataSource.getListOfFavorites();
-                    return null;
-                }
+            Completable.fromCallable(() -> {
+                observable = appDataSource.getListOfFavorites();
+                return null;
             }).subscribeOn(Schedulers.io())
-            .subscribe(getCachedMoviesObserver);
+            .subscribe(getListMoviesObserver);
         }
     }
+
 
 
     private void updateDataList(List<Movie> list) {
@@ -767,7 +912,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerAdapter.O
         } else
             return false;
     }
-
 
 
     class CustomDivider extends RecyclerView.ItemDecoration {
