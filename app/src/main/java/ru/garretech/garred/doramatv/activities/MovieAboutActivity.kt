@@ -1,0 +1,282 @@
+package ru.garretech.garred.doramatv.activities
+
+import android.content.Intent
+import android.net.Uri
+import android.support.design.widget.TabLayout
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.Toolbar
+import android.support.v4.view.ViewPager
+import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+
+import io.reactivex.Completable
+import io.reactivex.CompletableObserver
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
+import io.reactivex.ObservableOnSubscribe
+import io.reactivex.Single
+import io.reactivex.SingleObserver
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.functions.Consumer
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
+import ru.garretech.garred.doramatv.R
+import ru.garretech.garred.doramatv.adapters.MovieAboutPagerAdapter
+import ru.garretech.garred.doramatv.database.AppDataSource
+import ru.garretech.garred.doramatv.fragments.MovieAboutFragment
+import ru.garretech.garred.doramatv.fragments.MovieSourcesFragment
+
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.concurrent.Callable
+
+import butterknife.BindView
+import butterknife.ButterKnife
+import ru.garretech.garred.doramatv.model.Favorites
+import ru.garretech.garred.doramatv.model.Movie
+
+class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInteractionListener, MovieSourcesFragment.OnFragmentInteractionListener {
+
+
+    @BindView(R.id.toolbar)
+    internal var toolbar: Toolbar? = null
+    @BindView(R.id.container)
+    internal var mViewPager: ViewPager? = null
+    @BindView(R.id.tabs)
+    internal var tabLayout: TabLayout? = null
+    internal lateinit var mFragmentAdapter: MovieAboutPagerAdapter
+    internal lateinit var movieInfo: JSONObject
+    internal var sources: JSONArray? = null
+    internal lateinit var title: String
+    internal lateinit var age: String
+    internal lateinit var genres: String
+    internal lateinit var production: String
+    internal lateinit var seriesNumber: String
+    internal lateinit var duration: String
+    internal lateinit var description: String
+    internal lateinit var imageURL: String
+    internal lateinit var movieURL: String
+    internal lateinit var accessToken: String
+    internal lateinit var initialSeries: String
+    internal lateinit var currentMovie: Movie
+    internal lateinit var dataSource: AppDataSource
+    internal var isFavorite: Boolean = false
+    internal var observable: Subject<Boolean> = PublishSubject.create()
+    internal lateinit var disposable: Disposable
+    internal lateinit var optionsMenu: Menu
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_movie_about)
+        ButterKnife.bind(this)
+        val intent = intent
+        dataSource = AppDataSource(applicationContext)
+        try {
+            movieInfo = JSONObject(intent.getStringExtra("movie_info"))
+
+
+            /*
+            * Запросить наличие фильма в избранных (completable)
+            * Полученный результат хранится в переменной isFavorite, которая является observable
+            * При изменении значения данной переменной подписчик выполняет свои действия (меняется иконку избранного)
+            *
+            * Занесение фильма в избранное.
+            * Опять completable. С помощью него фильм заносится в БД.
+            * */
+            /*
+
+            this.title = currentMovie.getTitle();
+            this.genres = currentMovie.getGenres().toString().substring(1,currentMovie.getGenres().toString().length()-1);
+            this.imageURL = currentMovie.getMovieImageURL();
+            this.movieURL = currentMovie.getURL();
+            this.age = currentMovie.getProductionYear();
+            this.description = currentMovie.getDescription();
+            this.initialSeries = currentMovie.getInitialSeries();
+            this.production = currentMovie.getProductionCountry();
+            this.seriesNumber = currentMovie.getSeriesNumber();
+            this.duration = currentMovie.getDuration();
+
+            this.accessToken = movieInfo.getString("access_token");*/
+            this.title = movieInfo.getString("title")
+            this.genres = movieInfo.getString("genres").substring(1, movieInfo.getString("genres").length - 1)
+            this.imageURL = movieInfo.getString("image_url")
+            this.movieURL = movieInfo.getString("url")
+            this.accessToken = movieInfo.getString("access_token")
+            this.age = movieInfo.getString("age")
+            this.description = movieInfo.getString("description")
+            this.initialSeries = movieInfo.getString("initial_series")
+            this.production = movieInfo.getString("production")
+            this.seriesNumber = movieInfo.getString("series_number")
+            this.duration = movieInfo.getString("duration")
+
+            val bundle = intent.getBundleExtra("bundle")
+            try {
+                currentMovie = bundle.getSerializable("movie") as Movie
+            } catch (e: NullPointerException) {
+                currentMovie = Movie(title, Arrays.asList(*genres.split(",".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()), imageURL, movieURL)
+                currentMovie.productionYear = age
+                currentMovie.description = description
+                currentMovie.initialSeries = initialSeries
+                currentMovie.productionCountry = production
+                currentMovie.seriesNumber = seriesNumber
+                currentMovie.duration = duration
+            }
+
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+
+        setupViewPager(mViewPager!!)
+        tabLayout!!.setupWithViewPager(mViewPager)
+
+        mViewPager!!.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
+        tabLayout!!.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(mViewPager))
+
+
+    }
+
+
+    private fun setupViewPager(viewPager: ViewPager) {
+        mFragmentAdapter = MovieAboutPagerAdapter(supportFragmentManager)
+
+        try {
+            val sourcesInfo = JSONObject()
+            sourcesInfo.put("url", movieURL)
+            sourcesInfo.put("access_token", accessToken)
+            sourcesInfo.put("initial_series", initialSeries)
+            mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме")
+            mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники")
+            viewPager.adapter = mFragmentAdapter
+            setSupportActionBar(toolbar)
+            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+            supportActionBar!!.title = title
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+
+    }
+
+    private fun flagFavorite(flag: Boolean) {
+        val item = optionsMenu.getItem(0)
+        if (flag)
+            item.setIcon(R.drawable.ic_favorite_white_24dp)
+        else
+            item.setIcon(R.drawable.ic_favorite_border_white_24dp)
+
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.menu_movie_about, menu)
+        optionsMenu = menu
+
+
+        disposable = observable
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(object : Consumer<Boolean> {
+                    override fun accept(t: Boolean) {
+                        flagFavorite(t)
+                    }
+                })
+
+        Completable.fromCallable {
+            isFavorite = dataSource.isFavorite(currentMovie.url)
+            emmitFavorite(isFavorite)
+            null
+        }.subscribeOn(Schedulers.io())
+                .subscribe(object : CompletableObserver {
+                    override fun onSubscribe(d: Disposable) {
+
+                    }
+
+                    override fun onComplete() {
+                        Log.d("Task", "Delete completable completed")
+                    }
+
+                    override fun onError(e: Throwable) {
+
+                    }
+                })
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        when (item.itemId) {
+            R.id.action_favorite -> {
+                if (isFavorite!!) {
+                    Completable.fromCallable {
+                        dataSource.deleteFavorites(currentMovie)
+                        null
+                    }.subscribeOn(Schedulers.io())
+                            .subscribe(object : CompletableObserver {
+                                override fun onSubscribe(d: Disposable) {
+
+                                }
+
+                                override fun onComplete() {
+                                    emmitFavorite(false)
+                                    Log.d("Task", "Delete completable completed")
+                                }
+
+                                override fun onError(e: Throwable) {
+                                    Log.d("Task", "Delete completable error")
+                                }
+                            })
+                } else {
+                    Completable.fromCallable {
+                        dataSource.addFavorites(currentMovie)
+                        null
+                    }.subscribeOn(Schedulers.io())
+                            .subscribe(object : CompletableObserver {
+                                override fun onSubscribe(d: Disposable) {
+
+                                }
+
+                                override fun onComplete() {
+                                    emmitFavorite(true)
+                                    Log.d("Task", "Add completable completed")
+                                }
+
+                                override fun onError(e: Throwable) {
+                                    Log.d("Task", "Add completable error")
+                                }
+                            })
+                }
+            }
+            R.id.action_settings -> {
+                val intent = Intent(this@MovieAboutActivity, SettingsActivity::class.java)
+                startActivity(intent)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onFragmentInteraction(uri: Uri) {
+
+    }
+
+    internal fun emmitFavorite(value: Boolean) {
+        isFavorite = value
+        observable.onNext(isFavorite)
+    }
+
+}
+

@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-android'
 
 android {
     signingConfigs {
@@ -65,4 +67,8 @@ dependencies {
     annotationProcessor "android.arch.persistence.room:compiler:$archComponentsVersion"
 
     debugImplementation 'im.dino:dbinspector:3.4.1@aar'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
+repositories {
+    mavenCentral()
 }
