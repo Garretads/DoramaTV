@@ -7,29 +7,29 @@ import android.text.Spannable
 import android.text.Spanned
 import android.widget.TextView
 
-import butterknife.BindView
-import butterknife.ButterKnife
+import kotlinx.android.synthetic.main.activity_about_application.*
+import kotlinx.android.synthetic.main.toolbar.*
 import ru.garretech.garred.doramatv.BuildConfig
 import ru.garretech.garred.doramatv.R
 
 class AboutApplicationActivity : AppCompatActivity() {
-    @BindView(R.id.version_text)
+    /*@BindView(R.id.versionTextView)
     internal var versionTextView: TextView? = null
-    @BindView(R.id.nick_link)
+    @BindView(R.id.nickLink)
     internal var nickLink: TextView? = null
-    @BindView(R.id.toolbar_actionbar)
-    internal var toolbar: Toolbar? = null
+    @BindView(R.id.toolbarActionBar)
+    internal var toolbarActionBar: Toolbar? = null*/
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_about_application)
-        ButterKnife.bind(this)
-        setSupportActionBar(toolbar)
+        //ButterKnife.bind(this)
+        setSupportActionBar(toolbarActionBar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.title = getString(R.string.about_application)
 
-        versionTextView!!.text = getText(R.string.version_label).toString() + " " + BuildConfig.VERSION_NAME
+        versionTextView.text = getText(R.string.version_label).toString() + " " + BuildConfig.VERSION_NAME
 
 
     }

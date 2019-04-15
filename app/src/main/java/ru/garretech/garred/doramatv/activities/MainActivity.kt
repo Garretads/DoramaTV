@@ -22,11 +22,9 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
-import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ProgressBar
 import android.widget.Toast
 
 import com.chad.library.adapter.base.BaseQuickAdapter
@@ -39,8 +37,6 @@ import java.io.FileNotFoundException
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.concurrent.ExecutionException
-import butterknife.BindView
-import butterknife.ButterKnife
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.Observable
@@ -48,6 +44,8 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.toolbar.*
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.adapters.RecyclerAdapter
@@ -59,18 +57,18 @@ import ru.garretech.garred.doramatv.tools.ImageDownloader
 import ru.garretech.garred.doramatv.tools.SiteWorker
 
 class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener {
-    @BindView(R.id.movie_list)
-    internal var mRecyclerView: RecyclerView? = null
-    @BindView(R.id.toolbar_actionbar)
-    internal lateinit var toolbar: Toolbar
-    @BindView(R.id.drawer_layout)
-    internal lateinit var drawer: DrawerLayout
-    @BindView(R.id.nav_view)
+    /*@BindView(R.id.movieListRecyclerView)
+    internal var movieListRecyclerView: RecyclerView? = null
+    @BindView(R.id.toolbarActionBar)
+    internal lateinit var toolbarActionBar: Toolbar
+    @BindView(R.id.drawerLayout)
+    internal lateinit var drawerLayout: DrawerLayout
+    @BindView(R.id.navigationView)
     internal lateinit var navigationView: NavigationView
     @BindView(R.id.progressBar)
     internal lateinit var progressBar: ProgressBar
-    @BindView(R.id.swipe_container)
-    internal lateinit var swipeContainer: SwipeRefreshLayout
+    @BindView(R.id.swipeContainer)
+    internal lateinit var swipeContainer: SwipeRefreshLayout*/
 
     private var searchView: SearchView? = null
     private var newMovieAdapter: RecyclerAdapter? = null
@@ -183,12 +181,12 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         conMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        ButterKnife.bind(this)
+        //ButterKnife.bind(this)
         progressBottomSheet = ProgressBottomSheet()
-        navigationView!!.setNavigationItemSelectedListener(this)
-        swipeContainer!!.setOnRefreshListener(this)
+        navigationView.setNavigationItemSelectedListener(this)
+        swipeContainer.setOnRefreshListener(this)
 
-        setSupportActionBar(toolbar)
+        setSupportActionBar(toolbarActionBar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.setHomeAsUpIndicator(R.drawable.ic_menu)
 
@@ -196,25 +194,25 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val mDivider = applicationContext.getDrawable(R.drawable.line_divider)
             val mDividerItemDecoration = CustomDivider(mDivider, 10, 10)
-            mRecyclerView!!.addItemDecoration(mDividerItemDecoration)
+            movieListRecyclerView!!.addItemDecoration(mDividerItemDecoration)
         }
 
 
-        mRecyclerView!!.layoutManager = object : LinearLayoutManager(this) {
+        movieListRecyclerView!!.layoutManager = object : LinearLayoutManager(this) {
             override fun supportsPredictiveItemAnimations(): Boolean {
                 return false
             }
         }
-        mRecyclerView!!.setHasFixedSize(true)
+        movieListRecyclerView!!.setHasFixedSize(true)
 
-        val toggle = ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
-        drawer!!.addDrawerListener(toggle)
+        val toggle = ActionBarDrawerToggle(this, drawerLayout, toolbarActionBar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+        drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
         newMovieAdapter = RecyclerAdapter(R.layout.fragment_movie, ArrayList())
-        mRecyclerView!!.adapter = newMovieAdapter
+        movieListRecyclerView!!.adapter = newMovieAdapter
         newMovieAdapter!!.setOnItemClickListener(this)
-        newMovieAdapter!!.setOnLoadMoreListener(this, mRecyclerView)
+        newMovieAdapter!!.setOnLoadMoreListener(this, movieListRecyclerView)
         newMovieAdapter!!.setEnableLoadMore(false)
         newMovieAdapter!!.setLoadMoreView(CustomLoadMoreView())
 
@@ -255,7 +253,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             override fun onQueryTextSubmit(queryString: String): Boolean {
 
                 // Поиск дорам
-                if (hasConnection()!!) {
+                if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
 
                     Completable.fromCallable {
@@ -456,11 +454,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     Handler().postDelayed({
 
-                        var jsonObject: JSONObject? = null
+                        var jsonObject: JSONObject?
 
                         try {
                             jsonObject = SiteWorker.getMovieInfo(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX)
-                            jsonObject!!.put("access_token", Settings.access_token())
+                            jsonObject.put("access_token", Settings.access_token())
 
                             intent.putExtra("movie_info", jsonObject.toString())
 
@@ -531,15 +529,15 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             else -> {
             }
         }
-        drawer!!.closeDrawer(GravityCompat.START)
+        drawerLayout.closeDrawer(GravityCompat.START)
         return true
 
     }
 
 
     override fun onBackPressed() {
-        if (drawer!!.isDrawerOpen(GravityCompat.START)) {
-            drawer!!.closeDrawer(GravityCompat.START)
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
         } else {
             super.onBackPressed()
         }
@@ -695,7 +693,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
     override fun onRefresh() {
-        swipeContainer!!.isRefreshing = false
+        swipeContainer.isRefreshing = false
         if (activityState == ACTIVITY_STATE.ONLINE) {
             if (requestQuery != null) {
                 requestQuery!!.resetOffset()
@@ -749,8 +747,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     private fun updateDataList(list: List<Movie>) {
 
         newMovieAdapter!!.addAll(list)
-        mRecyclerView!!.recycledViewPool.clear()
-        mRecyclerView!!.scrollToPosition(0)
+        movieListRecyclerView!!.recycledViewPool.clear()
+        movieListRecyclerView!!.scrollToPosition(0)
 
         if (requestQuery != null && requestQuery!!.offset() < requestQuery!!.queryAmount())
             newMovieAdapter!!.setEnableLoadMore(true)

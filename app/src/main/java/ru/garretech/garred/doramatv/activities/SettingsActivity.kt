@@ -4,7 +4,6 @@ import android.annotation.TargetApi
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -12,7 +11,6 @@ import android.os.Bundle
 import android.preference.ListPreference
 import android.preference.Preference
 import android.preference.PreferenceActivity
-import android.support.v7.app.ActionBar
 import android.preference.PreferenceFragment
 import android.preference.PreferenceManager
 import android.preference.RingtonePreference
@@ -79,10 +77,10 @@ class SettingsActivity : AppCompatPreferenceActivity() {
      * Make sure to deny any unknown fragments here.
      */
     override fun isValidFragment(fragmentName: String): Boolean {
-        return (PreferenceFragment::class.java!!.getName() == fragmentName
-                || GeneralPreferenceFragment::class.java!!.getName() == fragmentName
-                || DataSyncPreferenceFragment::class.java!!.getName() == fragmentName
-                || NotificationPreferenceFragment::class.java!!.getName() == fragmentName)
+        return (PreferenceFragment::class.java.getName() == fragmentName
+                || GeneralPreferenceFragment::class.java.getName() == fragmentName
+                || DataSyncPreferenceFragment::class.java.getName() == fragmentName
+                || NotificationPreferenceFragment::class.java.getName() == fragmentName)
     }
 
     /**

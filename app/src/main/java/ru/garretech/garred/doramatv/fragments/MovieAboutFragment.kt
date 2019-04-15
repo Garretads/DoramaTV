@@ -20,7 +20,6 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.ExecutionException
 
-import butterknife.BindView
 import ru.garretech.garred.doramatv.tools.ImageDownloader
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.tools.SiteWorker

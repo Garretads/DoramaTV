@@ -4,13 +4,11 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.ListView
 import android.widget.TextView
 
 import org.json.JSONArray
@@ -19,25 +17,25 @@ import org.json.JSONObject
 
 import java.util.ArrayList
 
-import butterknife.BindView
-import butterknife.ButterKnife
+import kotlinx.android.synthetic.main.activity_genres.*
+import kotlinx.android.synthetic.main.toolbar.*
 import ru.garretech.garred.doramatv.R
 
 class GenresActivity : AppCompatActivity() {
     private var genresArray: JSONArray? = null
-    @BindView(R.id.genresListView)
-    internal var listView: ListView? = null
-    @BindView(R.id.toolbar_actionbar)
-    internal var toolbar: Toolbar? = null
+   /* @BindView(R.id.genresListView)
+    internal var genresListView: ListView? = null
+    @BindView(R.id.toolbarActionBar)
+    internal var toolbarActionBar: Toolbar? = null*/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_genres)
-        ButterKnife.bind(this)
+        //ButterKnife.bind(this)
         title = getString(R.string.genres_title)
 
-        if (toolbar != null) {
-            setSupportActionBar(toolbar)
+        if (toolbarActionBar != null) {
+            setSupportActionBar(toolbarActionBar)
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         }
 
@@ -69,8 +67,8 @@ class GenresActivity : AppCompatActivity() {
                 }
             }*/
 
-            listView!!.setAdapter(arrayAdapter)
-            listView!!.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
+            genresListView.setAdapter(arrayAdapter)
+            genresListView.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
                 try {
                     val data = Intent()
                     data.putExtra("link", (genresArray!!.get(i) as JSONObject).getString("link"))

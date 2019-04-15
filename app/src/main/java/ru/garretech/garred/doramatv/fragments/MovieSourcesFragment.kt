@@ -96,7 +96,7 @@ class MovieSourcesFragment : Fragment() {
         val backSymbolText = "<-- "
 
         if (!empty) {
-            listView.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
+            listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, i, l ->
                 if (hasConnection()!!) {
                     if (!seriesSelected) {
                         Handler().postDelayed({
@@ -135,7 +135,7 @@ class MovieSourcesFragment : Fragment() {
 
                                     arrayAdapter!!.clear()
                                     for (index in 0 until seriesList.length()) {
-                                        val seriesName = (seriesList.get(index) as JSONObject)?.getString("name")
+                                        val seriesName = (seriesList.get(index) as JSONObject).getString("name")
                                         arrayAdapter!!.add(seriesName)
                                     }
 
@@ -248,10 +248,7 @@ class MovieSourcesFragment : Fragment() {
     }
 
     internal fun hasConnection(): Boolean? {
-        return if (conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).state == NetworkInfo.State.CONNECTED || conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI).state == NetworkInfo.State.CONNECTED) {
-            true
-        } else
-            false
+        return conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).state == NetworkInfo.State.CONNECTED || conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI).state == NetworkInfo.State.CONNECTED
     }
 
     companion object {

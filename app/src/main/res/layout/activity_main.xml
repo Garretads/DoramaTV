@@ -15,16 +15,16 @@
     <android.support.v4.widget.DrawerLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/drawer_layout"
-        android:layout_below="@+id/toolbar_actionbar">
+        android:id="@+id/drawerLayout"
+        android:layout_below="@+id/toolbarActionBar">
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/swipe_container">
+        android:id="@+id/swipeContainer">
 
         <android.support.v7.widget.RecyclerView
-        android:id="@+id/movie_list"
+        android:id="@+id/movieListRecyclerView"
         android:scrollbars="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -34,7 +34,7 @@
     </android.support.v4.widget.SwipeRefreshLayout>
 
         <android.support.design.widget.NavigationView
-        android:id="@+id/nav_view"
+        android:id="@+id/navigationView"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"

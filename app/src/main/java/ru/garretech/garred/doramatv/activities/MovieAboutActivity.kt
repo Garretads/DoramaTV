@@ -13,11 +13,6 @@ import android.view.MenuItem
 
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
-import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
-import io.reactivex.ObservableOnSubscribe
-import io.reactivex.Single
-import io.reactivex.SingleObserver
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
@@ -34,24 +29,20 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-import java.util.ArrayList
 import java.util.Arrays
-import java.util.concurrent.Callable
 
-import butterknife.BindView
-import butterknife.ButterKnife
-import ru.garretech.garred.doramatv.model.Favorites
+import kotlinx.android.synthetic.main.activity_movie_about.*
 import ru.garretech.garred.doramatv.model.Movie
 
 class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInteractionListener, MovieSourcesFragment.OnFragmentInteractionListener {
 
 
-    @BindView(R.id.toolbar)
+    /*@BindView(R.id.toolbar)
     internal var toolbar: Toolbar? = null
-    @BindView(R.id.container)
-    internal var mViewPager: ViewPager? = null
-    @BindView(R.id.tabs)
-    internal var tabLayout: TabLayout? = null
+    @BindView(R.id.viewPager)
+    internal var viewPager: ViewPager? = null
+    @BindView(R.id.tabLayout)
+    internal var tabLayout: TabLayout? = null*/
     internal lateinit var mFragmentAdapter: MovieAboutPagerAdapter
     internal lateinit var movieInfo: JSONObject
     internal var sources: JSONArray? = null
@@ -77,7 +68,7 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_movie_about)
-        ButterKnife.bind(this)
+        //ButterKnife.bind(this)
         val intent = intent
         dataSource = AppDataSource(applicationContext)
         try {
@@ -135,11 +126,11 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
             e.printStackTrace()
         }
 
-        setupViewPager(mViewPager!!)
-        tabLayout!!.setupWithViewPager(mViewPager)
+        setupViewPager(viewPager)
+        tabLayout.setupWithViewPager(viewPager)
 
-        mViewPager!!.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
-        tabLayout!!.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(mViewPager))
+        viewPager.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
+        tabLayout.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(viewPager))
 
 
     }
@@ -221,7 +212,7 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
         // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
             R.id.action_favorite -> {
-                if (isFavorite!!) {
+                if (isFavorite) {
                     Completable.fromCallable {
                         dataSource.deleteFavorites(currentMovie)
                         null

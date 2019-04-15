@@ -638,7 +638,7 @@ class SiteWorker {
 
         @Throws(FileNotFoundException::class, IOException::class)
         fun getCachedImage(context: Context, url: String): Bitmap? {
-            var image: Bitmap? = null
+            var image: Bitmap?
 
             val f = File(context.cacheDir, transformFileName(url))
             val fis = FileInputStream(f)
