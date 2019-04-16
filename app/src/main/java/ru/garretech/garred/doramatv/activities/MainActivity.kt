@@ -462,8 +462,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                             intent.putExtra("movie_info", jsonObject.toString())
 
-                            if (progressBottomSheet!!.isVisible)
-                                progressBottomSheet!!.dismissAllowingStateLoss()
+                            //if (progressBottomSheet!!.isVisible)
+                            progressBottomSheet!!.dismissAllowingStateLoss()
 
                             startActivity(intent)
 
@@ -518,6 +518,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                         .subscribe(getListMoviesObserver!!)
 
                 title = getString(R.string.action_favorite)
+
             }//Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
             R.id.nav_history -> {
                 Toast.makeText(applicationContext, "Функция в разработке", Toast.LENGTH_LONG).show()
@@ -628,8 +629,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     intent.putExtra("bundle", bundle)
                     intent.putExtra("movie_info", jsonObject.toString())
 
-                    if (progressBottomSheet!!.isVisible)
-                        progressBottomSheet!!.dismiss()
+                    progressBottomSheet!!.dismissAllowingStateLoss()
 
                     startActivity(intent)
 
@@ -642,7 +642,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 } catch (e: NullPointerException) {
                     showConnectionError()
                 }
-            }, 500)
+            }, 0)
             if (!progressBottomSheet!!.isAdded) {
                 progressBottomSheet!!.show(supportFragmentManager, "progressBar")
             }

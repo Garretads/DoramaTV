@@ -6,7 +6,7 @@ import android.arch.persistence.room.ForeignKey
 import android.arch.persistence.room.Index
 import android.arch.persistence.room.PrimaryKey
 
-@Entity(tableName = "favorites", indices = [Index("movie_url")], foreignKeys = [ForeignKey(entity = Movie::class, parentColumns = ["URL"], childColumns = ["movie_url"])])
+@Entity(tableName = "favorites", indices = [Index("movie_url")], foreignKeys = [ForeignKey(entity = Movie::class, parentColumns = ["url"], childColumns = ["movie_url"])])
 class Favorites {
 
     // Хранить ссылки на фильмы. Только и всего

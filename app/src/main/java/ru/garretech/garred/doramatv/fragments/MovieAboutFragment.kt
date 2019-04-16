@@ -28,15 +28,15 @@ import ru.garretech.garred.doramatv.tools.SiteWorker
 class MovieAboutFragment : Fragment() {
 
 
-    private var movieAge: String? = null
-    private var movieTitle: String? = null
-    private var movieGenres: String? = null
-    private var movieProduction: String? = null
-    private var movieSeriesNumber: String? = null
-    private var movieDuration: String? = null
-    private var movieDescription: String? = null
-    private var movieImageURL: String? = null
-    private var movieURL: String? = null
+    private val movieAge: String by lazy { arguments!!.getString(ARG_PARAM6)}
+    private val movieTitle: String by lazy { arguments!!.getString(ARG_PARAM1) }
+    private val movieGenres: String by lazy { arguments!!.getString(ARG_PARAM2) }
+    private val movieProduction: String by lazy { arguments!!.getString(ARG_PARAM3) }
+    private val movieSeriesNumber: String by lazy { arguments!!.getString(ARG_PARAM4) }
+    private val movieDuration: String by lazy { arguments!!.getString(ARG_PARAM5) }
+    private val movieDescription: String by lazy { arguments!!.getString(ARG_PARAM7) }
+    private val movieImageURL: String by lazy { arguments!!.getString(ARG_PARAM8) }
+    private val movieURL: String by lazy { arguments!!.getString(ARG_PARAM9) }
     private var image: Bitmap? = null
 
 
@@ -45,15 +45,15 @@ class MovieAboutFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {
-            movieTitle = arguments!!.getString(ARG_PARAM1)
+            /*movieTitle = arguments!!.getString(ARG_PARAM1)
             movieGenres = arguments!!.getString(ARG_PARAM2)
             movieProduction = arguments!!.getString(ARG_PARAM3)
             movieSeriesNumber = arguments!!.getString(ARG_PARAM4)
             movieDuration = arguments!!.getString(ARG_PARAM5)
-            movieAge = arguments!!.getString(ARG_PARAM6)
+            //movieAge = arguments!!.getString(ARG_PARAM6)
             movieDescription = arguments!!.getString(ARG_PARAM7)
             movieImageURL = arguments!!.getString(ARG_PARAM8)
-            movieURL = arguments!!.getString(ARG_PARAM9)
+            movieURL = arguments!!.getString(ARG_PARAM9)*/
 
             try {
                 image = SiteWorker.getCachedImage(context!!, movieImageURL!!)
@@ -173,3 +173,5 @@ class MovieAboutFragment : Fragment() {
         }
     }
 }// Required empty public constructor
+
+
