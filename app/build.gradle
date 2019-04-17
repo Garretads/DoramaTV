@@ -19,8 +19,8 @@ android {
         applicationId "ru.garretech.garred.doramatv"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 11
-        versionName "1.1.5"
+        versionCode 12
+        versionName "1.1.6 test"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config
@@ -54,18 +54,25 @@ dependencies {
     implementation "com.android.support:customtabs:$supportLibVersion"
     implementation "com.android.support:recyclerview-v7:$supportLibVersion"
     implementation "com.android.support:support-vector-drawable:$supportLibVersion"
+
     implementation "android.arch.persistence.room:runtime:$archComponentsVersion"
     implementation "android.arch.persistence.room:rxjava2:$archComponentsVersion"
+
     implementation 'org.jsoup:jsoup:1.11.3'
-    //implementation 'com.jakewharton:butterknife:8.8.1'
+
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.46'
+
     implementation 'io.reactivex.rxjava2:rxjava:2.1.0'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-    //annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
-    //annotationProcessor "android.arch.persistence.room:compiler:$archComponentsVersion"
+
     kapt "android.arch.persistence.room:compiler:$archComponentsVersion"
+
     debugImplementation 'im.dino:dbinspector:3.4.1@aar'
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    implementation 'com.yandex.android:mobmetricalib:3.4.0'
+    implementation 'com.yandex.android:mobileads:2.80'
 }
 repositories {
     mavenCentral()

@@ -10,7 +10,7 @@ import android.content.Context
 import ru.garretech.garred.doramatv.model.Favorites
 import ru.garretech.garred.doramatv.model.Movie
 
-@Database(entities = [Movie::class, Favorites::class], version = 2, exportSchema = false)
+@Database(entities = [Movie::class, Favorites::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun movieDAO(): MovieDAO
@@ -35,7 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
 
-        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 //database.execSQL("ALTER TABLE favorites DROP TO birthday INTEGER DEFAULT 0 NOT NULL");
             }

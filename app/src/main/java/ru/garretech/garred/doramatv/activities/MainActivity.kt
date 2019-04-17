@@ -25,9 +25,11 @@ import android.support.v7.widget.SearchView
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.RelativeLayout
 import android.widget.Toast
 
 import com.chad.library.adapter.base.BaseQuickAdapter
+import com.yandex.mobile.ads.*
 
 import org.json.JSONException
 import org.json.JSONObject
@@ -84,6 +86,34 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     private var onLoadMoreConsumer: Consumer<List<Movie>>? = null
     private var updateListConsumer: Consumer<List<Movie>>? = null
 
+    private var mAdMobView: AdView? = null
+    private var mAdRequest: AdRequest? = null
+    private var mAdViewContainer: RelativeLayout? = null
+
+
+    private val mBannerAdListener = object : AdEventListener {
+        override fun onAdClosed() {
+
+        }
+
+        override fun onAdFailedToLoad(adRequestError: AdRequestError) {
+
+        }
+
+        override fun onAdLeftApplication() {
+
+        }
+
+        override fun onAdLoaded() {
+            mAdMobView!!.visibility = View.VISIBLE
+        }
+
+        override fun onAdOpened() {
+
+        }
+
+    }
+
     private val GENRES_CODE = 15
 
     private var activityState = ACTIVITY_STATE.CACHED
@@ -98,6 +128,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         setContentView(R.layout.activity_main)
         mSiteWorker = SiteWorker()
         appDataSource = AppDataSource(applicationContext)
+
+
+        mAdViewContainer = findViewById<View>(R.id.relativeContainer) as RelativeLayout
+        //initAdMobView()
 
 
         updateListConsumer = Consumer { movies ->
@@ -238,7 +272,35 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
         } else
             showConnectionError()
+
+        refreshBannerAd()
     }
+
+
+    private fun initAdMobView() {
+        mAdMobView = AdView(this)
+        mAdMobView!!.adSize = AdSize.BANNER_320x100
+
+        /*
+          Replace AD_UNIT_ID with your unique Ad Unit ID.
+          Please, read official documentation how to obtain one: https://apps.admob.com
+        */
+        mAdMobView!!.blockId = Settings.block_id()
+        mAdMobView!!.adEventListener = mBannerAdListener
+
+        mAdRequest = AdRequest.Builder().build()
+
+        val layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
+        mAdViewContainer!!.addView(mAdMobView, layoutParams)
+    }
+
+    private fun refreshBannerAd() {
+        mAdMobView!!.visibility = View.INVISIBLE
+        mAdMobView!!.loadAd(mAdRequest)
+    }
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_activity_main, menu)
@@ -575,25 +637,25 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
     public override fun onPause() {
-        /*if (adView != null) {
-            adView.pause();
-        }*/
+        if (mAdMobView != null) {
+            mAdMobView!!.pause()
+        }
         super.onPause()
     }
 
     /** Called when returning to the activity  */
     public override fun onResume() {
         super.onResume()
-        /*if (adView != null) {
-            adView.resume();
-        }*/
+        if (mAdMobView != null) {
+            mAdMobView!!.resume()
+        }
     }
 
     /** Called before the activity is destroyed  */
     public override fun onDestroy() {
-        /*if (adView != null) {
-            adView.destroy();
-        } */
+        if (mAdMobView != null) {
+            mAdMobView!!.destroy()
+        }
         super.onDestroy()
     }
 
