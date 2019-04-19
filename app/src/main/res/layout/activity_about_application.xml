@@ -68,6 +68,22 @@
             android:text="@string/forum_nick"
             android:textSize="20sp" />
 
+        <TextView
+            android:id="@+id/privacyPolicyText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/privacyText"
+            android:textSize="20sp"/>
+
+        <TextView
+            android:id="@+id/privacyPolicyLink"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/privacyLink"
+            android:textSize="20sp"
+            android:autoLink="web"
+            android:linksClickable="true"/>
+
     </LinearLayout>
 
 </RelativeLayout>
