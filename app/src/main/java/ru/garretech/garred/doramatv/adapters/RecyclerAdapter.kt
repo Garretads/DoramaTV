@@ -14,9 +14,11 @@ class RecyclerAdapter(layoutResId: Int, data: List<Movie>?) : BaseQuickAdapter<M
 
     fun addAll(movies: Collection<Movie>) {
         data.clear()
+        var index = 0
         for (movie in movies) {
             data.add(movie)
-            notifyItemInserted(itemCount - 1)
+            notifyItemInserted(index)
+            index++
         }
     }
 

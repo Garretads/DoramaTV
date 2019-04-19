@@ -26,12 +26,12 @@ import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.ArrayList
 import java.util.Arrays
 import java.util.HashMap
 import java.util.concurrent.ExecutionException
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import kotlin.collections.ArrayList
 
 /*
 * Класс для работы с сайтом
@@ -49,7 +49,7 @@ class SiteWorker {
         private var path: String? = null
         private var currentOffset = 0
         private var uriQuery: Uri.Builder? = null
-        var list: List<Movie>? = null
+        var list: ArrayList<Movie>? = null
             private set
         private var parameters: HashMap<String, String>? = null
         private var context: Context? = null
@@ -73,7 +73,6 @@ class SiteWorker {
                             uriQuery!!.appendPath(path)
                         }
 
-
                         parameters!![OFFSET_PARAM] = currentOffset.toString()
 
                         for ((key, value) in parameters!!) {
@@ -86,11 +85,12 @@ class SiteWorker {
                             queryAmount = getMaxQueryElementCount(pageContent)
 
                         val result = movieListContentParse(context, pageContent, limit)
-                        list = result["list"] as List<Movie>?
 
+                        val resultArray = result["list"] as List<Movie>
+                        list?.addAll(resultArray)
 
                         currentOffset += (result["offset"] as Int?)!!
-                        Observable.fromArray(list!!)
+                        Observable.fromArray(resultArray!!)
                     }
 
                     SEARCH_QUERY -> {
@@ -109,16 +109,17 @@ class SiteWorker {
 
                         val result = movieListContentParse(context, pageContent, limit)
 
-                        list = result["list"] as List<Movie>?
+                        val resultArray = result["list"] as List<Movie>
+                        list?.addAll(resultArray)
 
                         currentOffset += (result["offset"] as Int?)!!
-                        Observable.fromArray(list!!)
+                        Observable.fromArray(resultArray!!)
                     }
 
                     EDITOR_CHOICE_QUERY -> {
                         queryAmount = 5
                         currentOffset = 5
-                        getEditorChoiceMoviesList(context)
+                        getEditorChoiceMoviesList(context).let { list = ArrayList(); list?.addAll(it); Observable.fromArray(it) }
                     }
                     else -> Observable.empty()
                 }
@@ -216,7 +217,7 @@ class SiteWorker {
 
 
         @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
-        fun getEditorChoiceMoviesList(context: Context?): Observable<List<Movie>> {
+        fun getEditorChoiceMoviesList(context: Context?): List<Movie> {
             val pageDownloader = PageDownloader()
             val pageContent: Document
             val movieList = ArrayList<Movie>()
@@ -268,7 +269,7 @@ class SiteWorker {
                     movieList.add(movie)
                 }
             }
-            return Observable.fromArray(movieList)
+            return movieList
         }
 
 
@@ -345,7 +346,7 @@ class SiteWorker {
             var original_name = ""
             var image_url = ""
             var url = ""
-            val genres = ArrayList<String>()
+            var genres : StringBuilder = StringBuilder()
             var description = ""
             var age = ""
             var production = ""
@@ -374,7 +375,7 @@ class SiteWorker {
 
             tempElements = pageContent.getElementsByClass("elem_genre ")
             for (element1 in tempElements) {
-                genres.add(element1.tagName("a").text())
+                genres.append(element1.tagName("a").text())
             }
 
             tempElement = pageContent.getElementsByClass("manga-description").first()

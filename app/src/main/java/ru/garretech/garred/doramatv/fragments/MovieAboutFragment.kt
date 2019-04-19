@@ -85,11 +85,11 @@ class MovieAboutFragment : Fragment() {
         val imageView = view.findViewById<ImageView>(R.id.movie_image_about)
         val movieDescriptionView = view.findViewById<TextView>(R.id.movie_description_text)
 
-        movieGenresView.text = getString(R.string.genres_description) + movieGenres!!
-        movieProductionCountryView.text = getString(R.string.production_country_description) + movieProduction!!
+        movieGenresView.text = getString(R.string.genres_description) + " " + movieGenres!!
+        movieProductionCountryView.text = getString(R.string.production_country_description)  + " " +  movieProduction!!
         movieSeriesNumberView.text = movieSeriesNumber
         movieDurationView.text = movieDuration
-        movieAgeView.text = getString(R.string.age_description) + movieAge!!
+        movieAgeView.text = getString(R.string.age_description)  + " " +  movieAge!!
         movieDescriptionView.text = movieDescription
         imageView.setImageBitmap(image)
 
@@ -158,7 +158,7 @@ class MovieAboutFragment : Fragment() {
             val args = Bundle()
 
             args.putString(ARG_PARAM1, movieInfo.getString("title"))
-            args.putString(ARG_PARAM2, movieInfo.getString("genres").substring(1, movieInfo.getString("genres").length - 1))
+            args.putString(ARG_PARAM2, movieInfo.getString("genres"))
             args.putString(ARG_PARAM3, movieInfo.getString("production"))
             args.putString(ARG_PARAM4, movieInfo.getString("series_number"))
             args.putString(ARG_PARAM5, movieInfo.getString("duration"))

@@ -67,6 +67,7 @@ class MovieSourcesFragment : Fragment() {
                 URL = sourcesInfo.getString("url")
                 accessToken = sourcesInfo.getString("access_token")
                 initialSeries = sourcesInfo.getString("initial_series")
+                //seriesList = JSONArray()
                 seriesList = SiteWorker.formSeriesList(URL, initialSeries)
                 listViewList = ArrayList<String>()
 
@@ -95,8 +96,9 @@ class MovieSourcesFragment : Fragment() {
         listView.adapter = arrayAdapter
         val backSymbolText = "<-- "
 
+
         if (!empty) {
-            listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, i, l ->
+            listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, i, _ ->
                 if (hasConnection()!!) {
                     if (!seriesSelected) {
                         Handler().postDelayed({
@@ -113,8 +115,8 @@ class MovieSourcesFragment : Fragment() {
                                 arrayAdapter!!.addAll(funSubList)
                                 arrayAdapter!!.notifyDataSetChanged()
                                 seriesSelected = true
-                                if (progressBottomSheet.isVisible)
-                                    progressBottomSheet.dismiss()
+                                if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
+                                    progressBottomSheet.dismissAllowingStateLoss()
                             } catch (e: InterruptedException) {
                                 e.printStackTrace()
                             } catch (e: ExecutionException) {
@@ -124,7 +126,7 @@ class MovieSourcesFragment : Fragment() {
                             } catch (e: NullPointerException) {
                                 showConnectionError()
                             }
-                        }, 1000)
+                        }, 100)
                         if (!progressBottomSheet.isAdded) {
                             progressBottomSheet.show(fragmentManager!!, "progressBar")
                         }
@@ -179,8 +181,8 @@ class MovieSourcesFragment : Fragment() {
 
                                         val selectQualityFragment = SelectQualityFragment.newInstance(fileLink)
                                         selectQualityFragment.show(fragmentManager!!, "Выберите качество")
-                                        if (progressBottomSheet.isVisible)
-                                            progressBottomSheet.dismiss()
+                                        if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
+                                            progressBottomSheet.dismissAllowingStateLoss()
                                     } catch (e: InterruptedException) {
                                         e.printStackTrace()
                                     } catch (e: ExecutionException) {
@@ -190,7 +192,7 @@ class MovieSourcesFragment : Fragment() {
                                     } catch (e: NullPointerException) {
                                         showConnectionError()
                                     }
-                                }, 1000)
+                                }, 100)
                                 if (!progressBottomSheet.isAdded) {
                                     progressBottomSheet.show(fragmentManager!!, "progressBar")
                                 }
@@ -227,23 +229,15 @@ class MovieSourcesFragment : Fragment() {
         mListener = null
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     *
-     *
-     * See the Android Training lesson [Communicating with Other Fragments](http://developer.android.com/training/basics/fragments/communicating.html) for more information.
-     */
+
     interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         fun onFragmentInteraction(uri: Uri)
     }
 
     internal fun showConnectionError() {
-        if (progressBottomSheet.isVisible)
-            progressBottomSheet.dismiss()
+        if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
+            progressBottomSheet.dismissAllowingStateLoss()
         Toast.makeText(context, getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show()
     }
 

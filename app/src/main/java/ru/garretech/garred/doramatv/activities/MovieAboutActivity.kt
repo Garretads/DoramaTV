@@ -98,7 +98,7 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
 
             this.accessToken = movieInfo.getString("access_token");*/
             this.title = movieInfo.getString("title")
-            this.genres = movieInfo.getString("genres").substring(1, movieInfo.getString("genres").length - 1)
+            this.genres = movieInfo.getString("genres")
             this.imageURL = movieInfo.getString("image_url")
             this.movieURL = movieInfo.getString("url")
             this.accessToken = movieInfo.getString("access_token")
@@ -195,7 +195,7 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
                     }
 
                     override fun onComplete() {
-                        Log.d("Task", "Delete completable completed")
+                        Log.d("Task", "Subscribe to favorite changes completed")
                     }
 
                     override fun onError(e: Throwable) {
@@ -262,6 +262,11 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
 
     override fun onFragmentInteraction(uri: Uri) {
 
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        disposable.dispose()
     }
 
     internal fun emmitFavorite(value: Boolean) {
