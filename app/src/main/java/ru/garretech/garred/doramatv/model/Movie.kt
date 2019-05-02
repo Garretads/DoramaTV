@@ -16,17 +16,7 @@ import ru.garretech.garred.doramatv.tools.ListConverter
 
 @Entity
 class Movie
-/*info.put("title",name + " | " + eng_name + " | " + original_name);
-                        info.put("url",url);
-                        info.put("genres",genres.toString());
-                        info.put("image_url",image_url);
-                        info.put("initial_series",initialSeries);
-                        info.put("production",production);
-                        info.put("series_number",seriesNumber);
-                        info.put("duration",duration);
-                        info.put("description",description);
-                        info.put("age",age);
-*/
+
 (var title: String?, @field:TypeConverters(ListConverter::class)
 var genres: List<String>?, @field:ColumnInfo(name = "movie_image_url")
  var movieImageURL: String, @field:PrimaryKey

@@ -15,6 +15,7 @@ import ru.garretech.garred.doramatv.model.Movie
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
@@ -188,7 +189,7 @@ class SiteWorker {
         val ONGOING_PARAMS = arrayOf("sortType", "rate")
         val RANDOM_MOVIE_PREFIX = "/internal/random"
         private val OFFSET_PARAM = "offset"
-        private val TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/"
+        val TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/"
         val SIMPLE_QUERY = 0
         val SEARCH_QUERY = 1
         val EDITOR_CHOICE_QUERY = 2
@@ -340,7 +341,7 @@ class SiteWorker {
         fun getMovieInfo(URL: String): JSONObject {
             val info = JSONObject()
             val pageDownloader = PageDownloader()
-            val pageContent: Document
+            val pageContent: Document?
             var name = ""
             var eng_name = ""
             var original_name = ""
@@ -352,6 +353,11 @@ class SiteWorker {
             var production = ""
 
             pageContent = pageDownloader.execute(URL).get()
+
+            if (pageContent == null) {
+                throw NullPointerException()
+            }
+
             var tempElement: Element?
             var tempElements: Elements
             var initialSeries = pageContent.getElementsByClass("subject-actions col-sm-7").first().getElementsByTag("a").last().attr("href")
@@ -491,38 +497,30 @@ class SiteWorker {
         @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class)
         fun getSources(seriesList: JSONArray, URL: String, seriesIndex: Int): JSONArray {
 
-            /*
-        * class=right controls_447318 hide hidden-xs hidden-sm
-        *
-            Перевод: Озвучка
 
-        * */
-            val vkPattern = Pattern.compile("oid=(.?[\\d]+).+id=([\\d]+).+hash=(.+)\" a")
             val VOICE = "Озвучка"
             val SUBS = "Сабы"
             val SUBS_NORMAL = "Субтитры"
-            val TRANSLATION_PATTERN = "right controls_447318 hide hidden-xs hidden-sm"
-            var matcher: Matcher
             val ADULT_PREFIX = "?mtr=1"
             var pageDownloader: PageDownloader
             var pageContent: Document
-            var tempElement: Element?
-            val tempElements: Elements
             var translation: String? = null
 
             val oneSeriesSources = JSONArray()
             pageDownloader = PageDownloader()
 
             pageContent = pageDownloader.execute(URL + (seriesList.get(seriesIndex) as JSONObject).getString("link") + ADULT_PREFIX).get()
-            //Elements elements = pageContent.getElementsByClass("chapter-link");
+
+            if (pageContent == null) {
+                throw NullPointerException()
+            }
+
             val elements = pageContent.getElementsByClass("chapter")
             for (element1 in elements) {
                 val jsonObject = JSONObject()
                 val subUnit: String
                 val seriesID: String
-                val oid: String
-                val id: String
-                val hash: String
+                val sourceName : String
 
                 if (element1.getElementsByClass("person-link").first() != null)
                     subUnit = "Фансаб " + element1.getElementsByClass("person-link").first().text()
@@ -535,34 +533,21 @@ class SiteWorker {
                 else if (element1.text().contains(SUBS))
                     translation = SUBS_NORMAL
 
+                sourceName = element1.getElementsByClass("text-additional").first().text()
+                jsonObject.put("sources_name", sourceName)
+
+
                 seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid")
 
-                pageDownloader = PageDownloader()
-                pageContent = pageDownloader.execute(SiteWorker.TRAGUS_URL + seriesID).get()
-                tempElement = pageContent.getElementsByTag("iframe").first()
+                jsonObject.put("series_id", seriesID)
 
-                if (tempElement == null)
-                    continue
 
-                val tempURL = tempElement.toString()
+                if (translation != null)
+                    jsonObject.put("sub_unit", "$subUnit ($translation) ${sourceName}")
+                else
+                    jsonObject.put("sub_unit", "${subUnit} ${sourceName}")
 
-                if (tempURL.contains("vk.com")) {
-                    matcher = vkPattern.matcher(tempURL)
-                    if (matcher.find()) {
-                        oid = matcher.group(1)
-                        id = matcher.group(2)
-                        hash = matcher.group(3)
-
-                        if (translation != null)
-                            jsonObject.put("sub_unit", "$subUnit ($translation)")
-                        else
-                            jsonObject.put("sub_unit", subUnit)
-
-                        jsonObject.put("movie_id", oid + "_" + id)
-                        jsonObject.put("hash", hash)
-                        oneSeriesSources.put(jsonObject)
-                    }
-                }
+                oneSeriesSources.put(jsonObject)
             }
             return oneSeriesSources
         }

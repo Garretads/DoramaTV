@@ -58,14 +58,11 @@ class SearchRequest : AsyncTask<String, Void, Document>() {
                 }
 
             } catch (e: MalformedURLException) {
-
-                //resultString = "MalformedURLException:" + e.getMessage();
+               e.printStackTrace()
             } catch (e: IOException) {
-
-                //resultString = "IOException:" + e.getMessage();
+                e.printStackTrace()
             } catch (e: Exception) {
-
-                //resultString = "Exception:" + e.getMessage();
+                e.printStackTrace()
             }
 
         } catch (e: Exception) {

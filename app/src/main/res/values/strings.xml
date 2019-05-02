@@ -4,8 +4,6 @@
     <string name="about_application">О приложении</string>
     <string name="email_text_label">Email для предложений:</string>
     <string name="email_link">garretads@gmail.com</string>
-    <string name="forum_nick_label">Профиль на форуме ДорамаТВ: </string>
-    <string name="forum_nick">https://grouple.co/user/1576729</string>
     <string name="privacyText">Политика конфиденциальности</string>
     <string name="privacyLink">https://garretads.github.io/Garretads/</string>
     <string name="title_activity_movie_about">MovieAbout</string>

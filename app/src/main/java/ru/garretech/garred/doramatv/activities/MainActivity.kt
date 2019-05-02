@@ -4,15 +4,12 @@ import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.support.design.widget.NavigationView
 import android.support.v4.view.GravityCompat
 import android.support.v4.widget.DrawerLayout
@@ -22,6 +19,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -29,7 +27,10 @@ import android.widget.RelativeLayout
 import android.widget.Toast
 
 import com.chad.library.adapter.base.BaseQuickAdapter
-import com.google.android.gms.ads.*
+import com.crashlytics.android.Crashlytics
+import com.crashlytics.android.core.CrashlyticsCore
+import com.yandex.mobile.ads.*
+import io.fabric.sdk.android.Fabric
 
 import org.json.JSONException
 import org.json.JSONObject
@@ -42,12 +43,15 @@ import java.util.concurrent.ExecutionException
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
+import ru.garretech.garred.doramatv.BuildConfig
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.adapters.RecyclerAdapter
@@ -62,23 +66,112 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private var searchView: SearchView? = null
     private var newMovieAdapter: RecyclerAdapter? = null
-    private var progressBottomSheet: ProgressBottomSheet? = null
+    private lateinit var progressBottomSheet : ProgressBottomSheet
     private var conMgr: ConnectivityManager? = null
     private var mSiteWorker: SiteWorker? = null
     private var requestQuery: SiteWorker.RequestQuery? = null
     private var appDataSource: AppDataSource? = null
     private var observable: Observable<List<Movie>>? = null
-    private var getListMoviesObserver: CompletableObserver? = null
-    private var getOnLoadMoreObserver: CompletableObserver? = null
-    private var onLoadMoreConsumer: Consumer<List<Movie>>? = null
-    private var updateListConsumer: Consumer<List<Movie>>? = null
+
+    private val getListMoviesObserver by lazy {
+        object : CompletableObserver {
+            override fun onSubscribe(d: Disposable) {
+
+            }
+
+            override fun onComplete() {
+                observable!!
+                        .subscribeOn(Schedulers.io())
+                        .map { movies ->
+                            for (movie in movies) {
+                                var image: Bitmap?
+                                try {
+                                    image = SiteWorker.getCachedImage(applicationContext, movie.movieImageURL)
+                                } catch (e: FileNotFoundException) {
+                                    val imageDownloader = ImageDownloader()
+                                    image = imageDownloader.execute(movie.movieImageURL).get()
+                                    SiteWorker.saveImage(applicationContext, image!!, movie.movieImageURL)
+                                }
+
+                                movie.image = image
+                            }
+                            movies
+                        }
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(updateListConsumer!!)
+                //Log.d("Task", "get favorites completable completed");
+            }
+
+            override fun onError(e: Throwable) {
+
+            }
+        }
+    }
+
+    private val getOnLoadMoreObserver by lazy {
+        object : CompletableObserver {
+            override fun onSubscribe(d: Disposable) {
+
+            }
+
+            override fun onComplete() {
+                observable!!
+                        .subscribeOn(Schedulers.io())
+                        .map { movies ->
+                            for (movie in movies) {
+                                var image: Bitmap?
+                                try {
+                                    image = SiteWorker.getCachedImage(applicationContext, movie.movieImageURL)
+                                } catch (e: FileNotFoundException) {
+                                    val imageDownloader = ImageDownloader()
+                                    image = imageDownloader.execute(movie.movieImageURL).get()
+                                    SiteWorker.saveImage(applicationContext, image!!, movie.movieImageURL)
+                                }
+
+                                movie.image = image
+                            }
+                            movies
+                        }
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(onLoadMoreConsumer!!)
+                //Log.d("Task", "get favorites completable completed");
+            }
+
+            override fun onError(e: Throwable) {
+
+            }
+        }
+    }
+
+    private val onLoadMoreConsumer by lazy {
+        Consumer<List<Movie>> { movies ->
+            newMovieAdapter!!.addData(movies)
+            newMovieAdapter!!.loadMoreComplete()
+            mAdMobView.visibility = View.VISIBLE
+        }
+    }
+
+    private val updateListConsumer by lazy {
+        Consumer<List<Movie>> { movies ->
+            updateDataList(movies)
+
+            if (swipeContainer.isRefreshing) swipeContainer.isRefreshing = false
+
+            if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
+                progressBottomSheet.dismissAllowingStateLoss()
+        }
+    }
 
     private val mAdMobView: AdView by lazy { AdView(this) }
     private var mAdRequest: AdRequest? = null
     private var mAdViewContainer: RelativeLayout? = null
 
 
-    private val mBannerAdListener = object : AdListener() {
+    private val mBannerAdListener = object : AdEventListener {
+        override fun onAdFailedToLoad(p0: AdRequestError) {
+
+        }
+
         override fun onAdClosed() {
 
         }
@@ -89,7 +182,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         }
 
         override fun onAdLoaded() {
-            mAdMobView!!.visibility = View.VISIBLE
+            mAdMobView.visibility = View.VISIBLE
         }
 
         override fun onAdOpened() {
@@ -110,101 +203,21 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        //val crashlyticsKit = Crashlytics.Builder().core(CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build()).build()
+        //if (BuildConfig.DEBUG) Fabric.with(this, crashlyticsKit)
         setContentView(R.layout.activity_main)
         mSiteWorker = SiteWorker()
         appDataSource = AppDataSource(applicationContext)
-        MobileAds.initialize(this, "ca-app-pub-1453289229022558~3850061937")
+        progressBottomSheet = ProgressBottomSheet()
 
-        mAdViewContainer = findViewById<View>(R.id.relativeContainer) as RelativeLayout
-        initAdMobView()
-
-
-        updateListConsumer = Consumer { movies ->
-            //requestQuery = null;
-            updateDataList(movies)
-
-            if (swipeContainer.isRefreshing) swipeContainer.isRefreshing = false
-
-            if (progressBottomSheet!!.isAdded && progressBottomSheet!!.isVisible)
-                progressBottomSheet!!.dismissAllowingStateLoss()
-        }
-
-        onLoadMoreConsumer = Consumer { movies ->
-            newMovieAdapter!!.addData(movies)
-            newMovieAdapter!!.loadMoreComplete()
-        }
-
-        getListMoviesObserver = object : CompletableObserver {
-            override fun onSubscribe(d: Disposable) {
-
-            }
-
-            override fun onComplete() {
-                observable!!
-                    .subscribeOn(Schedulers.io())
-                    .map { movies ->
-                        for (movie in movies) {
-                            var image: Bitmap?
-                            try {
-                                image = SiteWorker.getCachedImage(applicationContext, movie.movieImageURL)
-                            } catch (e: FileNotFoundException) {
-                                val imageDownloader = ImageDownloader()
-                                image = imageDownloader.execute(movie.movieImageURL).get()
-                                SiteWorker.saveImage(applicationContext, image!!, movie.movieImageURL)
-                            }
-
-                            movie.image = image
-                        }
-                        movies
-                    }
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(updateListConsumer!!)
-                //Log.d("Task", "get favorites completable completed");
-            }
-
-            override fun onError(e: Throwable) {
-
-            }
-        }
-
-        getOnLoadMoreObserver = object : CompletableObserver {
-            override fun onSubscribe(d: Disposable) {
-
-            }
-
-            override fun onComplete() {
-                observable!!
-                    .subscribeOn(Schedulers.io())
-                    .map { movies ->
-                        for (movie in movies) {
-                            var image: Bitmap?
-                            try {
-                                image = SiteWorker.getCachedImage(applicationContext, movie.movieImageURL)
-                            } catch (e: FileNotFoundException) {
-                                val imageDownloader = ImageDownloader()
-                                image = imageDownloader.execute(movie.movieImageURL).get()
-                                SiteWorker.saveImage(applicationContext, image!!, movie.movieImageURL)
-                            }
-
-                            movie.image = image
-                        }
-                        movies
-                    }
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(onLoadMoreConsumer!!)
-                //Log.d("Task", "get favorites completable completed");
-            }
-
-            override fun onError(e: Throwable) {
-
-            }
-        }
+        mAdViewContainer = relativeContainer
+        //initAdMobView()
 
 
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        //requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         conMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        progressBottomSheet = ProgressBottomSheet()
         navigationView.setNavigationItemSelectedListener(this)
 
 
@@ -218,11 +231,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
 
             override fun onDrawerClosed(p0: View) {
-                mAdMobView?.visibility = View.VISIBLE
+                mAdMobView.visibility = View.VISIBLE
             }
 
             override fun onDrawerOpened(p0: View) {
-                mAdMobView?.visibility = View.GONE
+                mAdMobView.visibility = View.GONE
             }
 
         })
@@ -260,6 +273,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         newMovieAdapter!!.setLoadMoreView(CustomLoadMoreView())
 
 
+
+
         if (hasConnection()) {
             activityState = ACTIVITY_STATE.ONLINE
 
@@ -282,21 +297,15 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         } else
             showConnectionError()
 
-        refreshBannerAd()
+        //refreshBannerAd()
     }
 
 
     private fun initAdMobView() {
+        mAdMobView.adSize = AdSize.flexibleSize()
 
-        mAdMobView.adSize = AdSize.BANNER
-        mAdMobView.adUnitId = "ca-app-pub-1453289229022558/5432475024"
-
-        /*
-          Replace AD_UNIT_ID with your unique Ad Unit ID.
-          Please, read official documentation how to obtain one: https://apps.admob.com
-        */
-        //mAdMobView!!.blockId = Settings.block_id()
-        mAdMobView!!.adListener = mBannerAdListener
+        mAdMobView.blockId = Settings.block_id()
+        mAdMobView.adEventListener = mBannerAdListener
 
         mAdRequest = AdRequest.Builder().build()
 
@@ -307,8 +316,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     }
 
     private fun refreshBannerAd() {
-        mAdMobView!!.visibility = View.INVISIBLE
-        mAdMobView!!.loadAd(mAdRequest)
+        mAdMobView.visibility = View.INVISIBLE
+        mAdMobView.loadAd(mAdRequest)
     }
 
 
@@ -326,6 +335,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 // Поиск дорам
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
+
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
+                    }
 
                     Completable.fromCallable {
                         try {
@@ -348,10 +361,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     title = getString(R.string.search_hint) + ": $queryString"
 
-                    //newMovieAdapter!!.clear()
-                    if (!progressBottomSheet!!.isAdded) {
-                        progressBottomSheet!!.show(supportFragmentManager, "progressBar")
-                    }
 
                     if (!searchView!!.isIconified) {
                         searchView!!.isIconified = true
@@ -402,6 +411,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
 
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
+                    }
+
                     Completable.fromCallable {
                     try {
                         requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.EDITOR_CHOICE_QUERY)
@@ -427,6 +440,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
 
+
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
+                    }
+
                     Completable.fromCallable {
                         try {
                             val params = HashMap<String, String>()
@@ -448,9 +466,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     title = getString(R.string.new_movie_title)
 
                     //newMovieAdapter!!.clear()
-                    if (!progressBottomSheet!!.isAdded) {
-                        progressBottomSheet!!.show(supportFragmentManager, "progressBar")
-                    }
                 } else
                     showConnectionError();
             }
@@ -458,6 +473,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
+
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
+                    }
 
                     Completable.fromCallable {
                         try {
@@ -477,9 +496,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     title = getString(R.string.best_movie_title)
 
                     //newMovieAdapter!!.clear()
-                    if (!progressBottomSheet!!.isAdded) {
-                        progressBottomSheet!!.show(supportFragmentManager, "progressBar")
-                    }
                 } else
                     showConnectionError();
             }
@@ -488,6 +504,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
+
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
+                    }
 
                     Completable.fromCallable {
                         try {
@@ -509,10 +529,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                             .subscribe(getListMoviesObserver!!)
                     title = getString(R.string.ongoing_title)
 
-                    //newMovieAdapter!!.clear()
-                    if (!progressBottomSheet!!.isAdded) {
-                        progressBottomSheet!!.show(supportFragmentManager, "progressBar")
-                    }
+
                 } else
                     showConnectionError();
             }
@@ -520,36 +537,28 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 if (hasConnection()) {
 
-                    val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
 
-                    Handler().postDelayed({
-
-                        var jsonObject: JSONObject?
-
-                        try {
-                            jsonObject = SiteWorker.getMovieInfo(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX)
-                            jsonObject.put("access_token", Settings.access_token())
-
-                            intent.putExtra("movie_info", jsonObject.toString())
-
-                            if (progressBottomSheet!!.isAdded && progressBottomSheet!!.isVisible)
-                                progressBottomSheet!!.dismissAllowingStateLoss()
-
-                            startActivity(intent)
-
-                        } catch (e: JSONException) {
-                            e.printStackTrace()
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: ExecutionException) {
-                            showConnectionError()
-                        } catch (e: NullPointerException) {
-                            showConnectionError()
-                        }
-                    }, 0)
-                    if (!progressBottomSheet!!.isAdded) {
-                        progressBottomSheet!!.show(supportFragmentManager, "progressBar")
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
                     }
+
+
+                    getMovieRequestSingle(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX).observeOn(AndroidSchedulers.mainThread())
+                            .subscribeOn(Schedulers.io())
+                            .subscribe( { json ->
+                                val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
+
+                                intent.putExtra("movie_info", json.toString())
+
+                                if (progressBottomSheet.isAdded)
+                                    progressBottomSheet.dismissAllowingStateLoss()
+
+                                startActivity(intent)
+                            }, { error ->
+                                Log.d("Error occured",error.localizedMessage)
+                            })
+
+
                 } else
                     showConnectionError();
             }
@@ -589,16 +598,18 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 title = getString(R.string.action_favorite)
 
-            }//Toast.makeText(getApplicationContext(), "Функция в разработке", Toast.LENGTH_LONG).show();
+            }
+
             R.id.nav_history -> {
                 Toast.makeText(applicationContext, "Функция в разработке", Toast.LENGTH_LONG).show()
             }
+
             R.id.nav_about -> {
                 val intent = Intent(this@MainActivity, AboutApplicationActivity::class.java)
                 startActivity(intent)
             }
-            else -> {
-            }
+
+            else -> { }
         }
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
@@ -619,7 +630,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             if (resultCode == Activity.RESULT_OK) {
                 val resultPrefix = data!!.getStringExtra("link")
                 val genreName = data.getStringExtra("name")
+
                 progressBottomSheet = ProgressBottomSheet()
+
 
                 Completable.fromCallable {
                     try {
@@ -638,85 +651,79 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                         .subscribe(getListMoviesObserver!!)
 
                 setTitle(genreName.substring(0, 1).toUpperCase() + genreName.substring(1))
-                //newMovieAdapter!!.clear()
             }
         }
     }
 
 
     public override fun onPause() {
-        mAdMobView?.pause()
+        mAdMobView.pause()
         super.onPause()
+
+        if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
+            progressBottomSheet.dismissAllowingStateLoss()
     }
 
     /** Called when returning to the activity  */
     public override fun onResume() {
         super.onResume()
 
-        if (progressBottomSheet!!.isResumed || progressBottomSheet!!.isVisible)
-            progressBottomSheet!!.dismissAllowingStateLoss()
+        if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
+            progressBottomSheet.dismissAllowingStateLoss()
 
-        mAdMobView?.resume()
+        //mAdMobView?.resume()
+        refreshBannerAd()
     }
 
 
 
     /** Called before the activity is destroyed  */
     public override fun onStop() {
-        mAdMobView?.destroy()
+        mAdMobView.pause()
         super.onStop()
+
+        if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
+            progressBottomSheet.dismissAllowingStateLoss()
     }
 
 
     override fun onItemClick(adapter: BaseQuickAdapter<*, *>, view: View, position: Int) {
         val selectedMovie = newMovieAdapter!!.data[position]
-        val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
         if (hasConnection()) {
-            Handler().postDelayed({
+            //Handler().postDelayed({
 
                 val jsonObject: JSONObject
-
-                try {
-                    jsonObject = SiteWorker.getMovieInfo(selectedMovie.url)
-
-                    selectedMovie.title = jsonObject.getString("title")
-                    selectedMovie.initialSeries = jsonObject.getString("initial_series")
-                    selectedMovie.productionCountry = jsonObject.getString("production")
-                    selectedMovie.seriesNumber = jsonObject.getString("series_number")
-                    selectedMovie.duration = jsonObject.getString("duration")
-                    selectedMovie.description = jsonObject.getString("description")
-                    selectedMovie.productionYear = jsonObject.getString("age")
-                    //jsonObject.put("title", selectedMovie.getTitle());
-                    //jsonObject.put("genres", selectedMovie.getGenres().toString());
-                    //jsonObject.put("image_url", selectedMovie.getMovieImageURL());
-                    //jsonObject.put("url", selectedMovie.getURL());
-                    jsonObject.put("access_token", Settings.access_token())
-
-                    val bundle = Bundle()
-
-                    bundle.putSerializable("movie", selectedMovie)
-
-                    intent.putExtra("bundle", bundle)
-                    intent.putExtra("movie_info", jsonObject.toString())
-
-                    if (progressBottomSheet!!.isAdded)
-                        progressBottomSheet!!.dismissAllowingStateLoss()
-
-                    startActivity(intent)
-
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                } catch (e: ExecutionException) {
-                    showConnectionError()
-                } catch (e: NullPointerException) {
-                    showConnectionError()
-                }
-            }, 100)
-            if (!progressBottomSheet!!.isAdded) {
-                progressBottomSheet!!.show(supportFragmentManager, "progressBar")
+            if (!progressBottomSheet.isAdded) {
+                progressBottomSheet.show(supportFragmentManager, "progressBar")
             }
+
+            getMovieRequestSingle(selectedMovie.url).observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe( { json ->
+                        val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
+                        selectedMovie.title = json.getString("title")
+                        selectedMovie.initialSeries = json.getString("initial_series")
+                        selectedMovie.productionCountry = json.getString("production")
+                        selectedMovie.seriesNumber = json.getString("series_number")
+                        selectedMovie.duration = json.getString("duration")
+                        selectedMovie.description = json.getString("description")
+                        selectedMovie.productionYear = json.getString("age")
+
+                        val bundle = Bundle()
+
+                        bundle.putSerializable("movie", selectedMovie)
+
+                        intent.putExtra("bundle", bundle)
+                        intent.putExtra("movie_info", json.toString())
+
+                        if (progressBottomSheet.isAdded)
+                            progressBottomSheet.dismissAllowingStateLoss()
+
+                        startActivity(intent)
+                    }, { error ->
+                        Log.d("Error occured",error.localizedMessage)
+                    })
+
         } else
             showConnectionError()
 
@@ -728,10 +735,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             if (requestQuery != null) {
 
                 if (requestQuery!!.offset() >= requestQuery!!.queryAmount()) {
-                    // Все данные загружены
-                   newMovieAdapter!!.setEnableLoadMore(false)
+                    newMovieAdapter!!.loadMoreComplete()
+                    newMovieAdapter!!.setEnableLoadMore(false)
                 } else {
                     if (hasConnection()) {
+                        mAdMobView.visibility = View.GONE
 
                         Completable.fromCallable {
                             try {
@@ -755,10 +763,14 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     }
                 }
-            } else
+            } else {
+                if (newMovieAdapter!!.isLoading) newMovieAdapter!!.loadMoreComplete()
                 newMovieAdapter!!.setEnableLoadMore(false)
-        } else
+            }
+        } else {
+            if (newMovieAdapter!!.isLoading) newMovieAdapter!!.loadMoreComplete()
             newMovieAdapter!!.setEnableLoadMore(false)
+        }
     }
 
 
@@ -787,6 +799,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                         null
                     }.subscribeOn(Schedulers.io())
                             .subscribe(getListMoviesObserver!!)
+                    refreshBannerAd()
                 } else {
                     showConnectionError()
                 }
@@ -806,7 +819,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
         newMovieAdapter!!.addAll(list)
         movieListRecyclerView!!.recycledViewPool.clear()
-        movieListRecyclerView!!.scrollToPosition(0)
+
+        if (newMovieAdapter!!.data.size != 0)
+            movieListRecyclerView!!.scrollToPosition(0)
 
         if (activityState == ACTIVITY_STATE.ONLINE) {
             if (requestQuery != null && requestQuery!!.offset() < requestQuery!!.queryAmount())
@@ -820,7 +835,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     }
 
     internal fun hasConnection(): Boolean {
-        return conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).state == NetworkInfo.State.CONNECTED || conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI).state == NetworkInfo.State.CONNECTED
+        //return conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).state == NetworkInfo.State.CONNECTED || conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI).state == NetworkInfo.State.CONNECTED
+        return true
     }
 
 
@@ -833,5 +849,13 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             outRect.bottom = bottomOffset
         }
 
+    }
+
+    fun getMovieRequestSingle(url: String) : Single<JSONObject> {
+        return Single.create<JSONObject> { observer ->
+            val jsonObject = SiteWorker.getMovieInfo(url)
+
+            observer.onSuccess(jsonObject)
+        }
     }
 }

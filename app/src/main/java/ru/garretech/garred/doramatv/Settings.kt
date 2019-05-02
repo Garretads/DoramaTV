@@ -5,16 +5,16 @@ package ru.garretech.garred.doramatv
  */
 
 object Settings {
-    private val client_id = "6863889"
-    private val api_scope = "video,offline"
-    private val api_display = "mobile"
-    private val api_redirect_uri = "ttp://api.vk.com/blank.html"
-    private val api_secret_key = "HMIqzRPUL4Shf9eOnjan"
-    private val api_response_type = "token"
-    private val version = "5.92"
-    private val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
-    private val max_loaded_in_screen = 15
-    private val BLOCK_ID = "adf-304149/991383"
+    const val client_id = "6863889"
+    const val api_scope = "video,offline"
+    const val api_display = "mobile"
+    const val api_redirect_uri = "ttp://api.vk.com/blank.html"
+    const val api_secret_key = "HMIqzRPUL4Shf9eOnjan"
+    const val api_response_type = "token"
+    const val version = "5.92"
+    const val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
+    const val max_loaded_in_screen = 15
+    const val BLOCK_ID = "adf-304149/991383"
 
     fun vk_api_id(): String {
         return client_id

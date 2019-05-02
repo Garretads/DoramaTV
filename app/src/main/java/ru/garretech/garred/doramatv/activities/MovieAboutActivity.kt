@@ -32,20 +32,15 @@ import org.json.JSONObject
 import java.util.Arrays
 
 import kotlinx.android.synthetic.main.activity_movie_about.*
+import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
 
 class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInteractionListener, MovieSourcesFragment.OnFragmentInteractionListener {
 
 
-    /*@BindView(R.id.toolbar)
-    internal var toolbar: Toolbar? = null
-    @BindView(R.id.viewPager)
-    internal var viewPager: ViewPager? = null
-    @BindView(R.id.tabLayout)
-    internal var tabLayout: TabLayout? = null*/
+
     internal lateinit var mFragmentAdapter: MovieAboutPagerAdapter
     internal lateinit var movieInfo: JSONObject
-    internal var sources: JSONArray? = null
     internal lateinit var title: String
     internal lateinit var age: String
     internal lateinit var genres: String
@@ -55,24 +50,27 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
     internal lateinit var description: String
     internal lateinit var imageURL: String
     internal lateinit var movieURL: String
-    internal lateinit var accessToken: String
     internal lateinit var initialSeries: String
     internal lateinit var currentMovie: Movie
     internal lateinit var dataSource: AppDataSource
     internal var isFavorite: Boolean = false
     internal var observable: Subject<Boolean> = PublishSubject.create()
-    internal lateinit var disposable: Disposable
+    internal var disposable: Disposable? = null
     internal lateinit var optionsMenu: Menu
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_movie_about)
-        //ButterKnife.bind(this)
         val intent = intent
         dataSource = AppDataSource(applicationContext)
         try {
-            movieInfo = JSONObject(intent.getStringExtra("movie_info"))
+            var movieInfoString : String? = intent.getStringExtra("movie_info")
+
+            if (movieInfoString == null)
+                throw NullPointerException()
+
+            movieInfo = JSONObject(movieInfoString!!)
 
 
             /*
@@ -83,25 +81,12 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
             * Занесение фильма в избранное.
             * Опять completable. С помощью него фильм заносится в БД.
             * */
-            /*
 
-            this.title = currentMovie.getTitle();
-            this.genres = currentMovie.getGenres().toString().substring(1,currentMovie.getGenres().toString().length()-1);
-            this.imageURL = currentMovie.getMovieImageURL();
-            this.movieURL = currentMovie.getURL();
-            this.age = currentMovie.getProductionYear();
-            this.description = currentMovie.getDescription();
-            this.initialSeries = currentMovie.getInitialSeries();
-            this.production = currentMovie.getProductionCountry();
-            this.seriesNumber = currentMovie.getSeriesNumber();
-            this.duration = currentMovie.getDuration();
 
-            this.accessToken = movieInfo.getString("access_token");*/
             this.title = movieInfo.getString("title")
             this.genres = movieInfo.getString("genres")
             this.imageURL = movieInfo.getString("image_url")
             this.movieURL = movieInfo.getString("url")
-            this.accessToken = movieInfo.getString("access_token")
             this.age = movieInfo.getString("age")
             this.description = movieInfo.getString("description")
             this.initialSeries = movieInfo.getString("initial_series")
@@ -124,6 +109,8 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
 
         } catch (e: JSONException) {
             e.printStackTrace()
+        } catch (e: NullPointerException) {
+            finish()
         }
 
         setupViewPager(viewPager)
@@ -142,7 +129,6 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
         try {
             val sourcesInfo = JSONObject()
             sourcesInfo.put("url", movieURL)
-            sourcesInfo.put("access_token", accessToken)
             sourcesInfo.put("initial_series", initialSeries)
             mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме")
             mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники")
@@ -266,7 +252,7 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
 
     override fun onDestroy() {
         super.onDestroy()
-        disposable.dispose()
+        disposable?.dispose()
     }
 
     internal fun emmitFavorite(value: Boolean) {

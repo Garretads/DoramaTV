@@ -68,7 +68,7 @@ class GenresActivity : AppCompatActivity() {
             }*/
 
             genresListView.setAdapter(arrayAdapter)
-            genresListView.onItemClickListener = AdapterView.OnItemClickListener { adapterView, view, i, l ->
+            genresListView.onItemClickListener = AdapterView.OnItemClickListener { _, _, i, _ ->
                 try {
                     val data = Intent()
                     data.putExtra("link", (genresArray!!.get(i) as JSONObject).getString("link"))

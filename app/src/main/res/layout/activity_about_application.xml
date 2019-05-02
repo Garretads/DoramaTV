@@ -52,23 +52,6 @@
 
 
         <TextView
-            android:id="@+id/nick_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="5dp"
-            android:text="@string/forum_nick_label"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/nickLink"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:autoLink="web"
-            android:linksClickable="true"
-            android:text="@string/forum_nick"
-            android:textSize="20sp" />
-
-        <TextView
             android:id="@+id/privacyPolicyText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -15,6 +15,7 @@ class ProgressBottomSheet : BottomSheetDialogFragment() {
         return inflater.inflate(R.layout.bottom_sheet_progress, container, false)
     }
 
+
     override fun dismissAllowingStateLoss() {
         if (fragmentManager != null) super.dismissAllowingStateLoss()
     }
