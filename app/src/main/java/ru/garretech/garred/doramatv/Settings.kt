@@ -13,7 +13,7 @@ object Settings {
     const val api_response_type = "token"
     const val version = "5.92"
     const val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
-    const val max_loaded_in_screen = 15
+    var max_loaded_in_screen = 15
     const val BLOCK_ID = "adf-304149/991383"
 
     fun vk_api_id(): String {

@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 
 import io.reactivex.Observable
+import okhttp3.*
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
@@ -95,15 +96,19 @@ class SiteWorker {
                     }
 
                     SEARCH_QUERY -> {
-
-                        val searchRequest = SearchRequest()
+                        val client = OkHttpClient()
 
                         uriQuery = standartUri
                         uriQuery!!.appendPath(path)
 
                         parameters!![OFFSET_PARAM] = currentOffset.toString()
 
-                        val pageContent = searchRequest.execute(uriQuery!!.toString(), parameters!!["q"], parameters!![OFFSET_PARAM]).get()
+                        val request = searchRequest(uriQuery!!.toString(), parameters!!["q"], parameters!![OFFSET_PARAM])
+
+                        val response = client.newCall(request).execute()
+                        val responseString = response.body()?.string()
+
+                        val pageContent = Jsoup.parse(responseString)
 
                         if (queryAmount == -1)
                             queryAmount = getMaxSearchElementCount(pageContent)
@@ -111,6 +116,7 @@ class SiteWorker {
                         val result = movieListContentParse(context, pageContent, limit)
 
                         val resultArray = result["list"] as List<Movie>
+
                         list?.addAll(resultArray)
 
                         currentOffset += (result["offset"] as Int?)!!
@@ -179,8 +185,8 @@ class SiteWorker {
     }
 
     companion object {
-        val SITE_URL = "http://doramatv.ru"
-        private val SITE_URL1 = "doramatv.ru"
+        val SITE_URL = "http://doramatv.me"
+        private val SITE_URL1 = "doramatv.me"
         private val editorChoice = "row tiles-row short"
         val NEW_MOVIES_PARAMS = arrayOf("sortType", "created")
         val LIST_PREFIX = "list"
@@ -208,10 +214,11 @@ class SiteWorker {
 
             val element = pageContent.getElementById("mangaResults").getElementsByTag("h3").first()
 
-            matcher = pattern.matcher(element.text())
-
-            if (matcher.find())
-                resultAmount = Integer.valueOf(matcher.group(1))
+            if (element != null) {
+                matcher = pattern.matcher(element.text())
+                if (matcher.find())
+                    resultAmount = Integer.valueOf(matcher.group(1))
+            }
 
             return resultAmount
         }
@@ -633,6 +640,16 @@ class SiteWorker {
             fis.close()
 
             return image
+        }
+
+        @Throws(Exception::class)
+        fun searchRequest(vararg params : String?) : Request {
+            val body = FormBody.Builder()
+                    .addEncoded("q",params[1]!!)
+                    .addEncoded("offset",params[2]!!)
+                    .build()
+
+            return Request.Builder().url(params[0]!!).post(body).build()
         }
     }
 

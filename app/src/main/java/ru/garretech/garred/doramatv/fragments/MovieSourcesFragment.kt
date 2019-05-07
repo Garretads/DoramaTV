@@ -65,7 +65,6 @@ class MovieSourcesFragment : Fragment() {
                         var funSubList = ArrayList<String>()
                         funSubList.add(backSymbolText + (seriesList.get(i) as JSONObject).getString("name"))
                         for (index in 0 until sourcesArray.length()) {
-
                             val jsonObject = sourcesArray.get(index) as JSONObject
                             funSubList.add(jsonObject.getString("sub_unit"))
                         }
@@ -116,7 +115,7 @@ class MovieSourcesFragment : Fragment() {
                                 val vkPattern = Pattern.compile("oid=(.?[\\d]+).+id=([\\d]+).+hash=(.+)\" a")
                                 val sourceName = jsonObject.getString("sources_name")
                                 val seriesId = jsonObject.getString("series_id")
-                                var vkMovieId: String? = null
+                                var vkMovieId: String?
 
                                 if (sourceName.contains("vk.com")) {
 
@@ -285,4 +284,4 @@ class MovieSourcesFragment : Fragment() {
             return fragment
         }
     }
-}// Required empty public constructor
+} // Required empty public constructor

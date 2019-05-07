@@ -9,16 +9,22 @@ import ru.garretech.garred.doramatv.model.Movie
 class RecyclerAdapter(layoutResId: Int, data: List<Movie>?) : BaseQuickAdapter<Movie, BaseViewHolder>(layoutResId, data) {
 
     override fun addData(data: Movie) {
-        super.addData(data)
+        synchronized(this) {
+            super.addData(data)
+            notifyDataSetChanged()
+        }
     }
 
     fun addAll(movies: Collection<Movie>) {
         data.clear()
         var index = 0
-        for (movie in movies) {
-            data.add(movie)
-            notifyItemInserted(index)
-            index++
+        synchronized(this) {
+            for (movie in movies) {
+                data.add(movie)
+                notifyItemInserted(index)
+                index++
+            }
+            notifyDataSetChanged()
         }
     }
 
@@ -28,7 +34,7 @@ class RecyclerAdapter(layoutResId: Int, data: List<Movie>?) : BaseQuickAdapter<M
     }
 
     override fun convert(helper: BaseViewHolder, item: Movie) {
-        helper.setText(R.id.movie_title, item.title)
-        helper.setImageBitmap(R.id.movie_photo, item.image)
+        helper.setText(R.id.movieTitleNew, item.title)
+        helper.setImageBitmap(R.id.moviePhotoNew, item.image)
     }
 }

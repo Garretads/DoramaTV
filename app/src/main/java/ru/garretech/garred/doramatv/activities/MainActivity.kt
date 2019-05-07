@@ -4,10 +4,12 @@ import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.os.Build
 import android.os.Bundle
 import android.support.design.widget.NavigationView
@@ -16,9 +18,11 @@ import android.support.v4.widget.DrawerLayout
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -61,6 +65,7 @@ import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet
 import ru.garretech.garred.doramatv.model.Movie
 import ru.garretech.garred.doramatv.tools.ImageDownloader
 import ru.garretech.garred.doramatv.tools.SiteWorker
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener {
 
@@ -204,8 +209,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //val crashlyticsKit = Crashlytics.Builder().core(CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build()).build()
-        //if (BuildConfig.DEBUG) Fabric.with(this, crashlyticsKit)
         setContentView(R.layout.activity_main)
         mSiteWorker = SiteWorker()
         appDataSource = AppDataSource(applicationContext)
@@ -217,6 +220,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
         //requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         conMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
 
         navigationView.setNavigationItemSelectedListener(this)
 
@@ -254,18 +258,20 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         }
 
 
-        movieListRecyclerView!!.layoutManager = object : LinearLayoutManager(this) {
-            override fun supportsPredictiveItemAnimations(): Boolean {
-                return false
-            }
-        }
+        val metrics = resources.displayMetrics
+        var spanCount = Math.ceil((metrics.widthPixels / 240).toDouble()).toInt()
+        Settings.max_loaded_in_screen = spanCount * 4
+
+        movieListRecyclerView!!.layoutManager = GridLayoutManager(this,spanCount)
+
+
         movieListRecyclerView!!.setHasFixedSize(true)
 
         val toggle = ActionBarDrawerToggle(this, drawerLayout, toolbarActionBar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        newMovieAdapter = RecyclerAdapter(R.layout.fragment_movie, ArrayList())
+        newMovieAdapter = RecyclerAdapter(R.layout.fragment_movie_new, ArrayList())
         movieListRecyclerView!!.adapter = newMovieAdapter
         newMovieAdapter!!.onItemClickListener = this
         newMovieAdapter!!.setOnLoadMoreListener(this, movieListRecyclerView)
@@ -834,10 +840,12 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         Toast.makeText(applicationContext, getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show()
     }
 
-    internal fun hasConnection(): Boolean {
-        //return conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).state == NetworkInfo.State.CONNECTED || conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI).state == NetworkInfo.State.CONNECTED
-        return true
-    }
+
+    internal fun hasConnection() : Boolean {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val ni = cm.getActiveNetworkInfo()
+        return ni.isConnected
+}
 
 
     internal inner class CustomDivider(val mDivider: Drawable, val topOffset: Int, val bottomOffset: Int) : RecyclerView.ItemDecoration() {

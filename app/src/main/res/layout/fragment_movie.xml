@@ -7,9 +7,7 @@
     android:layout_height="wrap_content"
     app:cardBackgroundColor="@color/cardview_dark_background"
     android:background="@color/colorPrimaryDark"
-    tools:background="@color/colorPrimaryDark"
-    android:focusable="true"
-    android:focusableInTouchMode="true">
+    tools:background="@color/colorPrimaryDark">
 
     <RelativeLayout
         android:layout_width="match_parent"
