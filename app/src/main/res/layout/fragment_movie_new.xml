@@ -3,12 +3,15 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:cardview="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        android:focusable="true"
         android:clickable="true"
         android:foreground="?android:attr/selectableItemBackground"
         android:layout_width="110dp"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        cardview:cardCornerRadius="4dp">
+        cardview:cardCornerRadius="4dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        cardview:cardBackgroundColor="#2F2F2F">
 
     <ImageView
             android:layout_width="match_parent"
@@ -16,17 +19,19 @@
             android:scaleType="centerCrop"
             android:background="#2d2d2d"
             android:id="@+id/moviePhotoNew"/>
+
     <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_shape"
-            android:textSize="13sp"
-            android:layout_margin="1dp"
-            android:layout_gravity="bottom"
-            android:gravity="bottom"
-            android:text="@string/new_movie_title"
-            android:id="@+id/movieTitleNew"
-            android:textAlignment="center"/>
+        android:id="@+id/movieTitleNew"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="1dp"
+        android:background="@drawable/rounded_shape"
+        android:gravity="bottom"
+        android:text="@string/list_movie_title"
+        android:textAlignment="center"
+        android:textColor="@android:color/background_light"
+        android:textSize="13sp" />
 
 
 </android.support.v7.widget.CardView>

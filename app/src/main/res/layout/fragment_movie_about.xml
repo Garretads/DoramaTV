@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     tools:context=".fragments.MovieAboutFragment"
-    android:id="@+id/movie_about_fragment">
+    android:id="@+id/movie_about_fragment"
+    android:background="?attr/colorPrimary">
 <ScrollView
     android:layout_width="match_parent"
     android:layout_height="wrap_content">

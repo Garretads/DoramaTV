@@ -54,8 +54,7 @@
         <activity
             android:name=".activities.GenresActivity"
             android:label="@string/title_activity_genres"
-            android:parentActivityName=".activities.MainActivity"
-            android:theme="@style/NoActionBar">
+            android:parentActivityName=".activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ru.garretech.garred.doramatv.activities.MainActivity" />
@@ -64,8 +63,7 @@
         <activity
             android:name=".activities.MovieAboutActivity"
             android:label="@string/title_activity_movie_about"
-            android:parentActivityName=".activities.MainActivity"
-            android:theme="@style/NoActionBar">
+            android:parentActivityName=".activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ru.garretech.garred.doramatv.activities.MainActivity" />

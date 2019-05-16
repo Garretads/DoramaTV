@@ -5,22 +5,19 @@
         <menu>
         <item
             android:id="@+id/nav_editorchoice"
-            android:title="@string/editor_choice_title" />
+            android:title="@string/editor_choice_title"/>
         <item
-            android:id="@+id/nav_new"
-            android:title="@string/new_movie_title" />
-        <item
-            android:id="@+id/nav_best"
-            android:title="@string/best_movie_title" />
+            android:id="@+id/nav_list"
+            android:title="@string/list_movie_title"/>
         <item
             android:id="@+id/nav_ongoing"
-            android:title="@string/ongoing_title" />
+            android:title="@string/ongoing_title"/>
             <item
                 android:id="@+id/nav_random"
-                android:title="@string/random_movie_title" />
+                android:title="@string/random_movie_title"/>
         <item
             android:id="@+id/nav_genres"
-            android:title="@string/genres_title" />
+            android:title="@string/genres_title"/>
         </menu>
     </item>
 

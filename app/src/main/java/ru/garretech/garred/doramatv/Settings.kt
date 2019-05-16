@@ -16,25 +16,6 @@ object Settings {
     var max_loaded_in_screen = 15
     const val BLOCK_ID = "adf-304149/991383"
 
-    fun vk_api_id(): String {
-        return client_id
-    }
-
-    fun vk_api_scope(): String {
-        return api_scope
-    }
-
-    fun vk_api_display(): String {
-        return api_display
-    }
-
-    fun vk_api_redirect_uri(): String {
-        return api_redirect_uri
-    }
-
-    fun vk_api_response_type(): String {
-        return api_response_type
-    }
 
     fun version(): String {
         return version

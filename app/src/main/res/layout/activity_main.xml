@@ -6,7 +6,8 @@
     android:id="@+id/relativeContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activities.MainActivity">
+    tools:context=".activities.MainActivity"
+    android:background="?attr/colorPrimary">
 
 
     <include layout="@layout/toolbar"/>
@@ -28,6 +29,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:descendantFocusability="afterDescendants"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
     </android.support.v4.widget.SwipeRefreshLayout>
@@ -44,13 +47,5 @@
 
 
     </android.support.v4.widget.DrawerLayout>
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:visibility="gone" />
 
 </RelativeLayout>

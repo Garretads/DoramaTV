@@ -5,11 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 
 import io.reactivex.Observable
 import okhttp3.*
-import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
 
@@ -21,7 +19,6 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
 
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -165,6 +162,9 @@ class SiteWorker {
             parameters = HashMap()
         }
 
+        fun requestUri() : Uri.Builder? {
+            return uriQuery
+        }
 
         fun queryAmount(): Int {
             return queryAmount
@@ -499,6 +499,146 @@ class SiteWorker {
             result["list"] = movieList
             result["offset"] = Integer.valueOf(iteration)
             return result
+        }
+
+        @Throws(NullPointerException::class)
+        fun getSortingParams(uri: Uri) : JSONArray{
+            /*
+            * sortType = name,rate,votes,created,updated
+            (По алфавиту,по популярности,по рейтингу,новинки,по дате добавления)
+            filter = high_rate,single,mature,completed,translated,many_chapters,wait_upload
+            (Все,Высокий рейтинг,Полнометражка,Для взрослых,Завершенная,Переведено,Длинная,Ожидает загрузки)
+
+            Выбор жанра /genre/%жанр
+
+            Выбор страны /country/%страна : vetnam, hong_kong, indoneziia, china, malaiziia, north_korea, singapore, thailand, taiwan, philippines, south_korea, japan
+
+            Прочее /tags/%тэг : web, stopped, mini_drama, ongoing, omnibus, coming_soon
+
+            Рубрики : страна, жанр, прочее (/country/%страна, /genre/%жанр, /tags/%тэг)
+
+            Модификаторы : сортировка, фильтр (sortType, filter)
+
+            * Сам объект массив параметров с возможными значениями
+            * Один элемент содержит:
+            * sortingName =
+            * type = prefix, param
+            * key = /genre/, /tags/, /country/, sortType, filter
+            * values = { , , }
+            * translatedValues = { , , }
+            * */
+
+            var pageDownloader: PageDownloader
+            var pageContent: Document
+            var sortingContent : Element
+            var tempElements : Elements
+            val firstParamPattern = Pattern.compile("\\?(\\w+)=(\\w+)")
+            val secondParamPattern = Pattern.compile("\\&(\\w+)=(\\w+)")
+            val prefixPattern = Pattern.compile("\\/(\\w+)\\/(\\w+)\\?")
+
+
+
+            pageDownloader = PageDownloader()
+            pageContent = pageDownloader.execute(uri.toString()).get()
+
+            if (pageContent == null) {
+                throw NullPointerException()
+            }
+
+            sortingContent = pageContent.getElementsByClass("rightContent").first()
+            // Формируем список возможных параметров (список хранится в теге ul)
+            tempElements = sortingContent.getElementsByTag("ul")
+
+            var index = 0
+            val sortingVarJsonArray = JSONArray()
+            val selectedOptionsJsonArray = JSONArray()
+            for (element in tempElements) {
+                val jsonObject = JSONObject()
+                val loopElements = element.getElementsByTag("li")
+                val selectedElements = element.getElementsByClass("listSelected")
+                var name : String
+
+                // Собираем основную информацию для json объекта
+                /* sortingName =
+                * type = prefix, param
+                * isSelected
+                * key = /genre/, /tags/, /country/, sortType, filter
+                * */
+
+                val element1 = loopElements.last().getElementsByTag("a")
+                val link = element1.attr("href")
+                var matcher : Matcher
+
+                name = when (index)  {
+                    0 -> "Сортировка"
+                    1 -> "Фильтр"
+                    2 -> "Жанры"
+                    3 -> "Страны"
+                    4 -> "Прочее"
+                    else -> ""
+                }
+
+                matcher = when(index) {
+                    0 -> firstParamPattern.matcher(link)
+                    1 -> secondParamPattern.matcher(link)
+                    2,3,4 -> prefixPattern.matcher(link)
+                    else -> firstParamPattern.matcher(link)
+                }
+
+
+                if (matcher.find()) {
+                    jsonObject.put("sortingName", name)
+
+                    if (index < 2)
+                        jsonObject.put("type", "param")
+                    else
+                        jsonObject.put("type", "prefix")
+
+                    jsonObject.put("key", matcher.group(1))
+
+                    val valuesArray = JSONArray()
+                    val translatedValuesArray = JSONArray()
+                    var position = 0
+                    var selectedPosition : Int = -1
+
+                    for (liElement in loopElements) {
+                        val element1 = liElement.getElementsByTag("a")
+                        val link = element1.attr("href")
+                        val translatedValue = element1.text()
+                        var matcherInternalLoop: Matcher
+
+                        if (liElement.toString().contains("listSelected")) {
+                            selectedPosition = position
+                        }
+
+                        if (liElement.toString().contains("Все")) {
+                            valuesArray.put("")
+                            translatedValuesArray.put("Все")
+                        }
+
+                        matcherInternalLoop = when(index) {
+                            0 -> firstParamPattern.matcher(link)
+                            1 -> secondParamPattern.matcher(link)
+                            2,3,4 -> prefixPattern.matcher(link)
+                            else -> firstParamPattern.matcher(link)
+                        }
+
+                        if (matcherInternalLoop.find()) {
+                            valuesArray.put(matcherInternalLoop.group(2))
+                            translatedValuesArray.put(translatedValue)
+                        }
+                        position++
+                    }
+                    jsonObject.put("selectedPosition", selectedPosition)
+                    jsonObject.put("values", valuesArray)
+                    jsonObject.put("translatedValues", translatedValuesArray)
+
+                    sortingVarJsonArray.put(jsonObject)
+                }
+                index++
+            }
+
+            return sortingVarJsonArray
         }
 
         @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class)

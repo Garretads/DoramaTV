@@ -11,12 +11,12 @@
     <string name="tab_text_2">Источники</string>
     <string name="action_settings">Настройки</string>
     <string name="search_hint">Поиск</string>
+    <string name="action_sort">Сортировка</string>
     <string name="age_description">Год: </string>
     <string name="genres_description">Жанры: </string>
     <string name="production_country_description">Производство: </string>
     <string name="editor_choice_title">Выбор редакции</string>
-    <string name="new_movie_title">Новинки</string>
-    <string name="best_movie_title">Лучшие</string>
+    <string name="list_movie_title">Полный список</string>
     <string name="ongoing_title">Онгоинг</string>
     <string name="random_movie_title">Случайная дорама</string>
     <string name="genres_title">Жанры</string>
@@ -101,5 +101,8 @@
     <string name="loading">Загрузка</string>
     <string name="load_failed">Загрузка неудачна. Повторить</string>
     <string name="action_favorite">Избранное</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

@@ -4,12 +4,10 @@ import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
 import android.os.Build
 import android.os.Bundle
 import android.support.design.widget.NavigationView
@@ -19,10 +17,8 @@ import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
-import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -31,10 +27,7 @@ import android.widget.RelativeLayout
 import android.widget.Toast
 
 import com.chad.library.adapter.base.BaseQuickAdapter
-import com.crashlytics.android.Crashlytics
-import com.crashlytics.android.core.CrashlyticsCore
 import com.yandex.mobile.ads.*
-import io.fabric.sdk.android.Fabric
 
 import org.json.JSONException
 import org.json.JSONObject
@@ -55,28 +48,31 @@ import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.toolbar.*
-import ru.garretech.garred.doramatv.BuildConfig
+import org.json.JSONArray
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.adapters.RecyclerAdapter
 import ru.garretech.garred.doramatv.database.AppDataSource
 import ru.garretech.garred.doramatv.fragments.CustomLoadMoreView
 import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet
+import ru.garretech.garred.doramatv.fragments.SortingFragment
 import ru.garretech.garred.doramatv.model.Movie
 import ru.garretech.garred.doramatv.tools.ImageDownloader
 import ru.garretech.garred.doramatv.tools.SiteWorker
-import java.lang.Exception
 
-class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener {
+class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
 
-    private var searchView: SearchView? = null
-    private var newMovieAdapter: RecyclerAdapter? = null
+    private lateinit var searchView: SearchView
+    private lateinit var newMovieAdapter: RecyclerAdapter
     private lateinit var progressBottomSheet : ProgressBottomSheet
-    private var conMgr: ConnectivityManager? = null
-    private var mSiteWorker: SiteWorker? = null
+    private lateinit var mSiteWorker: SiteWorker
     private var requestQuery: SiteWorker.RequestQuery? = null
-    private var appDataSource: AppDataSource? = null
+    private lateinit var appDataSource: AppDataSource
     private var observable: Observable<List<Movie>>? = null
+    private lateinit var menu: Menu
+    private val sortingMenuItem by lazy { menu.findItem(R.id.action_sort) }
+
+    private val bag = CompositeDisposable()
 
     private val getListMoviesObserver by lazy {
         object : CompletableObserver {
@@ -217,11 +213,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         mAdViewContainer = relativeContainer
         //initAdMobView()
 
-
-        //requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        conMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-
         navigationView.setNavigationItemSelectedListener(this)
 
 
@@ -249,6 +240,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         setSupportActionBar(toolbarActionBar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.setHomeAsUpIndicator(R.drawable.ic_menu)
+        title = ""
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -259,8 +251,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
         val metrics = resources.displayMetrics
-        var spanCount = Math.ceil((metrics.widthPixels / 240).toDouble()).toInt()
-        Settings.max_loaded_in_screen = spanCount * 4
+        var spanCount = (metrics.widthPixels / (115 * metrics.scaledDensity)).toInt()
+        Settings.max_loaded_in_screen = spanCount * 8
 
         movieListRecyclerView!!.layoutManager = GridLayoutManager(this,spanCount)
 
@@ -273,10 +265,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
         newMovieAdapter = RecyclerAdapter(R.layout.fragment_movie_new, ArrayList())
         movieListRecyclerView!!.adapter = newMovieAdapter
-        newMovieAdapter!!.onItemClickListener = this
-        newMovieAdapter!!.setOnLoadMoreListener(this, movieListRecyclerView)
-        newMovieAdapter!!.setEnableLoadMore(false)
-        newMovieAdapter!!.setLoadMoreView(CustomLoadMoreView())
+        newMovieAdapter.onItemClickListener = this
+        newMovieAdapter.setOnLoadMoreListener(this, movieListRecyclerView)
+        newMovieAdapter.setEnableLoadMore(false)
+        newMovieAdapter.setLoadMoreView(CustomLoadMoreView())
 
 
 
@@ -284,21 +276,13 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         if (hasConnection()) {
             activityState = ACTIVITY_STATE.ONLINE
 
-            Completable.fromCallable {
-                try {
-                    requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.EDITOR_CHOICE_QUERY)
-                    observable = requestQuery!!.nextQuery
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                } catch (e: ExecutionException) {
-                    showConnectionError()
-                } catch (e: NullPointerException) {
-                    showConnectionError()
-                }
+            if (!progressBottomSheet.isAdded) {
+                progressBottomSheet.show(supportFragmentManager, "progressBar")
+            }
 
-                null
-            }.subscribeOn(Schedulers.io())
-                    .subscribe(getListMoviesObserver!!)
+            getRequestQueryCompletable(SiteWorker.EDITOR_CHOICE_QUERY)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe(getListMoviesObserver)
 
         } else
             showConnectionError()
@@ -329,13 +313,17 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_activity_main, menu)
+        this.menu = menu
         val myActionMenuItem = menu.findItem(R.id.action_search)
+
+        dismissSortingMenu()
+
         searchView = myActionMenuItem.actionView as SearchView
 
         val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
-        searchView!!.setSearchableInfo(searchManager.getSearchableInfo(componentName))
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(componentName))
 
-        searchView!!.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(queryString: String): Boolean {
 
                 // Поиск дорам
@@ -345,31 +333,20 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     if (!progressBottomSheet.isAdded) {
                         progressBottomSheet.show(supportFragmentManager, "progressBar")
                     }
+                    dismissSortingMenu()
 
-                    Completable.fromCallable {
-                        try {
-                            val params = HashMap<String, String>()
-                            params["q"] = queryString
+                    val params = HashMap<String, String>()
+                    params["q"] = queryString
 
-                            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.SEARCH_QUERY, SiteWorker.SEARCH_PREFIX, params)
-                            observable = requestQuery!!.nextQuery
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: ExecutionException) {
-                            showConnectionError()
-                        } catch (e: NullPointerException) {
-                            showConnectionError()
-                        }
-
-                        null
-                    }.subscribeOn(Schedulers.io())
-                            .subscribe(getListMoviesObserver!!)
+                    getRequestQueryCompletable(SiteWorker.SEARCH_QUERY, SiteWorker.SEARCH_PREFIX, params)
+                            .subscribeOn(Schedulers.io())
+                            .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.search_hint) + ": $queryString"
 
 
-                    if (!searchView!!.isIconified) {
-                        searchView!!.isIconified = true
+                    if (!searchView.isIconified) {
+                        searchView.isIconified = true
                     }
                 } else
                     showConnectionError()
@@ -390,6 +367,28 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             R.id.action_settings -> {
                 val intent = Intent(this@MainActivity, SettingsActivity::class.java)
                 startActivity(intent)
+            }
+            R.id.action_sort -> {
+                if (requestQuery!!.requestUri() != null) {
+
+                    if (!progressBottomSheet.isAdded) {
+                        progressBottomSheet.show(supportFragmentManager, "progressBar")
+                    }
+
+                    bag.add(Single.create<JSONArray> { observer ->
+                        val jsonArray  = SiteWorker.getSortingParams(requestQuery?.requestUri()?.build()!!)
+                        observer.onSuccess(jsonArray)
+                    }.observeOn(AndroidSchedulers.mainThread())
+                        .subscribeOn(Schedulers.io())
+                        .subscribe( { jsonArray ->
+                            val sortingFragment = SortingFragment.newInstance(jsonArray)
+                            sortingFragment.show(supportFragmentManager, "sortingFragment")
+
+                            if (progressBottomSheet.isAdded)
+                                progressBottomSheet.dismissAllowingStateLoss()
+
+                        }, { error -> Log.d("Error occured",error.localizedMessage) }))
+                }
             }
         }
         return true
@@ -420,20 +419,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     if (!progressBottomSheet.isAdded) {
                         progressBottomSheet.show(supportFragmentManager, "progressBar")
                     }
+                    dismissSortingMenu()
 
-                    Completable.fromCallable {
-                    try {
-                        requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.EDITOR_CHOICE_QUERY)
-                        observable = requestQuery!!.nextQuery
-                    } catch (e: InterruptedException) {
-                        e.printStackTrace()
-                    } catch (e: ExecutionException) {
-                        showConnectionError()
-                    } catch (e: NullPointerException) {
-                        showConnectionError()
-                    }
-                    null
-                }.subscribeOn(Schedulers.io())
+                    getRequestQueryCompletable(SiteWorker.EDITOR_CHOICE_QUERY)
+                        .subscribeOn(Schedulers.io())
                         .subscribe(getListMoviesObserver!!)
 
                     title = getString(R.string.editor_choice_title)
@@ -441,41 +430,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 } else
                     showConnectionError();
             }
-            R.id.nav_new -> {
-
-                if (hasConnection()) {
-                    activityState = ACTIVITY_STATE.ONLINE
-
-
-                    if (!progressBottomSheet.isAdded) {
-                        progressBottomSheet.show(supportFragmentManager, "progressBar")
-                    }
-
-                    Completable.fromCallable {
-                        try {
-                            val params = HashMap<String, String>()
-                            params[SiteWorker.NEW_MOVIES_PARAMS[0]] = SiteWorker.NEW_MOVIES_PARAMS[1]
-                            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.SIMPLE_QUERY, SiteWorker.LIST_PREFIX, params)
-                            observable = requestQuery!!.nextQuery
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: ExecutionException) {
-                            showConnectionError()
-                        } catch (e: NullPointerException) {
-                            showConnectionError()
-                        }
-
-                        null
-                    }.subscribeOn(Schedulers.io())
-                            .subscribe(getListMoviesObserver!!)
-
-                    title = getString(R.string.new_movie_title)
-
-                    //newMovieAdapter!!.clear()
-                } else
-                    showConnectionError();
-            }
-            R.id.nav_best -> {
+            R.id.nav_list -> {
 
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
@@ -483,66 +438,43 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     if (!progressBottomSheet.isAdded) {
                         progressBottomSheet.show(supportFragmentManager, "progressBar")
                     }
+                    showSortingMenu()
 
-                    Completable.fromCallable {
-                        try {
-                            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.SIMPLE_QUERY, SiteWorker.LIST_PREFIX)
-                            observable = requestQuery!!.nextQuery
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: ExecutionException) {
-                            showConnectionError()
-                        } catch (e: NullPointerException) {
-                            showConnectionError()
-                        }
-                        null
-                    }.subscribeOn(Schedulers.io())
+                    getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.LIST_PREFIX)
+                            .subscribeOn(Schedulers.io())
                             .subscribe(getListMoviesObserver!!)
 
-                    title = getString(R.string.best_movie_title)
+                    title = getString(R.string.list_movie_title)
 
                     //newMovieAdapter!!.clear()
                 } else
-                    showConnectionError();
+                    showConnectionError()
             }
 
             R.id.nav_ongoing -> {
 
                 if (hasConnection()) {
                     activityState = ACTIVITY_STATE.ONLINE
+                    val params = HashMap<String, String>()
+                    params[SiteWorker.ONGOING_PARAMS[0]] = SiteWorker.ONGOING_PARAMS[1]
+
 
                     if (!progressBottomSheet.isAdded) {
                         progressBottomSheet.show(supportFragmentManager, "progressBar")
                     }
+                    showSortingMenu()
 
-                    Completable.fromCallable {
-                        try {
-                            val params = HashMap<String, String>()
-                            params[SiteWorker.ONGOING_PARAMS[0]] = SiteWorker.ONGOING_PARAMS[1]
-
-                            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.SIMPLE_QUERY, SiteWorker.ONGOING_PREFIX, params)
-                            observable = requestQuery!!.nextQuery
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: ExecutionException) {
-                            showConnectionError()
-                        } catch (e: NullPointerException) {
-                            showConnectionError()
-                        }
-
-                        null
-                    }.subscribeOn(Schedulers.io())
-                            .subscribe(getListMoviesObserver!!)
+                    getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.ONGOING_PREFIX, params).subscribeOn(Schedulers.io())
+                            .subscribe(getListMoviesObserver)
                     title = getString(R.string.ongoing_title)
 
 
                 } else
-                    showConnectionError();
+                    showConnectionError()
             }
             R.id.nav_random -> {
 
                 if (hasConnection()) {
-
 
                     if (!progressBottomSheet.isAdded) {
                         progressBottomSheet.show(supportFragmentManager, "progressBar")
@@ -566,7 +498,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
                 } else
-                    showConnectionError();
+                    showConnectionError()
             }
 
             R.id.nav_genres -> {
@@ -639,24 +571,14 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 progressBottomSheet = ProgressBottomSheet()
 
+                showSortingMenu()
 
-                Completable.fromCallable {
-                    try {
-                        requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.SIMPLE_QUERY, resultPrefix)
-                        observable = requestQuery!!.nextQuery
-                    } catch (e: InterruptedException) {
-                        e.printStackTrace()
-                    } catch (e: ExecutionException) {
-                        showConnectionError()
-                    } catch (e: NullPointerException) {
-                        showConnectionError()
-                    }
 
-                    null
-                }.subscribeOn(Schedulers.io())
+                getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, resultPrefix)
+                        .subscribeOn(Schedulers.io())
                         .subscribe(getListMoviesObserver!!)
 
-                setTitle(genreName.substring(0, 1).toUpperCase() + genreName.substring(1))
+                title = genreName.substring(0, 1).toUpperCase() + genreName.substring(1)
             }
         }
     }
@@ -690,6 +612,30 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
         if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
             progressBottomSheet.dismissAllowingStateLoss()
+    }
+
+    override fun onFragmentInteraction(result: Map<String,Any>) {
+
+        if (hasConnection()) {
+            activityState = ACTIVITY_STATE.ONLINE
+            val params = result.get("params") as HashMap<String,String>
+            var completable : Completable
+
+            if (!progressBottomSheet.isAdded) {
+                progressBottomSheet.show(supportFragmentManager, "progressBar")
+            }
+
+            if (params.size == 0)
+                completable = getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, result.get("path") as String)
+            else
+                completable = getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, result.get("path") as String, params)
+
+            completable.subscribeOn(Schedulers.io())
+                    .subscribe(getListMoviesObserver!!)
+
+            //newMovieAdapter!!.clear()
+        } else
+            showConnectionError();
     }
 
 
@@ -840,13 +786,20 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         Toast.makeText(applicationContext, getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show()
     }
 
-
     internal fun hasConnection() : Boolean {
         val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val ni = cm.getActiveNetworkInfo()
-        return ni.isConnected
+        return ni != null && ni.isConnected
 }
 
+    internal fun showSortingMenu() {
+        if (!sortingMenuItem.isVisible)
+            sortingMenuItem.isVisible = true
+    }
+
+    internal fun dismissSortingMenu() {
+        sortingMenuItem.isVisible = false
+    }
 
     internal inner class CustomDivider(val mDivider: Drawable, val topOffset: Int, val bottomOffset: Int) : RecyclerView.ItemDecoration() {
 
@@ -857,6 +810,33 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             outRect.bottom = bottomOffset
         }
 
+    }
+
+    @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
+    fun getRequestQueryCompletable(requestType : Int, path : String, params : HashMap<String,String>) : Completable {
+        return Completable.fromCallable {
+            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, requestType, path, params)
+            observable = requestQuery!!.nextQuery
+            null
+        }
+    }
+
+    @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
+    fun getRequestQueryCompletable(requestType : Int, path : String) : Completable {
+        return Completable.fromCallable {
+            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, requestType, path)
+            observable = requestQuery!!.nextQuery
+            null
+        }
+    }
+
+    @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
+    fun getRequestQueryCompletable(requestType : Int) : Completable {
+        return Completable.fromCallable {
+            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, requestType)
+            observable = requestQuery!!.nextQuery
+            null
+        }
     }
 
     fun getMovieRequestSingle(url: String) : Single<JSONObject> {
