@@ -9,7 +9,6 @@ import android.webkit.WebResourceRequest
 import android.os.Build
 import android.annotation.TargetApi
 import android.util.Log
-import android.view.KeyEvent
 import android.view.Window
 import android.view.WindowManager
 import kotlinx.android.synthetic.main.activity_web_view.*
@@ -47,6 +46,7 @@ class WebViewActivity : AppCompatActivity() {
         Log.d("webView","Loading url:${url}")
         webView.loadUrl(url)
     }
+
 
     override fun onBackPressed() {
         if (webView.canGoBack()) {

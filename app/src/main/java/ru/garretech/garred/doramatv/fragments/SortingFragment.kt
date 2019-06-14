@@ -15,7 +15,6 @@ import org.json.JSONObject
 
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.adapters.CustomTableLayout
-import ru.garretech.garred.doramatv.tools.SiteWorker
 
 
 class SortingFragment : DialogFragment() {
@@ -36,6 +35,7 @@ class SortingFragment : DialogFragment() {
 
         arguments?.let {
             paramsJSONArray = JSONArray(it.getString(ARG_PARAM1))
+            initialURL = Uri.parse(it.getString(ARG_PARAM2))
         }
     }
 
@@ -134,9 +134,7 @@ class SortingFragment : DialogFragment() {
         if (selectedPosition != -1) othersRadioGroup.checkChildAt(selectedPosition)
 
         val sortingButton = view.findViewById<Button>(R.id.sortButton)
-        sortingButton.setOnClickListener {
-            onSortButtonClick()
-        }
+        sortingButton.setOnClickListener { onSortButtonClick() }
 
         return view
     }
@@ -247,6 +245,7 @@ class SortingFragment : DialogFragment() {
     companion object {
 
         private const val ARG_PARAM1 = "jsoArray"
+        private const val ARG_PARAM2 = "initialURL"
         private const val SORTING_INDEX = 0
         private const val FILTER_INDEX = 1
         private const val GENRES_INDEX = 2
@@ -256,10 +255,11 @@ class SortingFragment : DialogFragment() {
 
         // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(param1: JSONArray) =
+        fun newInstance(jsonArray: JSONArray, initialURL : String) =
             SortingFragment().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1,param1.toString())
+                    putString(ARG_PARAM1,jsonArray.toString())
+                    putString(ARG_PARAM2,initialURL)
                 }
             }
     }

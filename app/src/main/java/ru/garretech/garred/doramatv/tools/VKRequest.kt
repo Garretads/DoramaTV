@@ -52,12 +52,16 @@ class VKRequest {
                     }
                     input.close()
                 }
+
             } catch (e: MalformedURLException) {
-                e.printStackTrace()
+                if (observer.isDisposed)
+                    observer.onError(e)
             } catch (e: ProtocolException) {
-                e.printStackTrace()
+                if (observer.isDisposed)
+                    observer.onError(e)
             } catch (e: IOException) {
-                e.printStackTrace()
+                if (observer.isDisposed)
+                    observer.onError(e)
             }
 
             if (response.isNotEmpty())

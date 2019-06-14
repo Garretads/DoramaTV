@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.os.AsyncTask
 
 import java.io.IOException
+import java.net.SocketException
 import java.net.URL
 
 class ImageDownloader : AsyncTask<String, Void, Bitmap>() {
@@ -15,6 +16,8 @@ class ImageDownloader : AsyncTask<String, Void, Bitmap>() {
             val url = URL(strings[0])
             image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
         } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: SocketException) {
             e.printStackTrace()
         }
 

@@ -35,7 +35,7 @@ import kotlinx.android.synthetic.main.activity_movie_about.*
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
 
-class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInteractionListener, MovieSourcesFragment.OnFragmentInteractionListener {
+class MovieAboutActivity : AppCompatActivity() {
 
 
 
@@ -70,7 +70,7 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
             if (movieInfoString == null)
                 throw NullPointerException()
 
-            movieInfo = JSONObject(movieInfoString!!)
+            movieInfo = JSONObject(movieInfoString)
 
 
             /*
@@ -246,9 +246,6 @@ class MovieAboutActivity : AppCompatActivity(), MovieAboutFragment.OnFragmentInt
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onFragmentInteraction(uri: Uri) {
-
-    }
 
     override fun onDestroy() {
         super.onDestroy()

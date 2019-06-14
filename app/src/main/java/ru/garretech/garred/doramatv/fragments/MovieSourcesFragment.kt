@@ -16,6 +16,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -32,6 +33,7 @@ import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.activities.WebViewActivity
 import ru.garretech.garred.doramatv.tools.*
+import java.io.IOException
 import java.util.regex.Pattern
 
 
@@ -51,58 +53,49 @@ class MovieSourcesFragment : Fragment() {
     internal lateinit var initialSeries: String
     internal var empty: Boolean = false
     val backSymbolText = "<-- "
-    private var conMgr: ConnectivityManager? = null
     private var bag : CompositeDisposable = CompositeDisposable()
+
     val adapterClickListener = AdapterView.OnItemClickListener { _, _, i, _ ->
         if (hasConnection()) {
             if (!seriesSelected) {
                 if (!progressBottomSheet.isAdded) {
                     progressBottomSheet.show(fragmentManager!!, "progressBar")
                 }
-                Handler().postDelayed({
-                    try {
-                        sourcesArray = SiteWorker.getSources(seriesList, URL, i)
-                        var funSubList = ArrayList<String>()
-                        funSubList.add(backSymbolText + (seriesList.get(i) as JSONObject).getString("name"))
-                        for (index in 0 until sourcesArray.length()) {
-                            val jsonObject = sourcesArray.get(index) as JSONObject
-                            funSubList.add(jsonObject.getString("sub_unit"))
-                        }
-                        arrayAdapter!!.clear()
-                        arrayAdapter!!.addAll(funSubList)
-                        arrayAdapter!!.notifyDataSetChanged()
-                        seriesSelected = true
 
-                        if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
-                            progressBottomSheet.dismissAllowingStateLoss()
+                bag.add(getSourcesSingle(seriesList,URL,i).observeOn(AndroidSchedulers.mainThread())
+                        .subscribeOn(Schedulers.io())
+                        .subscribe( { jsonArray ->
 
-                    } catch (e: InterruptedException) {
-                        e.printStackTrace()
-                    } catch (e: ExecutionException) {
-                        e.printStackTrace()
-                    } catch (e: JSONException) {
-                        e.printStackTrace()
-                    } catch (e: NullPointerException) {
-                        showConnectionError()
-                    }
-                }, 100)
+                            var funSubList = ArrayList<String>()
+                            funSubList.add(backSymbolText + (seriesList.get(i) as JSONObject).getString("name"))
+                            for (index in 0 until jsonArray.length()) {
+                                val jsonObject = jsonArray.get(index) as JSONObject
+                                funSubList.add(jsonObject.getString("sub_unit"))
+                            }
+                            arrayAdapter!!.clear()
+                            arrayAdapter!!.addAll(funSubList)
+                            arrayAdapter!!.notifyDataSetChanged()
+                            seriesSelected = true
+
+                            if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
+                                progressBottomSheet.dismissAllowingStateLoss()
+                        }, { error ->
+                            Log.d("SOURCE LIST","ERROR LOADING SOURCES LIST")
+                        }))
             } else {
                 when (i) {
                     0 -> {
                         try {
-
                             arrayAdapter!!.clear()
                             for (index in 0 until seriesList.length()) {
                                 val seriesName = (seriesList.get(index) as JSONObject).getString("name")
                                 arrayAdapter!!.add(seriesName)
                             }
-
                             arrayAdapter!!.notifyDataSetChanged()
                             seriesSelected = false
                         } catch (e: JSONException) {
                             e.printStackTrace()
                         }
-
                     }
                     else -> {
                         if (!progressBottomSheet.isAdded) {
@@ -122,7 +115,7 @@ class MovieSourcesFragment : Fragment() {
                                     val pageDownloader = PageDownloader()
                                     val pageContent = pageDownloader.execute(SiteWorker.TRAGUS_URL + seriesId).get()
 
-                                    val tempElement: Element = pageContent.getElementsByTag("iframe").first()
+                                    val tempElement: Element = pageContent?.getElementsByTag("iframe")?.first()
                                             ?: return@postDelayed
 
                                     val rawURLString = tempElement.toString()
@@ -140,15 +133,20 @@ class MovieSourcesFragment : Fragment() {
                                                 .subscribeOn(Schedulers.io())
                                                 .subscribe({ posting ->
                                                     var jsonObject = posting.get("response") as JSONObject
-                                                    jsonObject = (jsonObject.get("items") as JSONArray).get(0) as JSONObject
-                                                    fileLink = jsonObject.get("files") as JSONObject
-                                                    val selectQualityFragment = SelectQualityFragment.newInstance(fileLink!!)
-                                                    selectQualityFragment.show(fragmentManager!!, "Выберите качество")
+                                                    var jsonArray = jsonObject.get("items") as JSONArray
+
+                                                    if (jsonArray?.length() !=0) {
+                                                        jsonObject = jsonArray.get(0) as JSONObject
+                                                        fileLink = jsonObject.get("files") as JSONObject
+                                                        val selectQualityFragment = SelectQualityFragment.newInstance(fileLink!!)
+                                                        selectQualityFragment.show(fragmentManager!!, "Выберите качество")
+                                                    } else
+                                                        Toast.makeText(context,"Ошибка при загрузке списка качеств, попробуйте еще раз",Toast.LENGTH_LONG).show()
 
                                                     if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
                                                         progressBottomSheet.dismissAllowingStateLoss()
                                                 }, { error ->
-                                                    Log.d("Error occured", error.localizedMessage)
+                                                    Log.d("QUALITY ERROR", "ERROR IN LOADING QUALITY LIST")
                                                 })
                                     }
                                 } else {
@@ -156,9 +154,9 @@ class MovieSourcesFragment : Fragment() {
 
                                     val pageDownloader = PageDownloader()
                                     val pageContent = pageDownloader.execute(SiteWorker.TRAGUS_URL + seriesId).get()
-                                    val tempElement: Element = pageContent.getElementsByTag("iframe").first()
-                                    var rawURLString = tempElement.attr("src")
-                                    if (!rawURLString.contains("http") && !rawURLString.contains("https")) rawURLString = "https:" + rawURLString
+                                    val tempElement: Element? = pageContent?.getElementsByTag("iframe")?.first()
+                                    var rawURLString = tempElement?.attr("src")
+                                    if (tempElement != null && !rawURLString!!.contains("http") && !rawURLString!!.contains("https")) rawURLString = "https:" + rawURLString
                                     intent.putExtra("link", rawURLString)
 
                                     if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
@@ -172,9 +170,13 @@ class MovieSourcesFragment : Fragment() {
                             } catch (e: ExecutionException) {
                                 e.printStackTrace()
                             } catch (e: JSONException) {
-                                e.printStackTrace()
+                                showConnectionError()
                             } catch (e: NullPointerException) {
                                 showConnectionError()
+                            } catch (e: IOException) {
+                                showConnectionError()
+                            } catch (e : ArrayIndexOutOfBoundsException) {
+                                e.printStackTrace()
                             }
                         }, 100)
                     }
@@ -185,43 +187,49 @@ class MovieSourcesFragment : Fragment() {
         }
     }
 
-    private var mListener: OnFragmentInteractionListener? = null
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {
             try {
                 progressBottomSheet = ProgressBottomSheet()
-                conMgr = activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                 sourcesInfo = JSONObject(arguments!!.getString(ARG_PARAM1))
                 URL = sourcesInfo.getString("url")
                 accessToken = Settings.access_token
                 initialSeries = sourcesInfo.getString("initial_series")
-                //seriesList = JSONArray()
-                seriesList = SiteWorker.formSeriesList(URL, initialSeries)
-                listViewList = ArrayList<String>()
 
-                if (seriesList.length() == 0) {
-                    listViewList.add("Пусто")
-                    empty = true
-                } else {
-                    for (i in 0 until seriesList.length()) {
-                        listViewList.add((seriesList.get(i) as JSONObject).getString("name"))
-                    }
-                }
-
-                arrayAdapter = ArrayAdapter(context!!, android.R.layout.simple_list_item_1, listViewList)
+                arrayAdapter = ArrayAdapter(context!!, android.R.layout.simple_list_item_1, ArrayList())
                 arrayAdapter!!.setNotifyOnChange(true)
+
+                bag.add(getSeriesSingle(URL,initialSeries).subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe( { jsonArray ->
+
+                            listViewList = ArrayList<String>()
+
+                            if (jsonArray.length() == 0) {
+                                listViewList.add("Пусто")
+                                empty = true
+                            } else {
+                                for (i in 0 until jsonArray.length()) {
+                                    listViewList.add((jsonArray.get(i) as JSONObject).getString("name"))
+                                }
+                            }
+                            arrayAdapter?.addAll(listViewList)
+                            arrayAdapter?.notifyDataSetChanged()
+
+                        }, { error ->
+                            Log.d("SERIES LIST","ERROR LOADING SERIES LIST")
+                        }))
+
             } catch (e: JSONException) {
                 e.printStackTrace()
             }
-
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
+
         val view = inflater.inflate(R.layout.fragment_movie_sources, container, false)
         listView = view.findViewById(R.id.sourcesListView)
         listView.adapter = arrayAdapter
@@ -232,30 +240,50 @@ class MovieSourcesFragment : Fragment() {
     }
 
 
-    fun onButtonPressed(uri: Uri) {
-        if (mListener != null) {
-            mListener!!.onFragmentInteraction(uri)
+    private fun getSeriesSingle(url : String, initial : String) : Single<JSONArray> {
+        return Single.create<JSONArray> { observer ->
+            try {
+                seriesList = SiteWorker.formSeriesList(url, initial)
+                observer.onSuccess(seriesList)
+            } catch (e: InterruptedException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: ExecutionException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: JSONException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: NullPointerException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            }
         }
     }
 
-    override fun onAttach(context: Context?) {
-        super.onAttach(context)
-        if (context is OnFragmentInteractionListener) {
-            mListener = context
-        } else {
-            throw RuntimeException(context!!.toString() + " must implement OnFragmentInteractionListener")
+
+    private fun getSourcesSingle(list : JSONArray, url : String, i : Int) : Single<JSONArray> {
+        return Single.create<JSONArray> { observer ->
+            try {
+                sourcesArray = SiteWorker.getSources(list, url, i)
+                observer.onSuccess(sourcesArray)
+            } catch (e: InterruptedException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: ExecutionException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: JSONException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e: NullPointerException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            }
         }
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        mListener = null
-    }
-
-
-    interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        fun onFragmentInteraction(uri: Uri)
     }
 
     internal fun showConnectionError() {
@@ -265,17 +293,15 @@ class MovieSourcesFragment : Fragment() {
     }
 
     internal fun hasConnection(): Boolean {
-        //return conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).state == NetworkInfo.State.CONNECTED || conMgr!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI).state == NetworkInfo.State.CONNECTED
-        return true
+        val cm = activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val ni = cm.getActiveNetworkInfo()
+        return ni != null && ni.isConnected
     }
 
     companion object {
-        // TODO: Rename parameter arguments, choose names that match
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
         private val ARG_PARAM1 = "info"
 
 
-        // TODO: Rename and change types and number of parameters
         fun newInstance(sourcesInfo: JSONObject): MovieSourcesFragment {
             val fragment = MovieSourcesFragment()
             val args = Bundle()
@@ -284,4 +310,4 @@ class MovieSourcesFragment : Fragment() {
             return fragment
         }
     }
-} // Required empty public constructor
+}

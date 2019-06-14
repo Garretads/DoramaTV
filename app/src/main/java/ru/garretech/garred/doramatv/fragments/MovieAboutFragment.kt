@@ -6,11 +6,15 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import android.widget.TextView
+import com.yandex.mobile.ads.*
 
 
 import org.json.JSONException
@@ -22,11 +26,13 @@ import java.util.concurrent.ExecutionException
 
 import ru.garretech.garred.doramatv.tools.ImageDownloader
 import ru.garretech.garred.doramatv.R
+import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.tools.SiteWorker
 
 
 class MovieAboutFragment : Fragment() {
 
+    private lateinit var pageLayout : LinearLayout
 
     private val movieAge: String by lazy { arguments!!.getString(ARG_PARAM6)}
     private val movieTitle: String by lazy { arguments!!.getString(ARG_PARAM1) }
@@ -39,8 +45,33 @@ class MovieAboutFragment : Fragment() {
     private val movieURL: String by lazy { arguments!!.getString(ARG_PARAM9) }
     private var image: Bitmap? = null
 
+    val mAdMobView: AdView by lazy { AdView(context!!) }
+    private var mAdRequest: AdRequest? = null
 
-    private var mListener: OnFragmentInteractionListener? = null
+
+    private val mBannerAdListener = object : AdEventListener {
+        override fun onAdFailedToLoad(p0: AdRequestError) {
+
+        }
+
+        override fun onAdClosed() {
+
+        }
+
+
+        override fun onAdLeftApplication() {
+
+        }
+
+        override fun onAdLoaded() {
+            mAdMobView.visibility = View.VISIBLE
+        }
+
+        override fun onAdOpened() {
+
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +87,7 @@ class MovieAboutFragment : Fragment() {
             movieURL = arguments!!.getString(ARG_PARAM9)*/
 
             try {
-                image = SiteWorker.getCachedImage(context!!, movieImageURL!!)
+                image = SiteWorker.getCachedImage(context!!, movieImageURL)
             } catch (e: FileNotFoundException) {
                 val imageDownloader = ImageDownloader()
                 try {
@@ -73,9 +104,27 @@ class MovieAboutFragment : Fragment() {
         }
     }
 
+    private fun initAdMobView() {
+        mAdMobView.adSize = AdSize.flexibleSize()
+
+        mAdMobView.blockId = Settings.BLOCK_ID1
+        mAdMobView.adEventListener = mBannerAdListener
+
+        mAdRequest = AdRequest.Builder().build()
+
+        val layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        layoutParams.gravity = Gravity.CENTER_HORIZONTAL
+        pageLayout.addView(mAdMobView, layoutParams)
+    }
+
+    private fun refreshBannerAd() {
+        mAdMobView.visibility = View.INVISIBLE
+        mAdMobView.loadAd(mAdRequest)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
+
         val view = inflater.inflate(R.layout.fragment_movie_about, container, false)
         val movieAgeView = view.findViewById<TextView>(R.id.movie_age_text)
         val movieGenresView = view.findViewById<TextView>(R.id.movie_genres_text)
@@ -84,57 +133,42 @@ class MovieAboutFragment : Fragment() {
         val movieDurationView = view.findViewById<TextView>(R.id.movie_duration_text)
         val imageView = view.findViewById<ImageView>(R.id.movie_image_about)
         val movieDescriptionView = view.findViewById<TextView>(R.id.movie_description_text)
+        pageLayout = view.findViewById(R.id.movieAboutScrollContent)
 
-        movieGenresView.text = getString(R.string.genres_description) + " " + movieGenres!!
-        movieProductionCountryView.text = getString(R.string.production_country_description)  + " " +  movieProduction!!
+        movieGenresView.text = getString(R.string.genres_description) + " " + movieGenres
+        movieProductionCountryView.text = getString(R.string.production_country_description)  + " " +  movieProduction
         movieSeriesNumberView.text = movieSeriesNumber
         movieDurationView.text = movieDuration
         movieAgeView.text = getString(R.string.age_description)  + " " +  movieAge!!
         movieDescriptionView.text = movieDescription
         imageView.setImageBitmap(image)
 
+        initAdMobView()
+
         return view
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    fun onButtonPressed(uri: Uri) {
-        if (mListener != null) {
-            mListener!!.onFragmentInteraction(uri)
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        refreshBannerAd()
     }
 
-    override fun onAttach(context: Context?) {
-        super.onAttach(context)
-        if (context is OnFragmentInteractionListener) {
-            mListener = context
-        } else {
-            throw RuntimeException(context!!.toString() + " must implement OnFragmentInteractionListener")
-        }
-    }
+
 
     override fun onDetach() {
         super.onDetach()
-        mListener = null
+    }
+
+    override fun onDestroy() {
+        mAdMobView.destroy()
+        super.onDestroy()
     }
 
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     *
-     *
-     * See the Android Training lesson [Communicating with Other Fragments](http://developer.android.com/training/basics/fragments/communicating.html) for more information.
-     */
-    interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        fun onFragmentInteraction(uri: Uri)
-    }
 
     companion object {
-        // TODO: Rename parameter arguments, choose names that match
-        // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
+
         private val ARG_PARAM1 = "title"
         private val ARG_PARAM2 = "genres"
         private val ARG_PARAM3 = "production"
@@ -172,6 +206,6 @@ class MovieAboutFragment : Fragment() {
             return fragment
         }
     }
-}// Required empty public constructor
+}
 
 

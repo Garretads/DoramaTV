@@ -1,10 +1,7 @@
 package ru.garretech.garred.doramatv
 
-/**
- * Created by garred on 14.03.17.
- */
-
 object Settings {
+    const val APP_PREFERENCES = "mysettings"
     const val client_id = "6863889"
     const val api_scope = "video,offline"
     const val api_display = "mobile"
@@ -15,6 +12,7 @@ object Settings {
     const val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
     var max_loaded_in_screen = 15
     const val BLOCK_ID = "adf-304149/991383"
+    const val BLOCK_ID1 = "adf-304149/999174"
 
 
     fun version(): String {

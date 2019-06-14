@@ -25,7 +25,7 @@ class AboutApplicationActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_about_application)
         //ButterKnife.bind(this)
-        setSupportActionBar(toolbarActionBar)
+        setSupportActionBar(applicationAboutToolbar as Toolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.title = getString(R.string.about_application)
 

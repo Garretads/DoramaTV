@@ -7,6 +7,7 @@ import android.net.Uri
 import android.util.Log
 
 import io.reactivex.Observable
+import io.reactivex.Single
 import okhttp3.*
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
@@ -14,6 +15,7 @@ import ru.garretech.garred.doramatv.model.Movie
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import org.jsoup.HttpStatusException
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -55,7 +57,7 @@ class SiteWorker {
 
 
         val nextQuery: Observable<List<Movie>>
-            @Throws(ExecutionException::class, InterruptedException::class, NullPointerException::class)
+            @Throws(ExecutionException::class, InterruptedException::class, NullPointerException::class,ArrayIndexOutOfBoundsException::class, IOException::class)
             get() = if (queryAmount == -1 || currentOffset < queryAmount) {
                 when (requestType) {
                     SIMPLE_QUERY -> {
@@ -79,6 +81,9 @@ class SiteWorker {
                         }
 
                         val pageContent = pageDownloader.execute(uriQuery!!.toString()).get()
+
+                        if (pageContent == null)
+                            throw NullPointerException()
 
                         if (queryAmount == -1)
                             queryAmount = getMaxQueryElementCount(pageContent)
@@ -224,12 +229,16 @@ class SiteWorker {
         }
 
 
-        @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
+        @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class,ArrayIndexOutOfBoundsException::class,IOException::class)
         fun getEditorChoiceMoviesList(context: Context?): List<Movie> {
             val pageDownloader = PageDownloader()
-            val pageContent: Document
+            val pageContent: Document?
             val movieList = ArrayList<Movie>()
             pageContent = pageDownloader.execute(SITE_URL).get()
+
+            if (pageContent == null)
+                throw NullPointerException()
+
             var imageDownloader: ImageDownloader
             var movie: Movie
 
@@ -282,16 +291,19 @@ class SiteWorker {
 
 
         val genresList: JSONArray
-            @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class)
+            @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class,ArrayIndexOutOfBoundsException::class)
             get() {
 
 
                 val genresList = JSONArray()
                 val URL_PREFIX = "/list/genres/sort_name"
                 val pageDownloader = PageDownloader()
-                val pageContent: Document
+                val pageContent: Document?
 
                 pageContent = pageDownloader.execute(SITE_URL + URL_PREFIX).get()
+
+                if (pageContent == null)
+                    throw NullPointerException()
 
                 var element = pageContent.getElementsByClass("table table-hover").first()
                 element = element.getElementsByTag("tbody").first()
@@ -344,7 +356,7 @@ class SiteWorker {
             return elements.size
         }
 
-        @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class)
+        @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class,ArrayIndexOutOfBoundsException::class)
         fun getMovieInfo(URL: String): JSONObject {
             val info = JSONObject()
             val pageDownloader = PageDownloader()
@@ -432,6 +444,7 @@ class SiteWorker {
             return info
         }
 
+        @Throws(ArrayIndexOutOfBoundsException::class)
         private fun movieListContentParse(context: Context?, pageContent: Document, limit: Int): HashMap<String, Any> {
             val movieList = ArrayList<Movie>()
             val result = HashMap<String, Any>()
@@ -501,7 +514,7 @@ class SiteWorker {
             return result
         }
 
-        @Throws(NullPointerException::class)
+        @Throws(NullPointerException::class,ArrayIndexOutOfBoundsException::class)
         fun getSortingParams(uri: Uri) : JSONArray{
             /*
             * sortType = name,rate,votes,created,updated
@@ -641,7 +654,7 @@ class SiteWorker {
             return sortingVarJsonArray
         }
 
-        @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class)
+        @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class,ArrayIndexOutOfBoundsException::class)
         fun getSources(seriesList: JSONArray, URL: String, seriesIndex: Int): JSONArray {
 
 
@@ -699,37 +712,33 @@ class SiteWorker {
             return oneSeriesSources
         }
 
+        @Throws(InterruptedException::class, ExecutionException::class, JSONException::class, NullPointerException::class,ArrayIndexOutOfBoundsException::class)
         fun formSeriesList(URL: String, initialSeries: String): JSONArray {
             val seriesList = JSONArray()
             val ADULT_PREFIX = "?mtr=1"
             val pageDownloader = PageDownloader()
             val pageContent: Document
-            try {
-                if (initialSeries == "/") {
-                    return seriesList
-                }
-                pageContent = pageDownloader.execute(URL + initialSeries + ADULT_PREFIX).get()
-                val element = pageContent.getElementById("chapterSelectorSelect")
-                val elements = element.getElementsByTag("option")
-                var index = 0
-                for (element1 in elements) {
-                    val `object` = JSONObject()
-                    `object`.put("name", element1.text())
-                    var link = element1.attr("value")
-                    link = link.substring(link.lastIndexOf("/"))
-                    `object`.put("link", link)
-                    seriesList.put(index, `object`)
-                    index++
-                }
 
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            } catch (e: ExecutionException) {
-                e.printStackTrace()
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            } catch (e: NullPointerException) {
-                e.printStackTrace()
+            if (initialSeries == "/") {
+                return seriesList
+            }
+            pageContent = pageDownloader.execute(URL + initialSeries + ADULT_PREFIX).get()
+
+            if (pageContent == null) {
+                throw NullPointerException()
+            }
+
+            val element = pageContent.getElementById("chapterSelectorSelect")
+            val elements = element.getElementsByTag("option")
+            var index = 0
+            for (element1 in elements) {
+                val `object` = JSONObject()
+                `object`.put("name", element1.text())
+                var link = element1.attr("value")
+                link = link.substring(link.lastIndexOf("/"))
+                `object`.put("link", link)
+                seriesList.put(index, `object`)
+                index++
             }
 
             return seriesList
@@ -791,6 +800,7 @@ class SiteWorker {
 
             return Request.Builder().url(params[0]!!).post(body).build()
         }
+
     }
 
 }

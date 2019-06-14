@@ -5,10 +5,7 @@ import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Rect
-import android.graphics.drawable.Drawable
 import android.net.ConnectivityManager
-import android.os.Build
 import android.os.Bundle
 import android.support.design.widget.NavigationView
 import android.support.v4.view.GravityCompat
@@ -17,7 +14,6 @@ import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
 import android.util.Log
 import android.view.Menu
@@ -54,6 +50,7 @@ import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.adapters.RecyclerAdapter
 import ru.garretech.garred.doramatv.database.AppDataSource
 import ru.garretech.garred.doramatv.fragments.CustomLoadMoreView
+import ru.garretech.garred.doramatv.fragments.DisclaimerFragment
 import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet
 import ru.garretech.garred.doramatv.fragments.SortingFragment
 import ru.garretech.garred.doramatv.model.Movie
@@ -63,7 +60,7 @@ import ru.garretech.garred.doramatv.tools.SiteWorker
 class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
 
     private lateinit var searchView: SearchView
-    private lateinit var newMovieAdapter: RecyclerAdapter
+    private lateinit var movieAdapter: RecyclerAdapter
     private lateinit var progressBottomSheet : ProgressBottomSheet
     private lateinit var mSiteWorker: SiteWorker
     private var requestQuery: SiteWorker.RequestQuery? = null
@@ -81,7 +78,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
 
             override fun onComplete() {
-                observable!!
+                bag.add(observable!!
                         .subscribeOn(Schedulers.io())
                         .map { movies ->
                             for (movie in movies) {
@@ -99,15 +96,16 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                             movies
                         }
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(updateListConsumer!!)
+                        .subscribe(updateListConsumer))
                 //Log.d("Task", "get favorites completable completed");
             }
 
             override fun onError(e: Throwable) {
-
+                Log.d("LIST LOAD","Ошибка получения списка фильмов, попробуйте еще раз")
             }
         }
     }
+
 
     private val getOnLoadMoreObserver by lazy {
         object : CompletableObserver {
@@ -116,7 +114,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
 
             override fun onComplete() {
-                observable!!
+                bag.add(observable!!
                         .subscribeOn(Schedulers.io())
                         .map { movies ->
                             for (movie in movies) {
@@ -134,20 +132,19 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                             movies
                         }
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(onLoadMoreConsumer!!)
-                //Log.d("Task", "get favorites completable completed");
+                        .subscribe(onLoadMoreConsumer))
             }
 
             override fun onError(e: Throwable) {
-
+                Log.d("ON LOAD MORE","Ошибка получения списка фильмов, попробуйте еще раз")
             }
         }
     }
 
     private val onLoadMoreConsumer by lazy {
         Consumer<List<Movie>> { movies ->
-            newMovieAdapter!!.addData(movies)
-            newMovieAdapter!!.loadMoreComplete()
+            movieAdapter.addData(movies)
+            movieAdapter.loadMoreComplete()
             mAdMobView.visibility = View.VISIBLE
         }
     }
@@ -165,7 +162,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private val mAdMobView: AdView by lazy { AdView(this) }
     private var mAdRequest: AdRequest? = null
-    private var mAdViewContainer: RelativeLayout? = null
 
 
     private val mBannerAdListener = object : AdEventListener {
@@ -210,8 +206,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         appDataSource = AppDataSource(applicationContext)
         progressBottomSheet = ProgressBottomSheet()
 
-        mAdViewContainer = relativeContainer
-        //initAdMobView()
+        initAdMobView()
 
         navigationView.setNavigationItemSelectedListener(this)
 
@@ -243,13 +238,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         title = ""
 
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val mDivider = applicationContext.getDrawable(R.drawable.line_divider)
-            val mDividerItemDecoration = CustomDivider(mDivider, 10, 10)
-            movieListRecyclerView!!.addItemDecoration(mDividerItemDecoration)
-        }
-
-
         val metrics = resources.displayMetrics
         var spanCount = (metrics.widthPixels / (115 * metrics.scaledDensity)).toInt()
         Settings.max_loaded_in_screen = spanCount * 8
@@ -263,15 +251,14 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        newMovieAdapter = RecyclerAdapter(R.layout.fragment_movie_new, ArrayList())
-        movieListRecyclerView!!.adapter = newMovieAdapter
-        newMovieAdapter.onItemClickListener = this
-        newMovieAdapter.setOnLoadMoreListener(this, movieListRecyclerView)
-        newMovieAdapter.setEnableLoadMore(false)
-        newMovieAdapter.setLoadMoreView(CustomLoadMoreView())
+        movieAdapter = RecyclerAdapter(R.layout.fragment_movie_new, ArrayList())
+        movieListRecyclerView!!.adapter = movieAdapter
+        movieAdapter.onItemClickListener = this
+        movieAdapter.setOnLoadMoreListener(this, movieListRecyclerView)
+        movieAdapter.setEnableLoadMore(false)
+        movieAdapter.setLoadMoreView(CustomLoadMoreView())
 
-
-
+        firstStartDisclaimer()
 
         if (hasConnection()) {
             activityState = ACTIVITY_STATE.ONLINE
@@ -287,7 +274,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         } else
             showConnectionError()
 
-        //refreshBannerAd()
+        refreshBannerAd()
     }
 
 
@@ -302,7 +289,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         val layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
         layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
-        mAdViewContainer!!.addView(mAdMobView, layoutParams)
+        relativeContainer.addView(mAdMobView, layoutParams)
     }
 
     private fun refreshBannerAd() {
@@ -381,13 +368,13 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     }.observeOn(AndroidSchedulers.mainThread())
                         .subscribeOn(Schedulers.io())
                         .subscribe( { jsonArray ->
-                            val sortingFragment = SortingFragment.newInstance(jsonArray)
+                            val sortingFragment = SortingFragment.newInstance(jsonArray,requestQuery?.requestUri()?.toString()!!)
                             sortingFragment.show(supportFragmentManager, "sortingFragment")
 
                             if (progressBottomSheet.isAdded)
                                 progressBottomSheet.dismissAllowingStateLoss()
 
-                        }, { error -> Log.d("Error occured",error.localizedMessage) }))
+                        }, { Log.d("SORTING FRAGMENT","CAN'T GET SORTING WINDOW") }))
                 }
             }
         }
@@ -423,7 +410,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     getRequestQueryCompletable(SiteWorker.EDITOR_CHOICE_QUERY)
                         .subscribeOn(Schedulers.io())
-                        .subscribe(getListMoviesObserver!!)
+                        .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.editor_choice_title)
 
@@ -442,11 +429,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.LIST_PREFIX)
                             .subscribeOn(Schedulers.io())
-                            .subscribe(getListMoviesObserver!!)
+                            .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.list_movie_title)
 
-                    //newMovieAdapter!!.clear()
+                    //movieAdapter!!.clear()
                 } else
                     showConnectionError()
             }
@@ -481,7 +468,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     }
 
 
-                    getMovieRequestSingle(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX).observeOn(AndroidSchedulers.mainThread())
+                    bag.add(getMovieRequestSingle(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX)
+                            .observeOn(AndroidSchedulers.mainThread())
                             .subscribeOn(Schedulers.io())
                             .subscribe( { json ->
                                 val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
@@ -492,9 +480,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                                     progressBottomSheet.dismissAllowingStateLoss()
 
                                 startActivity(intent)
-                            }, { error ->
-                                Log.d("Error occured",error.localizedMessage)
-                            })
+                            }, {
+                                Log.d("MOVIE INFO","ERROR GETTING MOVIE INFO")
+                            }))
 
 
                 } else
@@ -526,13 +514,12 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
             R.id.nav_favourites -> {
 
-                //List<Movie> favoritesMovies = appDataSource.getListOfFavorites();
                 activityState = ACTIVITY_STATE.FAVORITES
                 Completable.fromCallable {
-                    observable = appDataSource!!.listOfFavorites
+                    observable = appDataSource.listOfFavorites
                     null
                 }.subscribeOn(Schedulers.io())
-                        .subscribe(getListMoviesObserver!!)
+                        .subscribe(getListMoviesObserver)
 
                 title = getString(R.string.action_favorite)
 
@@ -576,7 +563,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, resultPrefix)
                         .subscribeOn(Schedulers.io())
-                        .subscribe(getListMoviesObserver!!)
+                        .subscribe(getListMoviesObserver)
 
                 title = genreName.substring(0, 1).toUpperCase() + genreName.substring(1)
             }
@@ -586,6 +573,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     public override fun onPause() {
         mAdMobView.pause()
+        //bag.dispose()
         super.onPause()
 
         if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
@@ -599,7 +587,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
             progressBottomSheet.dismissAllowingStateLoss()
 
-        //mAdMobView?.resume()
+        mAdMobView.resume()
         refreshBannerAd()
     }
 
@@ -608,6 +596,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     /** Called before the activity is destroyed  */
     public override fun onStop() {
         mAdMobView.pause()
+        //bag.dispose()
         super.onStop()
 
         if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
@@ -631,25 +620,23 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 completable = getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, result.get("path") as String, params)
 
             completable.subscribeOn(Schedulers.io())
-                    .subscribe(getListMoviesObserver!!)
+                    .subscribe(getListMoviesObserver)
 
-            //newMovieAdapter!!.clear()
+            //movieAdapter!!.clear()
         } else
             showConnectionError();
     }
 
 
     override fun onItemClick(adapter: BaseQuickAdapter<*, *>, view: View, position: Int) {
-        val selectedMovie = newMovieAdapter!!.data[position]
+        val selectedMovie = movieAdapter.data[position]
         if (hasConnection()) {
-            //Handler().postDelayed({
 
-                val jsonObject: JSONObject
             if (!progressBottomSheet.isAdded) {
                 progressBottomSheet.show(supportFragmentManager, "progressBar")
             }
 
-            getMovieRequestSingle(selectedMovie.url).observeOn(AndroidSchedulers.mainThread())
+            bag.add(getMovieRequestSingle(selectedMovie.url).observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.io())
                     .subscribe( { json ->
                         val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
@@ -672,9 +659,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                             progressBottomSheet.dismissAllowingStateLoss()
 
                         startActivity(intent)
-                    }, { error ->
-                        Log.d("Error occured",error.localizedMessage)
-                    })
+                    }, {
+                        Log.d("MOVIE INTENT", "ERROR LOADING MOVIE ACTIVITY")
+                    }))
 
         } else
             showConnectionError()
@@ -687,41 +674,33 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             if (requestQuery != null) {
 
                 if (requestQuery!!.offset() >= requestQuery!!.queryAmount()) {
-                    newMovieAdapter!!.loadMoreComplete()
-                    newMovieAdapter!!.setEnableLoadMore(false)
+                    movieAdapter.loadMoreComplete()
+                    movieAdapter.setEnableLoadMore(false)
                 } else {
                     if (hasConnection()) {
                         mAdMobView.visibility = View.GONE
 
                         Completable.fromCallable {
-                            try {
-                                observable = requestQuery!!.nextQuery
-                            } catch (e: InterruptedException) {
-                                e.printStackTrace()
-                            } catch (e: ExecutionException) {
-                                showConnectionError()
-                            } catch (e: NullPointerException) {
-                                showConnectionError()
-                            }
+                            observable = requestQuery!!.nextQuery
 
                             null
                         }.subscribeOn(Schedulers.io())
-                                .subscribe(getOnLoadMoreObserver!!)
+                                .subscribe(getOnLoadMoreObserver)
 
                     } else {
                         //Get more data failed
                         Toast.makeText(this@MainActivity, R.string.cant_connect_error, Toast.LENGTH_LONG).show()
-                        newMovieAdapter!!.loadMoreFail()
+                        movieAdapter.loadMoreFail()
 
                     }
                 }
             } else {
-                if (newMovieAdapter!!.isLoading) newMovieAdapter!!.loadMoreComplete()
-                newMovieAdapter!!.setEnableLoadMore(false)
+                if (movieAdapter.isLoading) movieAdapter.loadMoreComplete()
+                movieAdapter.setEnableLoadMore(false)
             }
         } else {
-            if (newMovieAdapter!!.isLoading) newMovieAdapter!!.loadMoreComplete()
-            newMovieAdapter!!.setEnableLoadMore(false)
+            if (movieAdapter.isLoading) movieAdapter.loadMoreComplete()
+            movieAdapter.setEnableLoadMore(false)
         }
     }
 
@@ -733,24 +712,17 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             ACTIVITY_STATE.ONLINE,ACTIVITY_STATE.LOST_CONNECTION -> {
                 if (hasConnection()) {
                     Completable.fromCallable {
-                        try {
-                            if (requestQuery != null)
-                                requestQuery!!.resetOffset()
-                            else
-                                requestQuery = mSiteWorker!!.RequestQuery(applicationContext, SiteWorker.EDITOR_CHOICE_QUERY)
 
-                            observable = requestQuery!!.nextQuery
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e: ExecutionException) {
-                            showConnectionError()
-                        } catch (e: NullPointerException) {
-                            showConnectionError()
-                        }
+                    if (requestQuery != null)
+                        requestQuery!!.resetOffset()
+                    else
+                        requestQuery = mSiteWorker.RequestQuery(applicationContext, SiteWorker.EDITOR_CHOICE_QUERY)
+
+                    observable = requestQuery!!.nextQuery
 
                         null
                     }.subscribeOn(Schedulers.io())
-                            .subscribe(getListMoviesObserver!!)
+                            .subscribe(getListMoviesObserver)
                     refreshBannerAd()
                 } else {
                     showConnectionError()
@@ -759,25 +731,25 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             ACTIVITY_STATE.FAVORITES -> {
                 activityState = ACTIVITY_STATE.FAVORITES
                 Completable.fromCallable {
-                    observable = appDataSource!!.listOfFavorites
+                    observable = appDataSource.listOfFavorites
                     null
                 }.subscribeOn(Schedulers.io())
-                        .subscribe(getListMoviesObserver!!)
+                        .subscribe(getListMoviesObserver)
             }
         }
     }
 
     private fun updateDataList(list: List<Movie>) {
 
-        newMovieAdapter!!.addAll(list)
+        movieAdapter.addAll(list)
         movieListRecyclerView!!.recycledViewPool.clear()
 
-        if (newMovieAdapter!!.data.size != 0)
+        if (movieAdapter.data.size != 0)
             movieListRecyclerView!!.scrollToPosition(0)
 
         if (activityState == ACTIVITY_STATE.ONLINE) {
             if (requestQuery != null && requestQuery!!.offset() < requestQuery!!.queryAmount())
-                newMovieAdapter!!.setEnableLoadMore(true)
+                movieAdapter.setEnableLoadMore(true)
         }
     }
 
@@ -801,22 +773,27 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         sortingMenuItem.isVisible = false
     }
 
-    internal inner class CustomDivider(val mDivider: Drawable, val topOffset: Int, val bottomOffset: Int) : RecyclerView.ItemDecoration() {
 
-        override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
-            super.getItemOffsets(outRect, view, parent, state)
+    fun firstStartDisclaimer() {
+        val mSettings = getSharedPreferences(Settings.APP_PREFERENCES, Context.MODE_PRIVATE)
+        val APP_FIRST_RUN = "first_run_check"
+        var isFirstRun = mSettings.getBoolean(APP_FIRST_RUN,true)
 
-            outRect.top = topOffset
-            outRect.bottom = bottomOffset
+        if (isFirstRun) {
+            val editor = mSettings.edit();
+            editor.putBoolean(APP_FIRST_RUN, false);
+            editor.apply();
+
+            val disclaimerFragment = DisclaimerFragment()
+            disclaimerFragment.show(supportFragmentManager, "disclaimer")
         }
-
     }
 
     @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
     fun getRequestQueryCompletable(requestType : Int, path : String, params : HashMap<String,String>) : Completable {
         return Completable.fromCallable {
-            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, requestType, path, params)
-            observable = requestQuery!!.nextQuery
+            requestQuery = mSiteWorker.RequestQuery(applicationContext, requestType, path, params)
+            observable = requestQuery?.nextQuery
             null
         }
     }
@@ -824,8 +801,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
     fun getRequestQueryCompletable(requestType : Int, path : String) : Completable {
         return Completable.fromCallable {
-            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, requestType, path)
-            observable = requestQuery!!.nextQuery
+            requestQuery = mSiteWorker.RequestQuery(applicationContext, requestType, path)
+            observable = requestQuery?.nextQuery
             null
         }
     }
@@ -833,17 +810,34 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
     fun getRequestQueryCompletable(requestType : Int) : Completable {
         return Completable.fromCallable {
-            requestQuery = mSiteWorker!!.RequestQuery(applicationContext, requestType)
-            observable = requestQuery!!.nextQuery
+            requestQuery = mSiteWorker.RequestQuery(applicationContext, requestType)
+            observable = requestQuery?.nextQuery
             null
         }
     }
 
     fun getMovieRequestSingle(url: String) : Single<JSONObject> {
         return Single.create<JSONObject> { observer ->
-            val jsonObject = SiteWorker.getMovieInfo(url)
+            try {
+                val jsonObject = SiteWorker.getMovieInfo(url)
+                observer.onSuccess(jsonObject)
+            } catch (e : InterruptedException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e : ExecutionException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e : JSONException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e : NullPointerException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            } catch (e : ArrayIndexOutOfBoundsException) {
+                if (!observer.isDisposed)
+                    observer.onError(e)
+            }
 
-            observer.onSuccess(jsonObject)
         }
     }
 }
