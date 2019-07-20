@@ -3,11 +3,9 @@ package ru.garretech.garred.doramatv.fragments
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.support.v4.app.Fragment
+import androidx.fragment.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -37,32 +35,33 @@ import java.io.IOException
 import java.util.regex.Pattern
 
 
-class MovieSourcesFragment : Fragment() {
+class MovieSourcesFragment : androidx.fragment.app.Fragment() {
 
     // TODO: Rename and change types of parameters
     private var arrayAdapter: ArrayAdapter<String>? = null
-    internal lateinit var seriesList: JSONArray
-    internal lateinit var listViewList: ArrayList<String>
-    internal lateinit var listView: ListView
-    internal lateinit var sourcesArray: JSONArray
-    internal lateinit var sourcesInfo: JSONObject
-    internal lateinit var URL: String
-    internal lateinit var accessToken: String
+    private lateinit var seriesList: JSONArray
+    private lateinit var listViewList: ArrayList<String>
+    private lateinit var listView: ListView
+    private lateinit var sourcesArray: JSONArray
+    private lateinit var sourcesInfo: JSONObject
+    private lateinit var url: String
+    private lateinit var accessToken: String
     private var seriesSelected: Boolean = false
-    internal lateinit var progressBottomSheet: ProgressBottomSheet
-    internal lateinit var initialSeries: String
-    internal var empty: Boolean = false
-    val backSymbolText = "<-- "
+    private lateinit var progressBottomSheet: ProgressBottomSheet
+    private lateinit var initialSeries: String
+    private var empty: Boolean = false
+
+
     private var bag : CompositeDisposable = CompositeDisposable()
 
-    val adapterClickListener = AdapterView.OnItemClickListener { _, _, i, _ ->
+    private val adapterClickListener = AdapterView.OnItemClickListener { _, _, i, _ ->
         if (hasConnection()) {
             if (!seriesSelected) {
                 if (!progressBottomSheet.isAdded) {
                     progressBottomSheet.show(fragmentManager!!, "progressBar")
                 }
 
-                bag.add(getSourcesSingle(seriesList,URL,i).observeOn(AndroidSchedulers.mainThread())
+                bag.add(getSourcesSingle(seriesList,url,i).observeOn(AndroidSchedulers.mainThread())
                         .subscribeOn(Schedulers.io())
                         .subscribe( { jsonArray ->
 
@@ -79,8 +78,8 @@ class MovieSourcesFragment : Fragment() {
 
                             if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
                                 progressBottomSheet.dismissAllowingStateLoss()
-                        }, { error ->
-                            Log.d("SOURCE LIST","ERROR LOADING SOURCES LIST")
+                        }, {
+                            Log.e("SOURCE LIST","ERROR LOADING SOURCES LIST", it)
                         }))
             } else {
                 when (i) {
@@ -125,9 +124,9 @@ class MovieSourcesFragment : Fragment() {
                                     if (matcher.find()) {
                                         val oid = matcher.group(1)
                                         val id = matcher.group(2)
-                                        vkMovieId = "${oid}_${id}"
+                                        vkMovieId = "${oid}_$id"
 
-                                        var fileLink: JSONObject? = null
+                                        var fileLink: JSONObject?
 
                                         VKRequest().loadSourcesAsSingle(vkMovieId).observeOn(AndroidSchedulers.mainThread())
                                                 .subscribeOn(Schedulers.io())
@@ -135,7 +134,7 @@ class MovieSourcesFragment : Fragment() {
                                                     var jsonObject = posting.get("response") as JSONObject
                                                     var jsonArray = jsonObject.get("items") as JSONArray
 
-                                                    if (jsonArray?.length() !=0) {
+                                                    if (jsonArray.length() !=0) {
                                                         jsonObject = jsonArray.get(0) as JSONObject
                                                         fileLink = jsonObject.get("files") as JSONObject
                                                         val selectQualityFragment = SelectQualityFragment.newInstance(fileLink!!)
@@ -145,8 +144,8 @@ class MovieSourcesFragment : Fragment() {
 
                                                     if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
                                                         progressBottomSheet.dismissAllowingStateLoss()
-                                                }, { error ->
-                                                    Log.d("QUALITY ERROR", "ERROR IN LOADING QUALITY LIST")
+                                                }, {
+                                                    Log.e("QUALITY ERROR", "ERROR IN LOADING QUALITY LIST", it)
                                                 })
                                     }
                                 } else {
@@ -156,7 +155,7 @@ class MovieSourcesFragment : Fragment() {
                                     val pageContent = pageDownloader.execute(SiteWorker.TRAGUS_URL + seriesId).get()
                                     val tempElement: Element? = pageContent?.getElementsByTag("iframe")?.first()
                                     var rawURLString = tempElement?.attr("src")
-                                    if (tempElement != null && !rawURLString!!.contains("http") && !rawURLString!!.contains("https")) rawURLString = "https:" + rawURLString
+                                    if (tempElement != null && !rawURLString!!.contains("http") && !rawURLString.contains("https")) rawURLString = "https:$rawURLString"
                                     intent.putExtra("link", rawURLString)
 
                                     if (progressBottomSheet.isAdded && progressBottomSheet.isVisible)
@@ -194,18 +193,18 @@ class MovieSourcesFragment : Fragment() {
             try {
                 progressBottomSheet = ProgressBottomSheet()
                 sourcesInfo = JSONObject(arguments!!.getString(ARG_PARAM1))
-                URL = sourcesInfo.getString("url")
+                url = sourcesInfo.getString("url")
                 accessToken = Settings.access_token
                 initialSeries = sourcesInfo.getString("initial_series")
 
                 arrayAdapter = ArrayAdapter(context!!, android.R.layout.simple_list_item_1, ArrayList())
                 arrayAdapter!!.setNotifyOnChange(true)
 
-                bag.add(getSeriesSingle(URL,initialSeries).subscribeOn(Schedulers.io())
+                bag.add(getSeriesSingle(url, initialSeries).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe( { jsonArray ->
 
-                            listViewList = ArrayList<String>()
+                            listViewList = ArrayList()
 
                             if (jsonArray.length() == 0) {
                                 listViewList.add("Пусто")
@@ -218,8 +217,8 @@ class MovieSourcesFragment : Fragment() {
                             arrayAdapter?.addAll(listViewList)
                             arrayAdapter?.notifyDataSetChanged()
 
-                        }, { error ->
-                            Log.d("SERIES LIST","ERROR LOADING SERIES LIST")
+                        }, {
+                            Log.e("SERIES LIST","ERROR LOADING SERIES LIST", it)
                         }))
 
             } catch (e: JSONException) {
@@ -241,47 +240,47 @@ class MovieSourcesFragment : Fragment() {
 
 
     private fun getSeriesSingle(url : String, initial : String) : Single<JSONArray> {
-        return Single.create<JSONArray> { observer ->
+        return Single.create {
             try {
                 seriesList = SiteWorker.formSeriesList(url, initial)
-                observer.onSuccess(seriesList)
+                it.onSuccess(seriesList)
             } catch (e: InterruptedException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: ExecutionException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: JSONException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: NullPointerException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: ArrayIndexOutOfBoundsException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             }
         }
     }
 
 
     private fun getSourcesSingle(list : JSONArray, url : String, i : Int) : Single<JSONArray> {
-        return Single.create<JSONArray> { observer ->
+        return Single.create {
             try {
                 sourcesArray = SiteWorker.getSources(list, url, i)
-                observer.onSuccess(sourcesArray)
+                it.onSuccess(sourcesArray)
             } catch (e: InterruptedException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: ExecutionException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: JSONException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             } catch (e: NullPointerException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
+                if (!it.isDisposed)
+                    it.onError(e)
             }
         }
     }
@@ -294,12 +293,13 @@ class MovieSourcesFragment : Fragment() {
 
     internal fun hasConnection(): Boolean {
         val cm = activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val ni = cm.getActiveNetworkInfo()
+        val ni = cm.activeNetworkInfo
         return ni != null && ni.isConnected
     }
 
     companion object {
-        private val ARG_PARAM1 = "info"
+        private const val ARG_PARAM1 = "info"
+        private const val backSymbolText = "<-- "
 
 
         fun newInstance(sourcesInfo: JSONObject): MovieSourcesFragment {

@@ -7,8 +7,6 @@
     <string name="privacyText">Политика конфиденциальности</string>
     <string name="privacyLink">https://garretads.github.io/Garretads/</string>
     <string name="title_activity_movie_about">MovieAbout</string>
-    <string name="tab_text_1">Описание</string>
-    <string name="tab_text_2">Источники</string>
     <string name="action_settings">Настройки</string>
     <string name="search_hint">Поиск</string>
     <string name="action_sort">Сортировка</string>
@@ -53,7 +51,6 @@
     </string-array>
 
     <!-- Example settings for Data & Sync -->
-    <string name="pref_header_data_sync">Data &amp; sync</string>
 
     <string name="pref_title_sync_frequency">Sync frequency</string>
     <string-array name="pref_sync_frequency_titles">
@@ -73,24 +70,9 @@
         <item>-1</item>
     </string-array>
 
-    <string-array name="list_preference_entries">
-        <item>Entry 1</item>
-        <item>Entry 2</item>
-        <item>Entry 3</item>
-    </string-array>
-
-    <string-array name="list_preference_entry_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-    </string-array>
-
-    <string-array name="multi_select_list_preference_default_value" />
-
     <string name="pref_title_system_sync_settings">System sync settings</string>
 
     <!-- Example settings for Notifications -->
-    <string name="pref_header_notifications">Notifications</string>
 
     <string name="pref_title_new_message_notifications">New message notifications</string>
 
@@ -103,8 +85,9 @@
     <string name="action_favorite">Избранное</string>
 
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="disclaimer_text">Внимание! Программа не хранит никаких материалов, защищенных авторскими правами, а лишь предоставляет доступ к пользовательскому контенту на сайте doramatv.me. Если вы уверены, что какое-либо содержимое, отображаемое приложением, нарушает ваши авторские права, немедленно сообщите об этом администрации сайта doramatv.me.</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

@@ -3,7 +3,7 @@ package ru.garretech.garred.doramatv.fragments
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import android.support.v4.app.DialogFragment
+import androidx.fragment.app.DialogFragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,7 +17,7 @@ import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.adapters.CustomTableLayout
 
 
-class SortingFragment : DialogFragment() {
+class SortingFragment : androidx.fragment.app.DialogFragment() {
     // TODO: Rename and change types of parameters
     private var initialURL: Uri? = null
     private var listener: OnFragmentInteractionListener? = null

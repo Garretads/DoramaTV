@@ -15,10 +15,10 @@ import ru.garretech.garred.doramatv.tools.SiteWorker
 class AppDataSource(context: Context) {
     private val appDatabase : AppDatabase by lazy { AppDatabase.getInstance(context)!! }
     private val movieDAO: MovieDAO by lazy {
-        appDatabase?.movieDAO()
+        appDatabase.movieDAO()
     }
     private val favoritesDAO: FavoritesDAO by lazy {
-        appDatabase?.favoritesDAO()
+        appDatabase.favoritesDAO()
     }
 
     val allMovies: List<Movie>

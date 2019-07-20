@@ -94,7 +94,7 @@ class SiteWorker {
                         list?.addAll(resultArray)
 
                         currentOffset += (result["offset"] as Int?)!!
-                        Observable.fromArray(resultArray!!)
+                        Observable.fromArray(resultArray)
                     }
 
                     SEARCH_QUERY -> {
@@ -122,7 +122,7 @@ class SiteWorker {
                         list?.addAll(resultArray)
 
                         currentOffset += (result["offset"] as Int?)!!
-                        Observable.fromArray(resultArray!!)
+                        Observable.fromArray(resultArray)
                     }
 
                     EDITOR_CHOICE_QUERY -> {
@@ -190,8 +190,8 @@ class SiteWorker {
     }
 
     companion object {
-        val SITE_URL = "http://doramatv.me"
-        private val SITE_URL1 = "doramatv.me"
+        //val SITE_URL = "http://doramatv.live"
+        //private val SITE_URL1 = "doramatv.live"
         private val editorChoice = "row tiles-row short"
         val NEW_MOVIES_PARAMS = arrayOf("sortType", "created")
         val LIST_PREFIX = "list"
@@ -234,12 +234,12 @@ class SiteWorker {
             val pageDownloader = PageDownloader()
             val pageContent: Document?
             val movieList = ArrayList<Movie>()
-            pageContent = pageDownloader.execute(SITE_URL).get()
+            pageContent = pageDownloader.execute(Settings.SITE_URL).get()
 
             if (pageContent == null)
                 throw NullPointerException()
 
-            var imageDownloader: ImageDownloader
+            //var imageDownloader: ImageDownloader
             var movie: Movie
 
             val tempElements = pageContent.getElementsByClass(editorChoice)
@@ -252,14 +252,14 @@ class SiteWorker {
                     val element1 = editorChoiceElements[i]
                     var genres = element1.attr("title")
                     genres = genres.substring(genres.indexOf(". ") + 2)
-                    var url = SITE_URL + element1.getElementsByTag("a")[0].attr("href")
+                    var url = Settings.SITE_URL + element1.getElementsByTag("a")[0].attr("href")
                     url = url.substring(0, url.lastIndexOf('/'))
                     val title = element1.getElementsByTag("img")[0].attr("alt")
                     val imageURL: String
                     imageURL = element1.getElementsByTag("img")[0].attr("data-original")
                     movie = Movie(title, ArrayList(Arrays.asList(*genres.split(", ".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray())), imageURL, url)
 
-                    var image: Bitmap? = null
+                    /*var image: Bitmap? = null
                     try {
                         image = getCachedImage(context!!, imageURL)
                         Log.d("STATUS: ", "$imageURL found")
@@ -280,9 +280,9 @@ class SiteWorker {
 
                     } catch (e: IOException) {
                         e.printStackTrace()
-                    }
+                    }*/
 
-                    movie.image = image
+                    //movie.image = image
                     movieList.add(movie)
                 }
             }
@@ -300,7 +300,7 @@ class SiteWorker {
                 val pageDownloader = PageDownloader()
                 val pageContent: Document?
 
-                pageContent = pageDownloader.execute(SITE_URL + URL_PREFIX).get()
+                pageContent = pageDownloader.execute(Settings.SITE_URL + URL_PREFIX).get()
 
                 if (pageContent == null)
                     throw NullPointerException()
@@ -449,7 +449,7 @@ class SiteWorker {
             val movieList = ArrayList<Movie>()
             val result = HashMap<String, Any>()
             val elements = pageContent.getElementsByClass("tile col-sm-6 ")
-            var imageDownloader: ImageDownloader
+            //var imageDownloader: ImageDownloader
             var movie: Movie
             var iteration = 0
             for (element in elements) {
@@ -473,7 +473,7 @@ class SiteWorker {
                     }
 
                     var tempElement = element.getElementsByClass("img").first()
-                    val url = SITE_URL + tempElement.getElementsByTag("a")[0].attr("href")
+                    val url = Settings.SITE_URL + tempElement.getElementsByTag("a")[0].attr("href")
                     tempElement = tempElement.getElementsByTag("img").first()
                     val title = tempElement.attr("title")
                     val imageURL = tempElement.attr("data-original")
@@ -481,7 +481,7 @@ class SiteWorker {
 
                     movie = Movie(title, ArrayList(Arrays.asList(*genres.split(", ".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray())), imageURL, url)
 
-                    var image: Bitmap? = null
+                    /*var image: Bitmap? = null
                     try {
                         image = getCachedImage(context!!, imageURL)
                         Log.d("STATUS: ", "$imageURL found")
@@ -502,9 +502,9 @@ class SiteWorker {
 
                     } catch (e: IOException) {
                         e.printStackTrace()
-                    }
+                    }*/
 
-                    movie.image = image
+                    //movie.image = image
                     movieList.add(movie)
                 }
                 iteration++
@@ -679,8 +679,8 @@ class SiteWorker {
             for (element1 in elements) {
                 val jsonObject = JSONObject()
                 val subUnit: String
-                val seriesID: String
-                val sourceName : String
+                val seriesID: String = element1.getElementsByAttribute("data-sid").first().attr("data-sid")
+                val sourceName : String = element1.getElementsByClass("text-additional").first().text()
 
                 if (element1.getElementsByClass("person-link").first() != null)
                     subUnit = "Фансаб " + element1.getElementsByClass("person-link").first().text()
@@ -693,19 +693,14 @@ class SiteWorker {
                 else if (element1.text().contains(SUBS))
                     translation = SUBS_NORMAL
 
-                sourceName = element1.getElementsByClass("text-additional").first().text()
                 jsonObject.put("sources_name", sourceName)
-
-
-                seriesID = element1.getElementsByAttribute("data-sid").first().attr("data-sid")
 
                 jsonObject.put("series_id", seriesID)
 
-
                 if (translation != null)
-                    jsonObject.put("sub_unit", "$subUnit ($translation) ${sourceName}")
+                    jsonObject.put("sub_unit", "$subUnit ($translation) $sourceName")
                 else
-                    jsonObject.put("sub_unit", "${subUnit} ${sourceName}")
+                    jsonObject.put("sub_unit", "$subUnit $sourceName")
 
                 oneSeriesSources.put(jsonObject)
             }
@@ -748,7 +743,7 @@ class SiteWorker {
             get() {
                 val builder = Uri.Builder()
                 builder.scheme("http")
-                        .authority(SITE_URL1)
+                        .authority(Settings.SITE_URL1)
                 return builder
             }
 

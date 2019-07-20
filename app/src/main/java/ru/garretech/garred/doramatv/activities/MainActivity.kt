@@ -4,17 +4,13 @@ import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.os.Bundle
-import android.support.design.widget.NavigationView
-import android.support.v4.view.GravityCompat
-import android.support.v4.widget.DrawerLayout
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.app.ActionBarDrawerToggle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.SearchView
+import com.google.android.material.navigation.NavigationView
+import androidx.core.view.GravityCompat
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -29,9 +25,6 @@ import org.json.JSONException
 import org.json.JSONObject
 
 
-import java.io.FileNotFoundException
-import java.util.ArrayList
-import java.util.HashMap
 import java.util.concurrent.ExecutionException
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
@@ -47,20 +40,21 @@ import kotlinx.android.synthetic.main.toolbar.*
 import org.json.JSONArray
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
-import ru.garretech.garred.doramatv.adapters.RecyclerAdapter
+import ru.garretech.garred.doramatv.adapters.MovieListAdapter
 import ru.garretech.garred.doramatv.database.AppDataSource
 import ru.garretech.garred.doramatv.fragments.CustomLoadMoreView
 import ru.garretech.garred.doramatv.fragments.DisclaimerFragment
 import ru.garretech.garred.doramatv.fragments.ProgressBottomSheet
 import ru.garretech.garred.doramatv.fragments.SortingFragment
 import ru.garretech.garred.doramatv.model.Movie
-import ru.garretech.garred.doramatv.tools.ImageDownloader
 import ru.garretech.garred.doramatv.tools.SiteWorker
+import java.util.*
+import kotlin.collections.ArrayList
 
-class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
+class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
 
     private lateinit var searchView: SearchView
-    private lateinit var movieAdapter: RecyclerAdapter
+    private lateinit var movieAdapter: MovieListAdapter
     private lateinit var progressBottomSheet : ProgressBottomSheet
     private lateinit var mSiteWorker: SiteWorker
     private var requestQuery: SiteWorker.RequestQuery? = null
@@ -80,7 +74,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             override fun onComplete() {
                 bag.add(observable!!
                         .subscribeOn(Schedulers.io())
-                        .map { movies ->
+                        /*.map { movies ->
                             for (movie in movies) {
                                 var image: Bitmap?
                                 try {
@@ -94,18 +88,17 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                                 movie.image = image
                             }
                             movies
-                        }
+                        }*/
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(updateListConsumer))
                 //Log.d("Task", "get favorites completable completed");
             }
 
             override fun onError(e: Throwable) {
-                Log.d("LIST LOAD","Ошибка получения списка фильмов, попробуйте еще раз")
+                Log.e("LIST LOAD","Ошибка получения списка фильмов, попробуйте еще раз",e)
             }
         }
     }
-
 
     private val getOnLoadMoreObserver by lazy {
         object : CompletableObserver {
@@ -116,7 +109,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             override fun onComplete() {
                 bag.add(observable!!
                         .subscribeOn(Schedulers.io())
-                        .map { movies ->
+                        /*.map { movies ->
                             for (movie in movies) {
                                 var image: Bitmap?
                                 try {
@@ -130,13 +123,13 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                                 movie.image = image
                             }
                             movies
-                        }
+                        }*/
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(onLoadMoreConsumer))
             }
 
             override fun onError(e: Throwable) {
-                Log.d("ON LOAD MORE","Ошибка получения списка фильмов, попробуйте еще раз")
+                Log.e("ON LOAD MORE","Ошибка получения списка фильмов, попробуйте еще раз",e)
             }
         }
     }
@@ -145,13 +138,13 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         Consumer<List<Movie>> { movies ->
             movieAdapter.addData(movies)
             movieAdapter.loadMoreComplete()
-            mAdMobView.visibility = View.VISIBLE
+            //mAdMobView.visibility = View.VISIBLE
         }
     }
 
     private val updateListConsumer by lazy {
         Consumer<List<Movie>> { movies ->
-            updateDataList(movies)
+            updateDataList(movies,true)
 
             if (swipeContainer.isRefreshing) swipeContainer.isRefreshing = false
 
@@ -206,12 +199,12 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         appDataSource = AppDataSource(applicationContext)
         progressBottomSheet = ProgressBottomSheet()
 
-        initAdMobView()
+        //initAdMobView()
 
         navigationView.setNavigationItemSelectedListener(this)
 
 
-        drawerLayout.setDrawerListener(object : DrawerLayout.DrawerListener {
+        drawerLayout.setDrawerListener(object : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
             override fun onDrawerStateChanged(p0: Int) {
                 //super
             }
@@ -221,11 +214,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
 
             override fun onDrawerClosed(p0: View) {
-                mAdMobView.visibility = View.VISIBLE
+                //mAdMobView.visibility = View.VISIBLE
             }
 
             override fun onDrawerOpened(p0: View) {
-                mAdMobView.visibility = View.GONE
+                //mAdMobView.visibility = View.GONE
             }
 
         })
@@ -242,7 +235,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         var spanCount = (metrics.widthPixels / (115 * metrics.scaledDensity)).toInt()
         Settings.max_loaded_in_screen = spanCount * 8
 
-        movieListRecyclerView!!.layoutManager = GridLayoutManager(this,spanCount)
+        movieListRecyclerView!!.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, spanCount)
 
 
         movieListRecyclerView!!.setHasFixedSize(true)
@@ -251,7 +244,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        movieAdapter = RecyclerAdapter(R.layout.fragment_movie_new, ArrayList())
+        movieAdapter = MovieListAdapter(R.layout.cardview_movie,ArrayList())
         movieListRecyclerView!!.adapter = movieAdapter
         movieAdapter.onItemClickListener = this
         movieAdapter.setOnLoadMoreListener(this, movieListRecyclerView)
@@ -274,7 +267,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         } else
             showConnectionError()
 
-        refreshBannerAd()
+        //refreshBannerAd()
     }
 
 
@@ -289,7 +282,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         val layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
         layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
-        relativeContainer.addView(mAdMobView, layoutParams)
+        //relativeContainer.addView(mAdMobView, layoutParams)
     }
 
     private fun refreshBannerAd() {
@@ -415,7 +408,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     title = getString(R.string.editor_choice_title)
 
                 } else
-                    showConnectionError();
+                    showConnectionError()
             }
             R.id.nav_list -> {
 
@@ -468,11 +461,11 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     }
 
 
-                    bag.add(getMovieRequestSingle(SiteWorker.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX)
+                    bag.add(getMovieRequestSingle(Settings.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX)
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribeOn(Schedulers.io())
                             .subscribe( { json ->
-                                val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
+                                val intent = Intent(this@MainActivity, MovieInfoActivity::class.java)
 
                                 intent.putExtra("movie_info", json.toString())
 
@@ -509,7 +502,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                         showConnectionError()
                     }
                 } else
-                    showConnectionError();
+                    showConnectionError()
 
             }
             R.id.nav_favourites -> {
@@ -551,6 +544,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == GENRES_CODE) {
             if (resultCode == Activity.RESULT_OK) {
                 val resultPrefix = data!!.getStringExtra("link")
@@ -572,7 +566,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
     public override fun onPause() {
-        mAdMobView.pause()
+        //mAdMobView.pause()
         //bag.dispose()
         super.onPause()
 
@@ -587,15 +581,15 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         if (progressBottomSheet.isResumed || progressBottomSheet.isVisible)
             progressBottomSheet.dismissAllowingStateLoss()
 
-        mAdMobView.resume()
-        refreshBannerAd()
+        //mAdMobView.resume()
+        //refreshBannerAd()
     }
 
 
 
     /** Called before the activity is destroyed  */
     public override fun onStop() {
-        mAdMobView.pause()
+        //mAdMobView.pause()
         //bag.dispose()
         super.onStop()
 
@@ -624,12 +618,12 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
             //movieAdapter!!.clear()
         } else
-            showConnectionError();
+            showConnectionError()
     }
 
 
     override fun onItemClick(adapter: BaseQuickAdapter<*, *>, view: View, position: Int) {
-        val selectedMovie = movieAdapter.data[position]
+        val selectedMovie = movieAdapter.data[position] as Movie
         if (hasConnection()) {
 
             if (!progressBottomSheet.isAdded) {
@@ -639,7 +633,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             bag.add(getMovieRequestSingle(selectedMovie.url).observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.io())
                     .subscribe( { json ->
-                        val intent = Intent(this@MainActivity, MovieAboutActivity::class.java)
+                        val intent = Intent(this@MainActivity, MovieInfoActivity::class.java)
                         selectedMovie.title = json.getString("title")
                         selectedMovie.initialSeries = json.getString("initial_series")
                         selectedMovie.productionCountry = json.getString("production")
@@ -678,7 +672,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     movieAdapter.setEnableLoadMore(false)
                 } else {
                     if (hasConnection()) {
-                        mAdMobView.visibility = View.GONE
+                        //mAdMobView.visibility = View.GONE
 
                         Completable.fromCallable {
                             observable = requestQuery!!.nextQuery
@@ -723,7 +717,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                         null
                     }.subscribeOn(Schedulers.io())
                             .subscribe(getListMoviesObserver)
-                    refreshBannerAd()
+                    //refreshBannerAd()
                 } else {
                     showConnectionError()
                 }
@@ -739,9 +733,12 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         }
     }
 
-    private fun updateDataList(list: List<Movie>) {
+    private fun updateDataList(list: List<Movie>,clear : Boolean) {
 
-        movieAdapter.addAll(list)
+        if(clear)
+            movieAdapter.clear()
+
+        movieAdapter.addData(list)
         movieListRecyclerView!!.recycledViewPool.clear()
 
         if (movieAdapter.data.size != 0)
@@ -760,29 +757,29 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     internal fun hasConnection() : Boolean {
         val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val ni = cm.getActiveNetworkInfo()
+        val ni = cm.activeNetworkInfo
         return ni != null && ni.isConnected
 }
 
-    internal fun showSortingMenu() {
+    private fun showSortingMenu() {
         if (!sortingMenuItem.isVisible)
             sortingMenuItem.isVisible = true
     }
 
-    internal fun dismissSortingMenu() {
+    private fun dismissSortingMenu() {
         sortingMenuItem.isVisible = false
     }
 
 
-    fun firstStartDisclaimer() {
+    private fun firstStartDisclaimer() {
         val mSettings = getSharedPreferences(Settings.APP_PREFERENCES, Context.MODE_PRIVATE)
-        val APP_FIRST_RUN = "first_run_check"
+        val APP_FIRST_RUN = "first_run_check_new"
         var isFirstRun = mSettings.getBoolean(APP_FIRST_RUN,true)
 
         if (isFirstRun) {
-            val editor = mSettings.edit();
-            editor.putBoolean(APP_FIRST_RUN, false);
-            editor.apply();
+            val editor = mSettings.edit()
+            editor.putBoolean(APP_FIRST_RUN, false)
+            editor.apply()
 
             val disclaimerFragment = DisclaimerFragment()
             disclaimerFragment.show(supportFragmentManager, "disclaimer")
@@ -821,19 +818,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             try {
                 val jsonObject = SiteWorker.getMovieInfo(url)
                 observer.onSuccess(jsonObject)
-            } catch (e : InterruptedException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
-            } catch (e : ExecutionException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
-            } catch (e : JSONException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
-            } catch (e : NullPointerException) {
-                if (!observer.isDisposed)
-                    observer.onError(e)
-            } catch (e : ArrayIndexOutOfBoundsException) {
+            } catch (e : Exception) {
                 if (!observer.isDisposed)
                     observer.onError(e)
             }

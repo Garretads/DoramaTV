@@ -1,10 +1,10 @@
 package ru.garretech.garred.doramatv.selection
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 
 interface HolderClickObserver {
-    fun onHolderClick(holder: RecyclerView.ViewHolder)
+    fun onHolderClick(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder)
 
-    fun onHolderLongClick(holder: RecyclerView.ViewHolder): Boolean
+    fun onHolderLongClick(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder): Boolean
 }
 

@@ -1,6 +1,6 @@
 package ru.garretech.garred.doramatv.tools
 
-import android.arch.persistence.room.TypeConverter
+import androidx.room.TypeConverter
 
 import java.util.Arrays
 

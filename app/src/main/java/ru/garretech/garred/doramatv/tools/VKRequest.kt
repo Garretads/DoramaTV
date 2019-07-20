@@ -36,7 +36,7 @@ class VKRequest {
                 builder.build()
 
                 val urlToRequest = URL(builder.toString())
-                val urlConnection = urlToRequest!!.openConnection() as HttpsURLConnection
+                val urlConnection = urlToRequest.openConnection() as HttpsURLConnection
                 urlConnection.doOutput = true
                 urlConnection.requestMethod = "GET"
                 urlConnection.setRequestProperty("User-Agent", "")

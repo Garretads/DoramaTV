@@ -14,6 +14,9 @@ object Settings {
     const val BLOCK_ID = "adf-304149/991383"
     const val BLOCK_ID1 = "adf-304149/999174"
 
+    const val SITE_URL = "http://doramatv.live"
+    const val SITE_URL1 = "doramatv.live"
+
 
     fun version(): String {
         return version

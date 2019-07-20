@@ -1,10 +1,10 @@
 package ru.garretech.garred.doramatv.database
 
-import android.arch.persistence.db.SupportSQLiteDatabase
-import android.arch.persistence.room.Database
-import android.arch.persistence.room.Room
-import android.arch.persistence.room.RoomDatabase
-import android.arch.persistence.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import android.content.Context
 
 import ru.garretech.garred.doramatv.model.Favorites
@@ -26,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
             if (INSTANCE == null) {
                 synchronized(AppDatabase::class.java) {
 
-                    INSTANCE = Room.databaseBuilder<AppDatabase>(context, AppDatabase::class.java, DATABASE_NAME)
+                    INSTANCE = Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
                             .fallbackToDestructiveMigration()
                             .build()
                 }

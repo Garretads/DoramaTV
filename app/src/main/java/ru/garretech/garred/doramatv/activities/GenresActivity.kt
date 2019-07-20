@@ -3,7 +3,7 @@ package ru.garretech.garred.doramatv.activities
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -56,7 +56,7 @@ class GenresActivity : AppCompatActivity() {
                     text.setTextColor(resources.getColor(android.R.color.white))
                     return view
                 }
-            };
+            }
 
            /* val arrayAdapter = object : ArrayAdapter(applicationContext, android.R.layout.simple_list_item_1, genresNameList) {
                 override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {

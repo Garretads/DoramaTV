@@ -1,11 +1,7 @@
 package ru.garretech.garred.doramatv.activities
 
-import android.content.Intent
-import android.net.Uri
-import android.support.design.widget.TabLayout
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
-import android.support.v4.view.ViewPager
+import com.google.android.material.tabs.TabLayout
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -15,7 +11,6 @@ import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
-import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
@@ -25,17 +20,16 @@ import ru.garretech.garred.doramatv.database.AppDataSource
 import ru.garretech.garred.doramatv.fragments.MovieAboutFragment
 import ru.garretech.garred.doramatv.fragments.MovieSourcesFragment
 
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
 import java.util.Arrays
 
 import kotlinx.android.synthetic.main.activity_movie_about.*
-import ru.garretech.garred.doramatv.Settings
+import ru.garretech.garred.doramatv.fragments.MovieDescriptionFragment
 import ru.garretech.garred.doramatv.model.Movie
 
-class MovieAboutActivity : AppCompatActivity() {
+class MovieInfoActivity : AppCompatActivity() {
 
 
 
@@ -65,10 +59,7 @@ class MovieAboutActivity : AppCompatActivity() {
         val intent = intent
         dataSource = AppDataSource(applicationContext)
         try {
-            var movieInfoString : String? = intent.getStringExtra("movie_info")
-
-            if (movieInfoString == null)
-                throw NullPointerException()
+            var movieInfoString : String? = intent.getStringExtra("movie_info") ?: throw NullPointerException()
 
             movieInfo = JSONObject(movieInfoString)
 
@@ -98,7 +89,7 @@ class MovieAboutActivity : AppCompatActivity() {
             try {
                 currentMovie = bundle.getSerializable("movie") as Movie
             } catch (e: NullPointerException) {
-                currentMovie = Movie(title, Arrays.asList(*genres.split(",".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()), imageURL, movieURL)
+                currentMovie = Movie(title, listOf(*genres.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()), imageURL, movieURL)
                 currentMovie.productionYear = age
                 currentMovie.description = description
                 currentMovie.initialSeries = initialSeries
@@ -119,23 +110,23 @@ class MovieAboutActivity : AppCompatActivity() {
         viewPager.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
         tabLayout.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(viewPager))
 
-
     }
 
 
-    private fun setupViewPager(viewPager: ViewPager) {
+    private fun setupViewPager(viewPager: androidx.viewpager.widget.ViewPager) {
         mFragmentAdapter = MovieAboutPagerAdapter(supportFragmentManager)
 
         try {
             val sourcesInfo = JSONObject()
             sourcesInfo.put("url", movieURL)
             sourcesInfo.put("initial_series", initialSeries)
-            mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(movieInfo), "О фильме")
+            mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(currentMovie), "О фильме")
+            //mFragmentAdapter.addFragment(MovieDescriptionFragment.newInstance(currentMovie),"Подробнее")
             mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники")
             viewPager.adapter = mFragmentAdapter
             setSupportActionBar(toolbar)
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-            supportActionBar!!.title = title
+            supportActionBar!!.title = ""
         } catch (e: JSONException) {
             e.printStackTrace()
         }
@@ -145,9 +136,9 @@ class MovieAboutActivity : AppCompatActivity() {
     private fun flagFavorite(flag: Boolean) {
         val item = optionsMenu.getItem(0)
         if (flag)
-            item.setIcon(R.drawable.ic_favorite_white_24dp)
+            item.setIcon(R.drawable.ic_favorite)
         else
-            item.setIcon(R.drawable.ic_favorite_border_white_24dp)
+            item.setIcon(R.drawable.ic_favorite_border)
 
     }
 
@@ -160,15 +151,11 @@ class MovieAboutActivity : AppCompatActivity() {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_movie_about, menu)
         optionsMenu = menu
-
+        optionsMenu.getItem(1).isVisible = false
 
         disposable = observable
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(object : Consumer<Boolean> {
-                    override fun accept(t: Boolean) {
-                        flagFavorite(t)
-                    }
-                })
+                .subscribe { t -> flagFavorite(t) }
 
         Completable.fromCallable {
             isFavorite = dataSource.isFavorite(currentMovie.url)
@@ -176,16 +163,14 @@ class MovieAboutActivity : AppCompatActivity() {
             null
         }.subscribeOn(Schedulers.io())
                 .subscribe(object : CompletableObserver {
-                    override fun onSubscribe(d: Disposable) {
-
-                    }
+                    override fun onSubscribe(d: Disposable) {}
 
                     override fun onComplete() {
                         Log.d("Task", "Subscribe to favorite changes completed")
                     }
 
                     override fun onError(e: Throwable) {
-
+                        Log.e("FAVORITE OBSERVER","Ошибка при занесении фильма в избранное",e)
                     }
                 })
 
@@ -204,9 +189,7 @@ class MovieAboutActivity : AppCompatActivity() {
                         null
                     }.subscribeOn(Schedulers.io())
                             .subscribe(object : CompletableObserver {
-                                override fun onSubscribe(d: Disposable) {
-
-                                }
+                                override fun onSubscribe(d: Disposable) {}
 
                                 override fun onComplete() {
                                     emmitFavorite(false)
@@ -214,7 +197,7 @@ class MovieAboutActivity : AppCompatActivity() {
                                 }
 
                                 override fun onError(e: Throwable) {
-                                    Log.d("Task", "Delete completable error")
+                                    Log.e("FAVORITE OBSERVER", "Delete completable error",e)
                                 }
                             })
                 } else {
@@ -223,9 +206,7 @@ class MovieAboutActivity : AppCompatActivity() {
                         null
                     }.subscribeOn(Schedulers.io())
                             .subscribe(object : CompletableObserver {
-                                override fun onSubscribe(d: Disposable) {
-
-                                }
+                                override fun onSubscribe(d: Disposable) {}
 
                                 override fun onComplete() {
                                     emmitFavorite(true)
@@ -237,10 +218,6 @@ class MovieAboutActivity : AppCompatActivity() {
                                 }
                             })
                 }
-            }
-            R.id.action_settings -> {
-                val intent = Intent(this@MovieAboutActivity, SettingsActivity::class.java)
-                startActivity(intent)
             }
         }
         return super.onOptionsItemSelected(item)

@@ -1,9 +1,9 @@
 package ru.garretech.garred.doramatv.selection
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 
 interface SelectionObserver {
-    fun onSelectedChanged(holder: RecyclerView.ViewHolder, isSelected: Boolean)
+    fun onSelectedChanged(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, isSelected: Boolean)
 
     fun onSelectableChanged(isSelectable: Boolean)
 }

@@ -1,7 +1,7 @@
 package ru.garretech.garred.doramatv.selection
 
 import android.database.Observable
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 
 import java.lang.ref.WeakReference
@@ -22,30 +22,30 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
     val selectedItemsCount: Int
         get() = mSelectedItems.size
 
-    constructor() : this(WeakHolderTracker()) {}
+    constructor() : this(WeakHolderTracker())
 
 
-    fun <H : RecyclerView.ViewHolder> wrapSelectable(holder: H): H {
+    fun <H : androidx.recyclerview.widget.RecyclerView.ViewHolder> wrapSelectable(holder: H): H {
         ViewHolderMultiSelectionWrapper(holder)
         return holder
     }
 
-    fun <H : RecyclerView.ViewHolder> wrapClickable(holder: H): H {
+    fun <H : androidx.recyclerview.widget.RecyclerView.ViewHolder> wrapClickable(holder: H): H {
         ViewHolderClickWrapper(holder)
         return holder
     }
 
-    fun bindHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    fun bindHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
         mTracker.bindHolder(holder, position)
     }
 
-    fun toggleItemSelected(holder: RecyclerView.ViewHolder) {
+    fun toggleItemSelected(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder) {
         setItemSelected(holder, !isItemSelected(holder))
     }
 
-    fun setItemSelected(holder: RecyclerView.ViewHolder, isSelected: Boolean): Boolean {
+    fun setItemSelected(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, isSelected: Boolean): Boolean {
         val position = holder.adapterPosition
-        if (position != RecyclerView.NO_POSITION) {
+        if (position != androidx.recyclerview.widget.RecyclerView.NO_POSITION) {
             val isAlreadySelected = isItemSelected(position)
             if (isSelected) {
                 mSelectedItems.add(position)
@@ -61,7 +61,7 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
         }
     }
 
-    fun isItemSelected(holder: RecyclerView.ViewHolder): Boolean {
+    fun isItemSelected(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder): Boolean {
         return mSelectedItems.contains(holder.adapterPosition)
     }
 
@@ -95,7 +95,7 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
     }
 
     private inner class HolderClickObservable : Observable<HolderClickObserver>() {
-        fun notifyOnHolderClick(holder: RecyclerView.ViewHolder) {
+        fun notifyOnHolderClick(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder) {
             synchronized(mObservers) {
                 for (observer in mObservers) {
                     observer.onHolderClick(holder)
@@ -103,7 +103,7 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
             }
         }
 
-        fun notifyOnHolderLongClick(holder: RecyclerView.ViewHolder): Boolean {
+        fun notifyOnHolderLongClick(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder): Boolean {
             var isConsumed = false
             synchronized(mObservers) {
                 for (observer in mObservers) {
@@ -115,7 +115,7 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
     }
 
     private inner class SelectionObservable : Observable<SelectionObserver>() {
-        internal fun notifySelectionChanged(holder: RecyclerView.ViewHolder, isSelected: Boolean) {
+        internal fun notifySelectionChanged(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, isSelected: Boolean) {
             synchronized(mObservers) {
                 for (observer in mObservers) {
                     observer.onSelectedChanged(holder, isSelected)
@@ -132,15 +132,15 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
         }
     }
 
-    private abstract inner class ViewHolderWrapper protected constructor(holder: RecyclerView.ViewHolder) : View.OnClickListener {
-        protected val mWrappedHolderRef: WeakReference<RecyclerView.ViewHolder>
+    private abstract inner class ViewHolderWrapper protected constructor(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder) : View.OnClickListener {
+        protected val mWrappedHolderRef: WeakReference<androidx.recyclerview.widget.RecyclerView.ViewHolder>
 
         init {
-            mWrappedHolderRef = WeakReference<RecyclerView.ViewHolder>(holder)
+            mWrappedHolderRef = WeakReference<androidx.recyclerview.widget.RecyclerView.ViewHolder>(holder)
         }
     }
 
-    private inner class ViewHolderMultiSelectionWrapper internal constructor(holder: RecyclerView.ViewHolder) : ViewHolderWrapper(holder), View.OnLongClickListener {
+    private inner class ViewHolderMultiSelectionWrapper internal constructor(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder) : ViewHolderWrapper(holder), View.OnLongClickListener {
         init {
             val itemView = holder.itemView
             itemView.setOnClickListener(this)
@@ -173,7 +173,7 @@ class SelectionHelper(private val mTracker: WeakHolderTracker) {
         }
     }
 
-    private inner class ViewHolderClickWrapper internal constructor(holder: RecyclerView.ViewHolder) : ViewHolderWrapper(holder) {
+    private inner class ViewHolderClickWrapper internal constructor(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder) : ViewHolderWrapper(holder) {
         init {
             val itemView = holder.itemView
             itemView.setOnClickListener(this)

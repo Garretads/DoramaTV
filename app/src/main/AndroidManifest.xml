@@ -61,7 +61,7 @@
         </activity>
 
         <activity
-            android:name=".activities.MovieAboutActivity"
+            android:name=".activities.MovieInfoActivity"
             android:label="@string/title_activity_movie_about"
             android:parentActivityName=".activities.MainActivity">
             <meta-data

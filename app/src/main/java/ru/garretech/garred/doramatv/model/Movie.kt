@@ -1,12 +1,13 @@
 package ru.garretech.garred.doramatv.model
 
-import android.arch.persistence.room.ColumnInfo
-import android.arch.persistence.room.Entity
-import android.arch.persistence.room.Ignore
-import android.arch.persistence.room.PrimaryKey
-import android.arch.persistence.room.TypeConverter
-import android.arch.persistence.room.TypeConverters
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Ignore
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import android.graphics.Bitmap
+import com.chad.library.adapter.base.entity.MultiItemEntity
 
 
 import java.io.Serializable
@@ -20,7 +21,7 @@ class Movie
 (var title: String?, @field:TypeConverters(ListConverter::class)
 var genres: List<String>?, @field:ColumnInfo(name = "movie_image_url")
  var movieImageURL: String, @field:PrimaryKey
- var url: String) : Serializable {
+ var url: String) : Serializable, MultiItemEntity {
 
     @ColumnInfo(name = "production_year")
     var productionYear: String? = null
@@ -46,6 +47,14 @@ var genres: List<String>?, @field:ColumnInfo(name = "movie_image_url")
 
     @ColumnInfo(name = "initial_series")
     var initialSeries: String? = null
+
+    override fun getItemType(): Int {
+        return TYPE
+    }
+
+    companion object {
+        const val TYPE = 0
+    }
 
 }
 

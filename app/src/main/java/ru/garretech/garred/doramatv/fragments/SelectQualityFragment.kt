@@ -5,15 +5,15 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.support.v4.app.DialogFragment
-import android.support.v7.app.AlertDialog
+import androidx.fragment.app.DialogFragment
+import androidx.appcompat.app.AlertDialog
 import android.widget.Toast
 
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.ArrayList
 
-class SelectQualityFragment : DialogFragment(), DialogInterface.OnClickListener {
+class SelectQualityFragment : androidx.fragment.app.DialogFragment(), DialogInterface.OnClickListener {
     internal lateinit var sourcesObject: JSONObject
     internal lateinit var sourcesNames: ArrayList<String>
     internal lateinit var sourcesLinks: ArrayList<String>
