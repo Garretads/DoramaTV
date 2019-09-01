@@ -18,10 +18,11 @@ import ru.garretech.garred.doramatv.tools.ListConverter
 @Entity
 class Movie
 
-(var title: String?, @field:TypeConverters(ListConverter::class)
-var genres: List<String>?, @field:ColumnInfo(name = "movie_image_url")
+(var title: String?, @field:ColumnInfo(name = "movie_image_url")
  var movieImageURL: String, @field:PrimaryKey
  var url: String) : Serializable, MultiItemEntity {
+
+   @field:TypeConverters(ListConverter::class) var genres: List<String>? = null
 
     @ColumnInfo(name = "production_year")
     var productionYear: String? = null

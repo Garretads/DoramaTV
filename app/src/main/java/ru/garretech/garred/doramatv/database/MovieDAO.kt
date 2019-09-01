@@ -18,6 +18,6 @@ interface MovieDAO {
     fun addMovie(movie: Movie): Long
 
     @Query("SELECT * FROM movie WHERE URL = :URL")
-    fun getMovie(URL: String): Movie
+    fun getMovie(URL: String): Movie?
 
 }

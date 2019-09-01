@@ -23,10 +23,6 @@ import ru.garretech.garred.doramatv.R
 
 class GenresActivity : AppCompatActivity() {
     private var genresArray: JSONArray? = null
-   /* @BindView(R.id.genresListView)
-    internal var genresListView: ListView? = null
-    @BindView(R.id.toolbarActionBar)
-    internal var toolbarActionBar: Toolbar? = null*/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

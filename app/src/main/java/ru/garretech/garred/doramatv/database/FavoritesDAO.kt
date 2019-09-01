@@ -17,12 +17,12 @@ interface FavoritesDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun addFavorites(favorites: Favorites): Long
 
-    @Query("SELECT * FROM favorites WHERE id = :ids")
-    fun getFavoriteByIndex(ids: Long): Favorites
-
     @Query("SELECT * FROM favorites WHERE movie_url = :URL")
-    fun getFavoriteByURL(URL: String): Favorites
+    fun getFavoriteByURL(URL: String): Favorites?
 
     @Delete
     fun deleteFavorites(favorites: Favorites)
+
+    @Query("DELETE FROM favorites")
+    fun clearFavorites()
 }

@@ -13,6 +13,7 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/disclaimerMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="15dp"
@@ -27,7 +28,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:background="@android:color/transparent"
-            android:text="Понятно" />
+            android:text="Понятно"
+            android:textColor="@android:color/white" />
     </LinearLayout>
 
 </FrameLayout>

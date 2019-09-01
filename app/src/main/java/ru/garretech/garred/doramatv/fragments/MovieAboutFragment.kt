@@ -1,6 +1,5 @@
 package ru.garretech.garred.doramatv.fragments
 
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -8,7 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.bumptech.glide.Glide
 import com.yandex.mobile.ads.*
@@ -19,21 +20,32 @@ import org.json.JSONException
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
-import ru.garretech.garred.doramatv.viewmodels.MovieInfoViewModel
+import ru.garretech.garred.doramatv.viewmodels.MovieAboutFragmentViewModel
+import java.lang.StringBuilder
 
 
-class MovieAboutFragment : androidx.fragment.app.Fragment() {
+class MovieAboutFragment : Fragment() {
 
-    private lateinit var viewModel : MovieInfoViewModel
+    private lateinit var viewModel : MovieAboutFragmentViewModel
 
-    private lateinit var pageLayout : LinearLayout
-
-    private var selectedMovie : Movie? = null
-
-    private var image: Bitmap? = null
+    private var currentMovie : Movie? = null
 
     val mAdMobView: AdView by lazy { AdView(context!!) }
     private var mAdRequest: AdRequest? = null
+
+    lateinit var rootView : View
+    private val movieTitleTextView : TextView by lazy { rootView.findViewById<TextView>(R.id.movieTitleText) }
+    private val movieAgeView : TextView by lazy {  rootView.findViewById<TextView>(R.id.movie_age_text) }
+    private val movieGenresView : TextView by lazy { rootView.findViewById<TextView>(R.id.movie_genres_text) }
+    private val movieProductionCountryView : TextView by lazy { rootView.findViewById<TextView>(R.id.movie_production_country_text) }
+    private val movieSeriesNumberView : TextView by lazy { rootView.findViewById<TextView>(R.id.movie_series_number_text) }
+    private val movieDurationView : TextView by lazy { rootView.findViewById<TextView>(R.id.movie_duration_text) }
+    private val imageView : ImageView by lazy { rootView.findViewById<ImageView>(R.id.movie_image_info) }
+    private val movieDescriptionView : TextView by lazy { rootView.findViewById<TextView>(R.id.movie_description_text) }
+    private val pageLayout : LinearLayout by lazy { rootView.findViewById<LinearLayout>(R.id.movieInfoScrollContent) }
+
+    private val progressCircle : ProgressBar by lazy { rootView.findViewById<ProgressBar>(R.id.movieInfoProgressCircle) }
+
 
 
     private val mBannerAdListener = object : AdEventListener {
@@ -52,10 +64,8 @@ class MovieAboutFragment : androidx.fragment.app.Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = ViewModelProviders.of(this).get(MovieInfoViewModel::class.java)
+        viewModel = ViewModelProviders.of(this).get(MovieAboutFragmentViewModel::class.java)
 
-        if (viewModel.selectedMovie == null)
-            viewModel.selectedMovie = selectedMovie
     }
 
     private fun initAdMobView() {
@@ -79,59 +89,90 @@ class MovieAboutFragment : androidx.fragment.app.Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
 
-        val view = inflater.inflate(R.layout.fragment_movie_info, container, false)
-        val movieTitleTextView = view.findViewById<TextView>(R.id.movieTitleText)
-        val movieAgeView = view.findViewById<TextView>(R.id.movie_age_text)
-        val movieGenresView = view.findViewById<TextView>(R.id.movie_genres_text)
-        val movieProductionCountryView = view.findViewById<TextView>(R.id.movie_production_country_text)
-        val movieSeriesNumberView = view.findViewById<TextView>(R.id.movie_series_number_text)
-        val movieDurationView = view.findViewById<TextView>(R.id.movie_duration_text)
-        val imageView = view.findViewById<ImageView>(R.id.movie_image_info)
-        val movieDescriptionView = view.findViewById<TextView>(R.id.movie_description_text)
-        pageLayout = view.findViewById(R.id.movieInfoScrollContent)
+        rootView = inflater.inflate(R.layout.fragment_movie_info, container, false)
 
-        movieGenresView.text = getString(R.string.genres_description) + " " + viewModel.selectedMovie?.genres?.toString()?.substring(1,viewModel.selectedMovie?.genres?.toString()?.length!!-1)
-        movieTitleTextView.text = viewModel.selectedMovie?.title
-        movieProductionCountryView.text = getString(R.string.production_country_description)  + " " +  viewModel.selectedMovie?.productionCountry
-        movieSeriesNumberView.text = viewModel.selectedMovie?.seriesNumber
-        movieDurationView.text = viewModel.selectedMovie?.duration
-        movieAgeView.text = getString(R.string.age_description)  + " " +  viewModel.selectedMovie?.productionYear
-        movieDescriptionView.text = viewModel.selectedMovie?.description
-        //imageView.setImageBitmap(image)
+        showProgressBar()
+
+        if (savedInstanceState != null) {
+            val url = savedInstanceState.getString(URL_MOVIE)
+            viewModel.getMovieFromDatabase(url).subscribe { movie ->
+                startLoading()
+            }
+        } else {
+            if (viewModel.currentMovie == null && currentMovie != null)
+                viewModel.currentMovie = currentMovie
+
+            startLoading()
+        }
+
+        return rootView
+    }
 
 
-        if (viewModel.selectedMovie?.movieImageURL != null && context != null) {
+    private fun startLoading() {
+        var genresString = StringBuilder()
+
+        for (genre in viewModel.currentMovie?.genres ?: ArrayList())
+            genresString.append("$genre, ")
+
+        if (genresString.length != 0)
+            movieGenresView.text = getString(R.string.genres_description) + " " + genresString.substring(0,genresString.length - 2)
+
+        movieTitleTextView.text = viewModel.currentMovie?.title
+        movieProductionCountryView.text = getString(R.string.production_country_description)  + " " +  viewModel.currentMovie?.productionCountry
+        movieSeriesNumberView.text = viewModel.currentMovie?.seriesNumber
+        movieDurationView.text = viewModel.currentMovie?.duration
+        movieAgeView.text = getString(R.string.age_description)  + " " +  viewModel.currentMovie?.productionYear
+        movieDescriptionView.text = viewModel.currentMovie?.description
+
+
+        if (viewModel.currentMovie?.movieImageURL != null) {
             Glide
                     .with(context!!)
-                    .load(viewModel.selectedMovie?.movieImageURL!!)
+                    .load(viewModel.currentMovie?.movieImageURL!!)
                     .fitCenter()
                     //.placeholder(R.drawable.loading_spinner)
                     .into(imageView)
         }
 
-        //initAdMobView()
+        initAdMobView()
 
-        return view
+        dismissProgressBar()
+    }
+
+    private fun showProgressBar() {
+        progressCircle?.visibility = View.VISIBLE
+    }
+
+    private fun dismissProgressBar() {
+        progressCircle?.visibility = View.GONE
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        //refreshBannerAd()
+        refreshBannerAd()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(URL_MOVIE,viewModel.currentMovie?.url)
     }
 
 
     override fun onDestroy() {
-        //mAdMobView.destroy()
+        mAdMobView.destroy()
         super.onDestroy()
     }
 
 
     companion object {
 
+        const val URL_MOVIE = "movie_url"
+
         @Throws(JSONException::class)
         fun newInstance(movie : Movie): MovieAboutFragment {
             return MovieAboutFragment().also {
-                it.selectedMovie = movie
+                it.currentMovie = movie
             }
         }
     }

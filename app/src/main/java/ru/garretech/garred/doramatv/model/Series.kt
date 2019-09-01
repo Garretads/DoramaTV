@@ -1,12 +1,19 @@
 package ru.garretech.garred.doramatv.model
 
-class Series {
+import com.chad.library.adapter.base.entity.AbstractExpandableItem
+import com.chad.library.adapter.base.entity.MultiItemEntity
 
-    internal var id: Long = 0
+class Series(val index : Int, val name : String) : AbstractExpandableItem<Source>(), MultiItemEntity {
 
-    internal var movieURL: String? = null
+    var url : String? = null
+    var sourcesLoaded = false
 
-    internal var seriesIndex: Int = 0
+    override fun getItemType() = TYPE
 
-    internal var seriesName: String? = null
+    override fun getLevel() = 0
+
+    companion object {
+        const val TYPE = 0
+    }
+
 }

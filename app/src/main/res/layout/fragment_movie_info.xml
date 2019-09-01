@@ -7,7 +7,16 @@
     tools:context=".fragments.MovieAboutFragment"
     android:id="@+id/movie_info_fragment"
     android:background="?attr/colorPrimary">
-<ScrollView
+
+    <include
+        android:id="@+id/movieInfoProgressCircle"
+        layout="@layout/progressbar_circle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="visible" />
+
+    <ScrollView
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 

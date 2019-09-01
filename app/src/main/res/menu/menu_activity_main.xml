@@ -3,13 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_search"
-        android:icon="@drawable/ic_search_black_24dp"
+        android:icon="@drawable/ic_search"
         android:title="@string/search_hint"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
     <item
         android:id="@+id/action_sort"
-        android:icon="@drawable/ic_sort_black_24dp"
+        android:icon="@drawable/ic_sort"
         android:title="@string/action_sort"
         android:visible="false"
         app:showAsAction="ifRoom|collapseActionView" />
@@ -18,4 +18,10 @@
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_clear"
+        android:orderInCategory="100"
+        android:title="@string/action_clear"
+        app:showAsAction="always|withText" />
 </menu>

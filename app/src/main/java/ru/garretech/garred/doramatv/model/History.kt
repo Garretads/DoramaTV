@@ -1,14 +1,13 @@
 package ru.garretech.garred.doramatv.model
 
-class History
+import androidx.room.*
+import org.json.JSONObject
+import ru.garretech.garred.doramatv.tools.MapTypeConverter
 
-/*
-* Хранить историю просмотров.
-* Ссылку на сам фильм. Список просмотренных серий (Желательно json! Хз как эту хренатень по другом в строке хранить)
-*
-* {
-*   seriesId :"34534345"
-*
-* }
-*
-* */
+@Entity(tableName = "history", indices = [Index("movie_url")])
+class History(@PrimaryKey @field:ColumnInfo(name = "movie_url") var movieURL: String) {
+
+    @field:TypeConverters(MapTypeConverter::class)
+    var series : HashMap<Int,List<Int>>? = null
+
+}

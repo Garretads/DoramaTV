@@ -8,6 +8,7 @@
     <string name="privacyLink">https://garretads.github.io/Garretads/</string>
     <string name="title_activity_movie_about">MovieAbout</string>
     <string name="action_settings">Настройки</string>
+    <string name="action_clear">Очистить</string>
     <string name="search_hint">Поиск</string>
     <string name="action_sort">Сортировка</string>
     <string name="age_description">Год: </string>
@@ -83,11 +84,15 @@
     <string name="loading">Загрузка</string>
     <string name="load_failed">Загрузка неудачна. Повторить</string>
     <string name="action_favorite">Избранное</string>
+    <string name="action_history">История</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 
-    <string name="disclaimer_text">Внимание! Программа не хранит никаких материалов, защищенных авторскими правами, а лишь предоставляет доступ к пользовательскому контенту на сайте doramatv.me. Если вы уверены, что какое-либо содержимое, отображаемое приложением, нарушает ваши авторские права, немедленно сообщите об этом администрации сайта doramatv.me.</string>
+    <string name="disclaimer_text">Внимание! Программа не хранит никаких материалов, защищенных авторскими правами, а лишь предоставляет доступ к пользовательскому контенту на сайте doramatv.live. Если вы уверены, что какое-либо содержимое, отображаемое приложением, нарушает ваши авторские права, немедленно сообщите об этом администрации сайта doramatv.live.</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+    <string name="changelog">В этой версии добавлена история просмотра. Функция все еще находится в разработке, поэтому буду рад за детальные отзывы и пожелания.</string>
 
 </resources>

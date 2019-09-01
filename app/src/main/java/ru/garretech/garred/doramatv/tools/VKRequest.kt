@@ -2,6 +2,8 @@ package ru.garretech.garred.doramatv.tools
 
 import android.net.Uri
 import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import org.json.JSONObject
 import ru.garretech.garred.doramatv.Settings
 import java.io.BufferedReader
@@ -20,8 +22,8 @@ class VKRequest {
     }
 
 
-    fun loadSourcesAsSingle(requestedId : String): Single<JSONObject> {
-        return Single.create { observer ->
+    fun loadSourcesAsSingle(requestedId : String) =
+        Single.create<JSONObject> { observer ->
             val response = StringBuffer()
 
             try {
@@ -68,6 +70,5 @@ class VKRequest {
                 observer.onSuccess(JSONObject(response.toString()))
             else
                 observer.onError(Throwable("Response is empty"))
-        }
-    }
+        }.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io())
 }

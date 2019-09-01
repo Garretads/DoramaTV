@@ -12,6 +12,7 @@ import android.widget.Toast
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.ArrayList
+import java.util.regex.Pattern
 
 class SelectQualityFragment : androidx.fragment.app.DialogFragment(), DialogInterface.OnClickListener {
     internal lateinit var sourcesObject: JSONObject
@@ -22,14 +23,26 @@ class SelectQualityFragment : androidx.fragment.app.DialogFragment(), DialogInte
         super.onCreate(savedInstanceState)
         if (arguments != null) {
             try {
+
                 sourcesObject = JSONObject(arguments!!.getString(ARG_PARAM1))
                 sourcesLinks = ArrayList()
                 sourcesNames = ArrayList()
+                val sourcesOrigNames = ArrayList<String>()
 
                 for (index in 0 until sourcesObject.names().length())
-                    sourcesNames.add(sourcesObject.names().getString(index))
+                    sourcesOrigNames.add(sourcesObject.names().getString(index))
 
-                for (name in sourcesNames) {
+
+                for (index in 0 until sourcesObject.names().length()) {
+                    if (sourcesObject.names().getString(index).contains("mp4"))
+                        sourcesNames.add(sourcesObject.names().getString(index).substring(4)+"P")
+                    else if (sourcesObject.names().getString(index).contains("hls"))
+                        sourcesNames.add("HLS")
+                    else
+                        sourcesNames.add(sourcesObject.names().getString(index))
+                }
+
+                for (name in sourcesOrigNames) {
                     sourcesLinks.add(sourcesObject.getString(name))
                 }
 
@@ -67,6 +80,25 @@ class SelectQualityFragment : androidx.fragment.app.DialogFragment(), DialogInte
             args.putString(ARG_PARAM1, sources.toString())
             fragment.arguments = args
             return fragment
+        }
+
+        val comparator = object : Comparator<JSONObject> {
+            override fun compare(o1: JSONObject?, o2: JSONObject?): Int {
+                var valA : String? = null
+                var valB : String? = null
+                o1
+
+                try {
+                    //valA =  o1?.get(KEY_NAME) as String
+                    //valB =  o2?.get(KEY_NAME) as String
+                }
+                catch (e : JSONException) {
+                    //do something
+                }
+
+                return valA!!.compareTo(valB!!);
+            }
+
         }
     }
 }

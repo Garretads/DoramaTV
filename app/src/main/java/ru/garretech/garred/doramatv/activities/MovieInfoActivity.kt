@@ -6,130 +6,115 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.Toast
+import androidx.lifecycle.ViewModelProviders
+import io.reactivex.Single
 
-import io.reactivex.Completable
-import io.reactivex.CompletableObserver
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.Subject
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.adapters.MovieAboutPagerAdapter
-import ru.garretech.garred.doramatv.database.AppDataSource
 import ru.garretech.garred.doramatv.fragments.MovieAboutFragment
 import ru.garretech.garred.doramatv.fragments.MovieSourcesFragment
 
-import org.json.JSONException
-import org.json.JSONObject
-
-import java.util.Arrays
-
-import kotlinx.android.synthetic.main.activity_movie_about.*
-import ru.garretech.garred.doramatv.fragments.MovieDescriptionFragment
+import kotlinx.android.synthetic.main.activity_movie_info.*
+import kotlinx.android.synthetic.main.activity_movie_info.view.*
+import ru.garretech.garred.doramatv.DisposableManager
+import ru.garretech.garred.doramatv.Settings
 import ru.garretech.garred.doramatv.model.Movie
+import ru.garretech.garred.doramatv.tools.SiteWorker
+import ru.garretech.garred.doramatv.viewmodels.MovieInfoActivityViewModel
 
 class MovieInfoActivity : AppCompatActivity() {
 
 
 
-    internal lateinit var mFragmentAdapter: MovieAboutPagerAdapter
-    internal lateinit var movieInfo: JSONObject
-    internal lateinit var title: String
-    internal lateinit var age: String
-    internal lateinit var genres: String
-    internal lateinit var production: String
-    internal lateinit var seriesNumber: String
-    internal lateinit var duration: String
-    internal lateinit var description: String
-    internal lateinit var imageURL: String
-    internal lateinit var movieURL: String
-    internal lateinit var initialSeries: String
-    internal lateinit var currentMovie: Movie
-    internal lateinit var dataSource: AppDataSource
-    internal var isFavorite: Boolean = false
-    internal var observable: Subject<Boolean> = PublishSubject.create()
-    internal var disposable: Disposable? = null
-    internal lateinit var optionsMenu: Menu
+    private lateinit var mFragmentAdapter: MovieAboutPagerAdapter
+    lateinit var viewModel: MovieInfoActivityViewModel
+    private lateinit var optionsMenu: Menu
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_movie_about)
-        val intent = intent
-        dataSource = AppDataSource(applicationContext)
-        try {
-            var movieInfoString : String? = intent.getStringExtra("movie_info") ?: throw NullPointerException()
+        setContentView(R.layout.activity_movie_info)
+        viewModel = ViewModelProviders.of(this).get(MovieInfoActivityViewModel::class.java)
+        showProgressCircle()
 
-            movieInfo = JSONObject(movieInfoString)
+        if (viewModel.isRandom == null)
+            viewModel.isRandom = intent.getBooleanExtra("is_random",true)
 
+        val url = if (viewModel.currentMovie == null) {
+                    if (viewModel.isRandom!!) {
+                        Settings.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX
+                    }
+                    else {
+                        intent.getStringExtra("movie_url")
+                    }
+                } else {
+                    viewModel.currentMovie?.url!!
+                }
 
-            /*
-            * Запросить наличие фильма в избранных (completable)
-            * Полученный результат хранится в переменной isFavorite, которая является observable
-            * При изменении значения данной переменной подписчик выполняет свои действия (меняется иконку избранного)
-            *
-            * Занесение фильма в избранное.
-            * Опять completable. С помощью него фильм заносится в БД.
-            * */
-
-
-            this.title = movieInfo.getString("title")
-            this.genres = movieInfo.getString("genres")
-            this.imageURL = movieInfo.getString("image_url")
-            this.movieURL = movieInfo.getString("url")
-            this.age = movieInfo.getString("age")
-            this.description = movieInfo.getString("description")
-            this.initialSeries = movieInfo.getString("initial_series")
-            this.production = movieInfo.getString("production")
-            this.seriesNumber = movieInfo.getString("series_number")
-            this.duration = movieInfo.getString("duration")
-
-            val bundle = intent.getBundleExtra("bundle")
-            try {
-                currentMovie = bundle.getSerializable("movie") as Movie
-            } catch (e: NullPointerException) {
-                currentMovie = Movie(title, listOf(*genres.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()), imageURL, movieURL)
-                currentMovie.productionYear = age
-                currentMovie.description = description
-                currentMovie.initialSeries = initialSeries
-                currentMovie.productionCountry = production
-                currentMovie.seriesNumber = seriesNumber
-                currentMovie.duration = duration
-            }
-
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        } catch (e: NullPointerException) {
-            finish()
-        }
-
-        setupViewPager(viewPager)
-        tabLayout.setupWithViewPager(viewPager)
-
-        viewPager.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
-        tabLayout.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(viewPager))
+        DisposableManager.add(viewModel
+                .getMovieFromDatabase(url)
+                .flatMap {
+                    if(it.description == null)
+                        viewModel.getMovieInfo(url)
+                    else
+                        Single.just(it)
+                }
+                .subscribe( { movie ->
+                    prepareMovie(movie)
+                },{
+                    viewModel.getMovieInfo(url)
+                    .subscribe( { movie ->
+                        viewModel.addMovie(movie).subscribe( {
+                        prepareMovie(movie)
+                        },{
+                            Log.e("MovieInfoActivity","Ошибка сохранения манги в БД", it)
+                            dismissProgressCircle()
+                        })
+                    },{
+                        Log.e("MOVIE INFO OBSERVER","Ошибка получения информации о фильме", it)
+                    })
+                })
+        )
 
     }
+
 
 
     private fun setupViewPager(viewPager: androidx.viewpager.widget.ViewPager) {
         mFragmentAdapter = MovieAboutPagerAdapter(supportFragmentManager)
 
-        try {
-            val sourcesInfo = JSONObject()
-            sourcesInfo.put("url", movieURL)
-            sourcesInfo.put("initial_series", initialSeries)
-            mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(currentMovie), "О фильме")
+        if (viewModel.currentMovie != null) {
+
+            mFragmentAdapter.addFragment(MovieAboutFragment.newInstance(viewModel.currentMovie!!), "О фильме")
             //mFragmentAdapter.addFragment(MovieDescriptionFragment.newInstance(currentMovie),"Подробнее")
-            mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(sourcesInfo), "Источники")
+            mFragmentAdapter.addFragment(MovieSourcesFragment.newInstance(viewModel.currentMovie!!), "Источники")
             viewPager.adapter = mFragmentAdapter
             setSupportActionBar(toolbar)
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
             supportActionBar!!.title = ""
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        }
+            var sourcesNotLoaded = true
+
+            tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab?) {
+                    if (tab?.position == 1 && sourcesNotLoaded) {
+                        sourcesNotLoaded = false
+                        val fragment = mFragmentAdapter.getItem(1) as MovieSourcesFragment
+                        fragment.startLoading()
+                    }
+                }
+
+                override fun onTabUnselected(tab: TabLayout.Tab?) {
+                }
+
+                override fun onTabReselected(tab: TabLayout.Tab?) {
+                }
+            })
+
+        } else
+            Toast.makeText(this,"Ошибка получения информации о фильме, повторите попытку еще раз", Toast.LENGTH_SHORT).show()
 
     }
 
@@ -139,7 +124,24 @@ class MovieInfoActivity : AppCompatActivity() {
             item.setIcon(R.drawable.ic_favorite)
         else
             item.setIcon(R.drawable.ic_favorite_border)
+    }
 
+    private fun showProgressCircle() {
+        infoProgressCircle.visibility = View.VISIBLE
+    }
+
+    private fun dismissProgressCircle() {
+        infoProgressCircle.visibility = View.GONE
+    }
+
+    private fun prepareMovie(movie: Movie) {
+
+        setupViewPager(viewPager)
+        tabLayout.setupWithViewPager(viewPager)
+
+        viewPager.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabLayout))
+        tabLayout.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(viewPager))
+        dismissProgressCircle()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -153,69 +155,38 @@ class MovieInfoActivity : AppCompatActivity() {
         optionsMenu = menu
         optionsMenu.getItem(1).isVisible = false
 
-        disposable = observable
+        DisposableManager.add(viewModel.observable
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { t -> flagFavorite(t) }
+                .subscribe { t -> flagFavorite(t) })
 
-        Completable.fromCallable {
-            isFavorite = dataSource.isFavorite(currentMovie.url)
-            emmitFavorite(isFavorite)
-            null
-        }.subscribeOn(Schedulers.io())
-                .subscribe(object : CompletableObserver {
-                    override fun onSubscribe(d: Disposable) {}
-
-                    override fun onComplete() {
-                        Log.d("Task", "Subscribe to favorite changes completed")
-                    }
-
-                    override fun onError(e: Throwable) {
-                        Log.e("FAVORITE OBSERVER","Ошибка при занесении фильма в избранное",e)
-                    }
-                })
+        DisposableManager.add(viewModel.isInFavorite.subscribe(
+                { isInFavorite ->
+                    emmitFavorite(isInFavorite)
+                },{
+                    Log.e("MovieInfoActivity","Ошибка проверки манги в избранном",it)
+                }))
 
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
             R.id.action_favorite -> {
-                if (isFavorite) {
-                    Completable.fromCallable {
-                        dataSource.deleteFavorites(currentMovie)
-                        null
-                    }.subscribeOn(Schedulers.io())
-                            .subscribe(object : CompletableObserver {
-                                override fun onSubscribe(d: Disposable) {}
-
-                                override fun onComplete() {
-                                    emmitFavorite(false)
-                                    Log.d("Task", "Delete completable completed")
-                                }
-
-                                override fun onError(e: Throwable) {
-                                    Log.e("FAVORITE OBSERVER", "Delete completable error",e)
-                                }
+                if (viewModel.isFavorite) {
+                    viewModel.deleteFavorites
+                            .subscribe( {
+                                emmitFavorite(false)
+                                Log.d("MovieInfoActivity","Удаление из избранного успешно")
+                            },{
+                                Log.e("MovieInfoActivity","Удаление из избранного завершилось с ошибкой",it)
                             })
                 } else {
-                    Completable.fromCallable {
-                        dataSource.addFavorites(currentMovie)
-                        null
-                    }.subscribeOn(Schedulers.io())
-                            .subscribe(object : CompletableObserver {
-                                override fun onSubscribe(d: Disposable) {}
-
-                                override fun onComplete() {
-                                    emmitFavorite(true)
-                                    Log.d("Task", "Add completable completed")
-                                }
-
-                                override fun onError(e: Throwable) {
-                                    Log.d("Task", "Add completable error")
-                                }
+                    viewModel.addFavorites
+                            .subscribe( {
+                                emmitFavorite(true)
+                                Log.d("MovieInfoActivity","Добавление в избранное успешно")
+                            },{
+                                Log.e("MovieInfoActivity","Добавление в избранное завершилось ошибкой",it)
                             })
                 }
             }
@@ -226,12 +197,12 @@ class MovieInfoActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        disposable?.dispose()
+        DisposableManager.dispose()
     }
 
     internal fun emmitFavorite(value: Boolean) {
-        isFavorite = value
-        observable.onNext(isFavorite)
+        viewModel.isFavorite = value
+        viewModel.observable.onNext(value)
     }
 
 }

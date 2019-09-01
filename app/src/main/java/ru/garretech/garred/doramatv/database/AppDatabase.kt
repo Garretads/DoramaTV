@@ -8,13 +8,15 @@ import androidx.room.migration.Migration
 import android.content.Context
 
 import ru.garretech.garred.doramatv.model.Favorites
+import ru.garretech.garred.doramatv.model.History
 import ru.garretech.garred.doramatv.model.Movie
 
-@Database(entities = [Movie::class, Favorites::class], version = 3, exportSchema = false)
+@Database(entities = [Movie::class, Favorites::class, History::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun movieDAO(): MovieDAO
     abstract fun favoritesDAO(): FavoritesDAO
+    abstract fun historyDAO() : HistoryDAO
 
     companion object {
 
