@@ -21,7 +21,6 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     var mSiteWorker = SiteWorker()
     var requestQuery: SiteWorker.RequestQuery? = null
     var title : String = ""
-    var needSortingMenu = false
 
 
 
@@ -43,7 +42,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             requestQuery = mSiteWorker.RequestQuery(getApplication(), requestType, path)
             observable = requestQuery?.nextQuery
             null
-        }
+        }.subscribeOn(Schedulers.io())
 
     @Throws(InterruptedException::class, ExecutionException::class, NullPointerException::class)
     fun getRequestQueryCompletable(requestType : Int) =

@@ -43,7 +43,7 @@
             android:layout_marginBottom="5dp"
             android:tint="@android:color/white"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_remove_red_eye" />
+            app:srcCompat="@drawable/ic_watched" />
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -10,7 +10,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import ru.garretech.garred.doramatv.database.AppDataSource
-import ru.garretech.garred.doramatv.model.History
 import ru.garretech.garred.doramatv.model.Movie
 import ru.garretech.garred.doramatv.tools.SiteWorker
 
@@ -27,7 +26,7 @@ class MovieInfoActivityViewModel(application: Application) : AndroidViewModel(ap
     fun addMovie(movie: Movie) =
         Completable.fromCallable {
             dataSource.addMovie(movie)
-            dataSource.addHistory(movie)
+            dataSource.saveHistory(movie)
         }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
 
 

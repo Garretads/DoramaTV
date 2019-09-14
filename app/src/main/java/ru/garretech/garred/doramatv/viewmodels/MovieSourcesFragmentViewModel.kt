@@ -123,7 +123,7 @@ class MovieSourcesFragmentViewModel(application: Application) : AndroidViewModel
                     .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
 
     fun addToHistory() =
-            dataSource.addHistory(historyProvider.history)
+            dataSource.saveHistory(historyProvider.history)
                     .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
 
 

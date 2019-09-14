@@ -10,7 +10,7 @@ android {
         config {
             keyAlias 'key0'
             keyPassword '457BWY4z'
-            storeFile file('D:\\System\\AndroidProjects\\doramatv_key')
+            storeFile file('/Users/sergej/doramatv_key')
             storePassword '457BWY4z'
         }
     }
@@ -26,8 +26,9 @@ android {
         applicationId "ru.garretech.garred.doramatv"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 41
-        versionName "1.6.1"
+        versionCode 42
+        versionName "1.6.2"
+
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -53,10 +54,6 @@ android {
     }
 }
 
-
-ext {
-    archComponentsVersion = "1.1.1"
-}
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

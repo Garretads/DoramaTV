@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     private lateinit var menu: Menu
     private val sortingMenuItem by lazy { menu.findItem(R.id.action_sort) }
     private val clearMenuItem by lazy { menu.findItem(R.id.action_clear) }
+    private val searchMenuItem by lazy { menu.findItem(R.id.action_search) }
 
     private val getListMoviesObserver by lazy {
         object : CompletableObserver {
@@ -245,42 +246,38 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_activity_main, menu)
         this.menu = menu
-        val myActionMenuItem = menu.findItem(R.id.action_search)
 
         performInitialRequest()
 
-        searchView = myActionMenuItem.actionView as SearchView
+        searchView = searchMenuItem.actionView as SearchView
 
         val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
         searchView.setSearchableInfo(searchManager.getSearchableInfo(componentName))
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(queryString: String): Boolean {
-
                 // Поиск дорам
                 if (hasConnection()) {
 
                     changeState(ACTIVITY_STATE.MOVIE_LIST)
                     showProgressBar()
-                    viewModel.needSortingMenu = true
 
                     val params = HashMap<String, String>()
                     params["q"] = queryString
 
                     viewModel.getRequestQueryCompletable(SiteWorker.SEARCH_QUERY, SiteWorker.SEARCH_PREFIX, params)
-                            .subscribeOn(Schedulers.io())
                             .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.search_hint) + ": $queryString"
                     viewModel.title = title.toString()
 
-                    if (!searchView.isIconified) {
+                    //if (!searchView.isIconified) {
                         searchView.isIconified = true
-                    }
+                   // }
                 } else
                     showConnectionError()
 
-                myActionMenuItem.collapseActionView()
+                searchMenuItem.collapseActionView()
                 return false
             }
 
@@ -397,7 +394,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     showProgressBar()
 
                     viewModel.getRequestQueryCompletable(SiteWorker.EDITOR_CHOICE_QUERY)
-                        .subscribeOn(Schedulers.io())
                         .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.editor_choice_title)
@@ -414,7 +410,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     showProgressBar()
 
                     viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.LIST_PREFIX)
-                            .subscribeOn(Schedulers.io())
                             .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.list_movie_title)
@@ -435,7 +430,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     showProgressBar()
 
-                    viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.ONGOING_PREFIX, params).subscribeOn(Schedulers.io())
+                    viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.ONGOING_PREFIX, params)
                             .subscribe(getListMoviesObserver)
                     title = getString(R.string.ongoing_title)
                     viewModel.title = title.toString()
@@ -465,7 +460,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 if (hasConnection()) {
 
-                    changeState(ACTIVITY_STATE.EDITOR_CHOICE)
+                    changeState(ACTIVITY_STATE.MOVIE_LIST)
 
                     showProgressBar()
 
@@ -490,7 +485,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                 title = getString(R.string.action_favorite)
                 viewModel.title = title.toString()
-
             }
 
             R.id.nav_history -> {
@@ -535,7 +529,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 changeState(ACTIVITY_STATE.MOVIE_LIST)
 
                 viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, resultPrefix)
-                        .subscribeOn(Schedulers.io())
                         .subscribe(getListMoviesObserver)
 
                 title = genreName.substring(0, 1).toUpperCase() + genreName.substring(1)
@@ -715,11 +708,13 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         when (newState) {
             ACTIVITY_STATE.EDITOR_CHOICE -> {
                 activityState =  ACTIVITY_STATE.EDITOR_CHOICE
-                sortingMenuItem.isVisible = false
+                searchMenuItem.isVisible = true
+                sortingMenuItem.isVisible = true
                 clearMenuItem.isVisible = false
             }
             ACTIVITY_STATE.MOVIE_LIST -> {
                 activityState =  ACTIVITY_STATE.MOVIE_LIST
+                searchMenuItem.isVisible = true
                 sortingMenuItem.isVisible = true
                 clearMenuItem.isVisible = false
 
@@ -730,12 +725,14 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
             ACTIVITY_STATE.HISTORY -> {
                 activityState =  ACTIVITY_STATE.HISTORY
+                searchMenuItem.isVisible = false
                 sortingMenuItem.isVisible = false
                 clearMenuItem.isVisible = true
 
             }
             ACTIVITY_STATE.FAVORITES -> {
                 activityState =  ACTIVITY_STATE.FAVORITES
+                searchMenuItem.isVisible = false
                 sortingMenuItem.isVisible = false
                 clearMenuItem.isVisible = true
 

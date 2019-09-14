@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_remove_red_eye" />
+            app:srcCompat="@drawable/ic_watched" />
 
     </LinearLayout>
 

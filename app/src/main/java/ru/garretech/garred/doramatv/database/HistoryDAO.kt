@@ -13,7 +13,7 @@ interface HistoryDAO {
     fun updateHistory(history: History)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addHistory(history: History): Long
+    fun saveHistory(history: History): Long
 
     @Query("SELECT * FROM history WHERE movie_url = :URL")
     fun getHistoryByURL(URL: String): History?

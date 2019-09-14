@@ -104,17 +104,17 @@ class AppDataSource(context: Context) {
 
         }
 
-    fun addHistory(history: History) =
+    fun saveHistory(history: History) =
             Completable.fromCallable {
-                historyDAO.addHistory(history)
+                historyDAO.saveHistory(history)
             }
 
-    fun addHistory(movie: Movie)  {
+    fun saveHistory(movie: Movie)  {
                 var history = historyDAO.getHistoryByURL(movie.url)
 
                 if (history == null) {
                     history = History(movie.url).also { it.series = HashMap() }
-                    historyDAO.addHistory(history)
+                    historyDAO.saveHistory(history)
                 }
 
             }

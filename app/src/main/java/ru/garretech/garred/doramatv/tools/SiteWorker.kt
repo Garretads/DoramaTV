@@ -293,6 +293,7 @@ class SiteWorker {
         val genresList =
            Single.create<JSONArray> {
 
+                val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
 
                 val genresList = JSONArray()
                 val URL_PREFIX = "/list/genres/sort_name"
@@ -312,6 +313,10 @@ class SiteWorker {
                     val tempElement = element1.getElementsByTag("td").first().getElementsByTag("a").first()
                     val jsonObject = JSONObject()
                     val genreName = tempElement.text()
+
+                    if (genreName.contains(explicitContent[0]) || genreName.contains(explicitContent[1]) || genreName.contains(explicitContent[2]))
+                        continue
+
                     var genreLink = tempElement.attr("href")
                     genreLink = genreLink.substring(1)
                     jsonObject.put("name", genreName)
@@ -449,6 +454,8 @@ class SiteWorker {
             val result = HashMap<String, Any>()
             val elements = pageContent.getElementsByClass("tile col-sm-6 ")
             //var imageDownloader: ImageDownloader
+            val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
+
             var movie: Movie
             var iteration = 0
             for (element in elements) {
@@ -471,6 +478,10 @@ class SiteWorker {
                         genres = tempElements.first().text()
                     }
 
+                    if (genres.contains(explicitContent[0]) || genres.contains(explicitContent[1]) || genres.contains(explicitContent[2]))
+                        continue
+
+
                     var tempElement = element.getElementsByClass("img").first()
                     val url = Settings.SITE_URL + tempElement.getElementsByTag("a")[0].attr("href")
                     tempElement = tempElement.getElementsByTag("img").first()
@@ -480,30 +491,6 @@ class SiteWorker {
 
                     movie = Movie(title, imageURL, url)
 
-                    /*var image: Bitmap? = null
-                    try {
-                        image = getCachedImage(context!!, imageURL)
-                        Log.d("STATUS: ", "$imageURL found")
-                    } catch (e: FileNotFoundException) {
-                        try {
-                            imageDownloader = ImageDownloader()
-                            image = imageDownloader.execute(imageURL).get()
-                            saveImage(context!!, image!!, imageURL)
-                        } catch (e1: ExecutionException) {
-                            e.printStackTrace()
-                        } catch (e1: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e1: FileNotFoundException) {
-                            e1.printStackTrace()
-                        } catch (e1: IOException) {
-                            e1.printStackTrace()
-                        }
-
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }*/
-
-                    //movie.image = image
                     movieList.add(movie)
                 }
                 iteration++

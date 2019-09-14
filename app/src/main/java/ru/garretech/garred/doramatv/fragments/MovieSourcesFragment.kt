@@ -94,8 +94,6 @@ class MovieSourcesFragment : Fragment() {
             startLoading()
         }
 
-
-
         return view
     }
 
