@@ -293,7 +293,7 @@ class SiteWorker {
         val genresList =
            Single.create<JSONArray> {
 
-                val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
+                //val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
 
                 val genresList = JSONArray()
                 val URL_PREFIX = "/list/genres/sort_name"
@@ -314,8 +314,8 @@ class SiteWorker {
                     val jsonObject = JSONObject()
                     val genreName = tempElement.text()
 
-                    if (genreName.contains(explicitContent[0]) || genreName.contains(explicitContent[1]) || genreName.contains(explicitContent[2]))
-                        continue
+                    //if (genreName.contains(explicitContent[0]) || genreName.contains(explicitContent[1]) || genreName.contains(explicitContent[2]))
+                     //   continue
 
                     var genreLink = tempElement.attr("href")
                     genreLink = genreLink.substring(1)
@@ -815,7 +815,7 @@ class SiteWorker {
         val standartUri: Uri.Builder
             get() {
                 val builder = Uri.Builder()
-                builder.scheme("http").authority(Settings.SITE_URL1)
+                builder.scheme("https").authority(Settings.SITE_URL1)
                 return builder
             }
 

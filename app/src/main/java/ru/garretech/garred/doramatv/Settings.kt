@@ -5,7 +5,7 @@ object Settings {
     const val client_id = "6863889"
     const val api_scope = "video,offline"
     const val api_display = "mobile"
-    const val api_redirect_uri = "ttp://api.vk.com/blank.html"
+    const val api_redirect_uri = "http://api.vk.com/blank.html"
     const val api_secret_key = "HMIqzRPUL4Shf9eOnjan"
     const val api_response_type = "token"
     const val version = "5.101"
@@ -14,7 +14,7 @@ object Settings {
     const val BLOCK_ID = "adf-304149/991383"
     const val BLOCK_ID1 = "adf-304149/999174"
 
-    const val SITE_URL = "http://doramatv.live"
+    const val SITE_URL = "https://doramatv.live"
     const val SITE_URL1 = "doramatv.live"
 
     const val APP_FIRST_RUN = "first_run_check_new"

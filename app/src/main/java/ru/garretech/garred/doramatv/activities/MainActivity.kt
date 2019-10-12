@@ -266,6 +266,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     params["q"] = queryString
 
                     viewModel.getRequestQueryCompletable(SiteWorker.SEARCH_QUERY, SiteWorker.SEARCH_PREFIX, params)
+                            .subscribeOn(Schedulers.io())
                             .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.search_hint) + ": $queryString"
