@@ -11,3 +11,7 @@
 .externalNativeBuild
 *.aab
 .idea/encodings.xml
+/.idea
+/app/release
+/app/build
+/app/Users
