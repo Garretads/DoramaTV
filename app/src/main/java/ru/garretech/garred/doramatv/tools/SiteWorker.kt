@@ -202,7 +202,7 @@ class SiteWorker {
         val ONGOING_PARAMS = arrayOf("sortType", "rate")
         val RANDOM_MOVIE_PREFIX = "/internal/random"
         private val OFFSET_PARAM = "offset"
-        val TRAGUS_URL = "http://grass.tragus.ru/internal/videoCode/"
+        val TRAGUS_URL = "https://frigg.taptap.rocks/internal/videoCode/"
         val SIMPLE_QUERY = 0
         val SEARCH_QUERY = 1
         val EDITOR_CHOICE_QUERY = 2
@@ -293,7 +293,7 @@ class SiteWorker {
         val genresList =
            Single.create<JSONArray> {
 
-                val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
+//                val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
 
                 val genresList = JSONArray()
                 val URL_PREFIX = "/list/genres/sort_name"
@@ -314,8 +314,8 @@ class SiteWorker {
                     val jsonObject = JSONObject()
                     val genreName = tempElement.text()
 
-                    if (genreName.contains(explicitContent[0]) || genreName.contains(explicitContent[1]) || genreName.contains(explicitContent[2]))
-                        continue
+//                    if (genreName.contains(explicitContent[0]) || genreName.contains(explicitContent[1]) || genreName.contains(explicitContent[2]))
+//                        continue
 
                     var genreLink = tempElement.attr("href")
                     genreLink = genreLink.substring(1)
@@ -454,7 +454,7 @@ class SiteWorker {
             val result = HashMap<String, Any>()
             val elements = pageContent.getElementsByClass("tile col-sm-6 ")
             //var imageDownloader: ImageDownloader
-            val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
+//            val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
 
             var movie: Movie
             var iteration = 0
@@ -478,8 +478,8 @@ class SiteWorker {
                         genres = tempElements.first().text()
                     }
 
-                    if (genres.contains(explicitContent[0]) || genres.contains(explicitContent[1]) || genres.contains(explicitContent[2]))
-                        continue
+//                    if (genres.contains(explicitContent[0]) || genres.contains(explicitContent[1]) || genres.contains(explicitContent[2]))
+//                        continue
 
 
                     var tempElement = element.getElementsByClass("img").first()
@@ -815,7 +815,7 @@ class SiteWorker {
         val standartUri: Uri.Builder
             get() {
                 val builder = Uri.Builder()
-                builder.scheme("http").authority(Settings.SITE_URL1)
+                builder.scheme("https").authority(Settings.SITE_URL1)
                 return builder
             }
 

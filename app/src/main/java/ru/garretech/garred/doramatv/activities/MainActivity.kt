@@ -266,6 +266,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     params["q"] = queryString
 
                     viewModel.getRequestQueryCompletable(SiteWorker.SEARCH_QUERY, SiteWorker.SEARCH_PREFIX, params)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.search_hint) + ": $queryString"
@@ -431,6 +433,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     showProgressBar()
 
                     viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, SiteWorker.ONGOING_PREFIX, params)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(getListMoviesObserver)
                     title = getString(R.string.ongoing_title)
                     viewModel.title = title.toString()

@@ -94,9 +94,10 @@ class MovieAboutFragment : Fragment() {
         showProgressBar()
 
         if (savedInstanceState != null) {
-            val url = savedInstanceState.getString(URL_MOVIE)
-            viewModel.getMovieFromDatabase(url).subscribe { movie ->
-                startLoading()
+            savedInstanceState.getString(URL_MOVIE)?.let {
+                viewModel.getMovieFromDatabase(it).subscribe { movie ->
+                    startLoading()
+                }
             }
         } else {
             if (viewModel.currentMovie == null && currentMovie != null)
@@ -115,7 +116,7 @@ class MovieAboutFragment : Fragment() {
         for (genre in viewModel.currentMovie?.genres ?: ArrayList())
             genresString.append("$genre, ")
 
-        if (genresString.length != 0)
+        if (genresString.isNotEmpty())
             movieGenresView.text = getString(R.string.genres_description) + " " + genresString.substring(0,genresString.length - 2)
 
         movieTitleTextView.text = viewModel.currentMovie?.title

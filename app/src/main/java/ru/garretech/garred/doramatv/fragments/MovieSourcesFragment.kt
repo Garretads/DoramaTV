@@ -82,10 +82,11 @@ class MovieSourcesFragment : Fragment() {
         * */
 
         if (savedInstanceState != null) {
-            val url = savedInstanceState.getString(URL_MOVIE)
-            viewModel.getMovieFromDatabase(url).subscribe { movie ->
-                currentMovie = movie
-                startLoading()
+            savedInstanceState.getString(URL_MOVIE)?.let {
+                viewModel.getMovieFromDatabase(it).subscribe { movie ->
+                    currentMovie = movie
+                    startLoading()
+                }
             }
         } else {
             if (viewModel.currentMovie == null && currentMovie != null)
