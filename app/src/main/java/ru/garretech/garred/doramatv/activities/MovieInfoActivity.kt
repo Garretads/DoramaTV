@@ -48,7 +48,7 @@ class MovieInfoActivity : AppCompatActivity() {
                         Settings.SITE_URL + SiteWorker.RANDOM_MOVIE_PREFIX
                     }
                     else {
-                        intent.getStringExtra("movie_url")
+                        intent.getStringExtra("movie_url") ?: ""
                     }
                 } else {
                     viewModel.currentMovie?.url!!

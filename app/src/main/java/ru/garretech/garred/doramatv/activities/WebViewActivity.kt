@@ -43,8 +43,11 @@ class WebViewActivity : AppCompatActivity() {
         webView.settings.javaScriptEnabled = true
         webView.settings.allowUniversalAccessFromFileURLs = true
         webView.settings.allowFileAccessFromFileURLs = true
-        Log.d("webView","Loading url:${url}")
-        webView.loadUrl(url)
+
+        url?.let {
+            Log.d("webView","Loading url:${it}")
+            webView.loadUrl(it)
+        }
     }
 
 

@@ -525,18 +525,20 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == GENRES_CODE) {
             if (resultCode == Activity.RESULT_OK) {
-                val resultPrefix = data!!.getStringExtra("link")
-                val genreName = data.getStringExtra("name")
+                data?.let {
+                    val resultPrefix = data.getStringExtra("link") ?: ""
+                    val genreName = data.getStringExtra("name") ?: ""
 
-                showProgressBar()
+                    showProgressBar()
 
-                changeState(ACTIVITY_STATE.MOVIE_LIST)
+                    changeState(ACTIVITY_STATE.MOVIE_LIST)
 
-                viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, resultPrefix)
-                        .subscribe(getListMoviesObserver)
+                    viewModel.getRequestQueryCompletable(SiteWorker.SIMPLE_QUERY, resultPrefix)
+                            .subscribe(getListMoviesObserver)
 
-                title = genreName.substring(0, 1).toUpperCase() + genreName.substring(1)
-                viewModel.title = title.toString()
+                    title = genreName.substring(0, 1).toUpperCase() + genreName.substring(1)
+                    viewModel.title = title.toString()
+                }
             }
         }
     }
