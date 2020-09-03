@@ -1,29 +1,26 @@
 package ru.garretech.garred.doramatv.activities
 
+
 import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.os.Bundle
-import com.google.android.material.navigation.NavigationView
-import androidx.core.view.GravityCompat
-import androidx.appcompat.app.ActionBarDrawerToggle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.RelativeLayout
 import android.widget.Toast
-import androidx.fragment.app.DialogFragment
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.core.view.GravityCompat
 import androidx.lifecycle.ViewModelProviders
-
 import com.chad.library.adapter.base.BaseQuickAdapter
+import com.google.android.material.navigation.NavigationView
 import com.yandex.mobile.ads.*
-
-
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.Single
@@ -53,7 +50,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private lateinit var searchView: SearchView
     private lateinit var movieAdapter: MovieListAdapter
-    private lateinit var viewModel : MainActivityViewModel
+    private lateinit var viewModel: MainActivityViewModel
     private lateinit var menu: Menu
     private val sortingMenuItem by lazy { menu.findItem(R.id.action_sort) }
     private val clearMenuItem by lazy { menu.findItem(R.id.action_clear) }
@@ -72,7 +69,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
 
             override fun onError(e: Throwable) {
-                Log.e("LIST LOAD","Ошибка получения списка фильмов, попробуйте еще раз",e)
+                Log.e("LIST LOAD", "Ошибка получения списка фильмов, попробуйте еще раз", e)
             }
         }
     }
@@ -91,7 +88,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             }
 
             override fun onError(e: Throwable) {
-                Log.e("ON LOAD MORE","Ошибка получения списка фильмов, попробуйте еще раз",e)
+                Log.e("ON LOAD MORE", "Ошибка получения списка фильмов, попробуйте еще раз", e)
             }
         }
     }
@@ -106,7 +103,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private val updateListConsumer by lazy {
         Consumer<List<Movie>> { movies ->
-            updateDataList(movies,true)
+            updateDataList(movies, true)
 
             if (swipeContainer.isRefreshing)
                 swipeContainer.isRefreshing = false
@@ -139,7 +136,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private var activityState = ACTIVITY_STATE.LOST_CONNECTION
 
-    internal enum class ACTIVITY_STATE {
+    enum class ACTIVITY_STATE {
         EDITOR_CHOICE,
         MOVIE_LIST,
         FAVORITES,
@@ -197,7 +194,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        movieAdapter = MovieListAdapter(R.layout.cardview_movie,ArrayList())
+        movieAdapter = MovieListAdapter(R.layout.cardview_movie, ArrayList())
         movieListRecyclerView!!.adapter = movieAdapter
         movieAdapter.onItemClickListener = this
         movieAdapter.setOnLoadMoreListener(this, movieListRecyclerView)
@@ -274,8 +271,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     viewModel.title = title.toString()
 
                     //if (!searchView.isIconified) {
-                        searchView.isIconified = true
-                   // }
+                    searchView.isIconified = true
+                    // }
                 } else
                     showConnectionError()
 
@@ -302,22 +299,22 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     showProgressBar()
 
                     DisposableManager.add(Single.create<JSONArray> { observer ->
-                        val jsonArray  = SiteWorker.getSortingParams(viewModel.requestQuery?.requestUri()?.build()!!)
+                        val jsonArray = SiteWorker.getSortingParams(viewModel.requestQuery?.requestUri()?.build()!!)
                         observer.onSuccess(jsonArray)
                     }.observeOn(AndroidSchedulers.mainThread())
-                        .subscribeOn(Schedulers.io())
-                        .subscribe( { jsonArray ->
-                            val sortingFragment = SortingFragment.newInstance(jsonArray,viewModel.requestQuery?.requestUri()?.toString()!!)
-                            sortingFragment.show(supportFragmentManager, "sortingFragment")
+                            .subscribeOn(Schedulers.io())
+                            .subscribe({ jsonArray ->
+                                val sortingFragment = SortingFragment.newInstance(jsonArray, viewModel.requestQuery?.requestUri()?.toString()!!)
+                                sortingFragment.show(supportFragmentManager, "sortingFragment")
 
-                            dismissProgressBar()
+                                dismissProgressBar()
 
-                        }, { Log.d("SORTING FRAGMENT","CAN'T GET SORTING WINDOW") }))
+                            }, { Log.d("SORTING FRAGMENT", "CAN'T GET SORTING WINDOW") }))
                 }
             }
             R.id.action_clear -> {
 
-                var confirmationDialog : ConfirmationFragment? = null
+                var confirmationDialog: ConfirmationFragment? = null
 
                 when (activityState) {
                     ACTIVITY_STATE.FAVORITES -> {
@@ -385,7 +382,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     }
 
 
-
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
 
         when (item.itemId) {
@@ -396,7 +392,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                     showProgressBar()
 
                     viewModel.getRequestQueryCompletable(SiteWorker.EDITOR_CHOICE_QUERY)
-                        .subscribe(getListMoviesObserver)
+                            .subscribe(getListMoviesObserver)
 
                     title = getString(R.string.editor_choice_title)
                     viewModel.title = title.toString()
@@ -451,7 +447,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
                     val intent = Intent(this@MainActivity, MovieInfoActivity::class.java)
 
-                    intent.putExtra("is_random",true)
+                    intent.putExtra("is_random", true)
 
                     startActivity(intent)
 
@@ -473,10 +469,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                         intent.putExtra("genres", it.toString())
                         startActivityForResult(intent, GENRES_CODE)
                         dismissProgressBar()
-                    },{
-                        Log.e("MainActivity","Ошибка при получении списка жанров",it)
-                        Toast.makeText(this,"Ошибка при получении списка жанров, попробуйте еще раз",Toast.LENGTH_SHORT)
-
+                    }, {
+                        Log.e("MainActivity", "Ошибка при получении списка жанров", it)
+                        Toast.makeText(this, "Ошибка при получении списка жанров, попробуйте еще раз", Toast.LENGTH_SHORT).show()
                     })
                 } else
                     showConnectionError()
@@ -505,7 +500,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                 startActivity(intent)
             }
 
-            else -> { }
+            else -> {
+            }
         }
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
@@ -563,7 +559,6 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
     }
 
 
-
     /** Called before the activity is destroyed  */
     public override fun onStop() {
         //mAdMobView.pause()
@@ -573,14 +568,14 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         dismissProgressBar()
     }
 
-    override fun onFragmentInteraction(result: Map<String,Any>) {
+    override fun onFragmentInteraction(result: Map<String, Any>) {
 
         if (hasConnection()) {
 
             changeState(ACTIVITY_STATE.MOVIE_LIST)
 
-            val params = result.get("params") as HashMap<String,String>
-            var completable : Completable
+            val params = result.get("params") as HashMap<String, String>
+            var completable: Completable
 
             showProgressBar()
 
@@ -604,7 +599,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
             val intent = Intent(this@MainActivity, MovieInfoActivity::class.java)
             intent.putExtra("is_random", false)
-            intent.putExtra("movie_url",selectedMovie.url)
+            intent.putExtra("movie_url", selectedMovie.url)
 
             startActivity(intent)
 
@@ -647,7 +642,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     override fun onRefresh() {
 
-        when(activityState) {
+        when (activityState) {
 
             ACTIVITY_STATE.EDITOR_CHOICE, ACTIVITY_STATE.MOVIE_LIST, ACTIVITY_STATE.LOST_CONNECTION -> {
                 if (hasConnection()) {
@@ -666,9 +661,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         }
     }
 
-    private fun updateDataList(list: List<Movie>,clear : Boolean) {
+    private fun updateDataList(list: List<Movie>, clear: Boolean) {
 
-        if(clear)
+        if (clear)
             movieAdapter.clear()
 
         movieAdapter.addData(list)
@@ -688,17 +683,20 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         Toast.makeText(applicationContext, getText(R.string.cant_connect_error), Toast.LENGTH_SHORT).show()
     }
 
-    internal fun hasConnection() : Boolean {
+    internal fun hasConnection(): Boolean {
         val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val ni = cm.activeNetworkInfo
         return ni != null && ni.isConnected
-}
+    }
+
+
     fun performInitialRequest() {
         if (hasConnection()) {
             changeState(ACTIVITY_STATE.EDITOR_CHOICE)
 
 
             if (viewModel.requestQuery != null) {
+
                 viewModel.observable?.subscribe(updateListConsumer)
             } else {
                 showProgressBar()
@@ -710,34 +708,34 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             showConnectionError()
     }
 
-    private fun changeState(newState : ACTIVITY_STATE) {
+    private fun changeState(newState: ACTIVITY_STATE) {
         when (newState) {
             ACTIVITY_STATE.EDITOR_CHOICE -> {
-                activityState =  ACTIVITY_STATE.EDITOR_CHOICE
+                activityState = ACTIVITY_STATE.EDITOR_CHOICE
                 searchMenuItem.isVisible = true
                 sortingMenuItem.isVisible = true
                 clearMenuItem.isVisible = false
             }
             ACTIVITY_STATE.MOVIE_LIST -> {
-                activityState =  ACTIVITY_STATE.MOVIE_LIST
+                activityState = ACTIVITY_STATE.MOVIE_LIST
                 searchMenuItem.isVisible = true
                 sortingMenuItem.isVisible = true
                 clearMenuItem.isVisible = false
 
             }
             ACTIVITY_STATE.LOST_CONNECTION -> {
-                activityState =  ACTIVITY_STATE.LOST_CONNECTION
+                activityState = ACTIVITY_STATE.LOST_CONNECTION
 
             }
             ACTIVITY_STATE.HISTORY -> {
-                activityState =  ACTIVITY_STATE.HISTORY
+                activityState = ACTIVITY_STATE.HISTORY
                 searchMenuItem.isVisible = false
                 sortingMenuItem.isVisible = false
                 clearMenuItem.isVisible = true
 
             }
             ACTIVITY_STATE.FAVORITES -> {
-                activityState =  ACTIVITY_STATE.FAVORITES
+                activityState = ACTIVITY_STATE.FAVORITES
                 searchMenuItem.isVisible = false
                 sortingMenuItem.isVisible = false
                 clearMenuItem.isVisible = true
@@ -749,9 +747,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private fun firstStartDisclaimer() {
         val mSettings = getSharedPreferences(Settings.APP_PREFERENCES, Context.MODE_PRIVATE)
-        var isFirstRun = mSettings.getBoolean(Settings.APP_FIRST_RUN,true)
+        var isFirstRun = mSettings.getBoolean(Settings.APP_FIRST_RUN, true)
         val currentVersion = BuildConfig.VERSION_CODE
-        val savedVersion = mSettings.getInt(Settings.VERSION_CODE,0)
+        val savedVersion = mSettings.getInt(Settings.VERSION_CODE, 0)
 
         if (isFirstRun) {
             val editor = mSettings.edit()
