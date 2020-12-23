@@ -357,7 +357,7 @@ class SiteWorker {
         }
 
         private fun getCurrentListElementCount(pageContent: Document): Int {
-            val elements = pageContent.getElementsByClass("tile col-sm-6 ")
+            val elements = pageContent.getElementsByClass("col-sm-6")
             return elements.size
         }
 
@@ -452,7 +452,7 @@ class SiteWorker {
         private fun movieListContentParse(context: Context?, pageContent: Document, limit: Int): HashMap<String, Any> {
             val movieList = ArrayList<Movie>()
             val result = HashMap<String, Any>()
-            val elements = pageContent.getElementsByClass("tile col-sm-6 ")
+            val elements = pageContent.getElementsByClass("col-sm-6")
             //var imageDownloader: ImageDownloader
 //            val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
 

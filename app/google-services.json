@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "362500199943",
+    "firebase_url": "https://doramatv-9d316.firebaseio.com",
+    "project_id": "doramatv-9d316",
+    "storage_bucket": "doramatv-9d316.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362500199943:android:b79ff9ec71c4132f",
+        "android_client_info": {
+          "package_name": "ru.garretech.garred.doramatv"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "362500199943-ri121kqpbleq6if1csq032689vuf84ig.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ru.garretech.garred.doramatv",
+            "certificate_hash": "6f0b69608788763f1d16701bb5f41a1818eda8f4"
+          }
+        },
+        {
+          "client_id": "362500199943-212ir851kq4te9iucm0495j0ob78lahl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAqZZWTC1dUFctw5C6wgiddSssxXLr83g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "362500199943-212ir851kq4te9iucm0495j0ob78lahl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
