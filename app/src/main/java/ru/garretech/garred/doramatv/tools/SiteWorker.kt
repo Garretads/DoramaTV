@@ -452,7 +452,7 @@ class SiteWorker {
         private fun movieListContentParse(context: Context?, pageContent: Document, limit: Int): HashMap<String, Any> {
             val movieList = ArrayList<Movie>()
             val result = HashMap<String, Any>()
-            val elements = pageContent.getElementsByClass("col-sm-6")
+            val elements = pageContent.getElementsByClass("col-md-6")
             //var imageDownloader: ImageDownloader
 //            val explicitContent = arrayListOf<String>("эротика", "гей-тема", "лесби-тема")
 
