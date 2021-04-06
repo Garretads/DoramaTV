@@ -202,7 +202,7 @@ class SiteWorker {
         val ONGOING_PARAMS = arrayOf("sortType", "rate")
         val RANDOM_MOVIE_PREFIX = "/internal/random"
         private val OFFSET_PARAM = "offset"
-        val TRAGUS_URL = "https://frigg.taptap.rocks/internal/videoCode/"
+        val TRAGUS_URL = "https://silver.taptap.rocks/internal/videoCode/"
         val SIMPLE_QUERY = 0
         val SEARCH_QUERY = 1
         val EDITOR_CHOICE_QUERY = 2
