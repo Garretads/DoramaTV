@@ -384,7 +384,7 @@ class SiteWorker {
 
             var tempElement: Element?
             var tempElements: Elements
-            var initialSeries = pageContent.getElementsByClass("subject-actions col-sm-7").first().getElementsByTag("a").last().attr("href")
+            var initialSeries = pageContent.getElementsByClass("read-first-chapter").first().getElementsByTag("a").last().attr("href")
             initialSeries = initialSeries.substring(initialSeries.lastIndexOf("/"))
 
             tempElement = pageContent.getElementsByAttributeValue("itemprop", "url").first()
@@ -425,7 +425,7 @@ class SiteWorker {
             if (tempElement != null)
                 production = tempElement.text()
 
-            tempElement = pageContent.getElementsByClass("subject-meta col-sm-7").first()
+            tempElement = pageContent.getElementsByClass("subject-meta").first()
             tempElements = tempElement!!.getElementsByTag("p")
 
             tempElement = tempElements[0]
