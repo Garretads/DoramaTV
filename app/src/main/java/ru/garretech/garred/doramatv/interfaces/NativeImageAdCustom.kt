@@ -1,6 +1,6 @@
 package ru.garretech.garred.doramatv.interfaces
 
 import com.chad.library.adapter.base.entity.MultiItemEntity
-import com.yandex.mobile.ads.nativeads.NativeImageAd
+import com.yandex.mobile.ads.nativeads.NativeAd
 
-interface NativeImageAdCustom : NativeImageAd, MultiItemEntity
+interface NativeImageAdCustom : NativeAd, MultiItemEntity

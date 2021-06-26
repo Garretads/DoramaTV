@@ -20,7 +20,6 @@ import androidx.core.view.GravityCompat
 import androidx.lifecycle.ViewModelProviders
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.google.android.material.navigation.NavigationView
-import com.yandex.mobile.ads.*
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.Single
@@ -45,6 +44,12 @@ import ru.garretech.garred.doramatv.tools.SiteWorker
 import ru.garretech.garred.doramatv.viewmodels.MainActivityViewModel
 import java.util.*
 import kotlin.collections.ArrayList
+import com.yandex.mobile.ads.*
+import com.yandex.mobile.ads.banner.AdSize
+import com.yandex.mobile.ads.banner.BannerAdEventListener
+import com.yandex.mobile.ads.banner.BannerAdView
+import com.yandex.mobile.ads.common.AdRequest
+import com.yandex.mobile.ads.common.AdRequestError
 
 class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
 
@@ -112,23 +117,27 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         }
     }
 
-    private val mAdMobView: AdView by lazy { AdView(this) }
+    private val mAdMobView: BannerAdView by lazy { BannerAdView(this) }
     private var mAdRequest: AdRequest? = null
 
 
-    private val mBannerAdListener = object : AdEventListener {
-        override fun onAdFailedToLoad(p0: AdRequestError) {}
+    private val mBannerAdListener = object : BannerAdEventListener {
+        override fun onLeftApplication() {
+            //TODO("Not yet implemented")
+        }
 
-        override fun onAdClosed() {}
+        override fun onReturnedToApplication() {
+            //TODO("Not yet implemented")
+        }
 
-
-        override fun onAdLeftApplication() {}
 
         override fun onAdLoaded() {
             mAdMobView.visibility = View.VISIBLE
         }
 
-        override fun onAdOpened() {}
+        override fun onAdFailedToLoad(p0: AdRequestError) {
+            //TODO("Not yet implemented")
+        }
 
     }
 
@@ -221,10 +230,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
     private fun initAdMobView() {
-        mAdMobView.adSize = AdSize.flexibleSize()
-
-        mAdMobView.blockId = Settings.block_id()
-        mAdMobView.adEventListener = mBannerAdListener
+        mAdMobView.setAdSize(AdSize.flexibleSize())
+        mAdMobView.setBlockId(Settings.block_id())
+        mAdMobView.setBannerAdEventListener(mBannerAdListener)
 
         mAdRequest = AdRequest.Builder().build()
 
@@ -236,7 +244,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
     private fun refreshBannerAd() {
         mAdMobView.visibility = View.INVISIBLE
-        mAdMobView.loadAd(mAdRequest)
+        mAdRequest?.let { mAdMobView.loadAd(it) }
     }
 
 

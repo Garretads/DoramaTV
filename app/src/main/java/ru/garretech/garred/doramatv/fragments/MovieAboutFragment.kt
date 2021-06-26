@@ -13,6 +13,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.bumptech.glide.Glide
 import com.yandex.mobile.ads.*
+import com.yandex.mobile.ads.banner.AdSize
+import com.yandex.mobile.ads.banner.BannerAdEventListener
+import com.yandex.mobile.ads.banner.BannerAdView
+import com.yandex.mobile.ads.common.AdRequest
+import com.yandex.mobile.ads.common.AdRequestError
 
 
 import org.json.JSONException
@@ -30,7 +35,7 @@ class MovieAboutFragment : Fragment() {
 
     private var currentMovie : Movie? = null
 
-    val mAdMobView: AdView by lazy { AdView(context!!) }
+    private val mAdMobView: BannerAdView by lazy { BannerAdView(requireContext()) }
     private var mAdRequest: AdRequest? = null
 
     lateinit var rootView : View
@@ -48,16 +53,24 @@ class MovieAboutFragment : Fragment() {
 
 
 
-    private val mBannerAdListener = object : AdEventListener {
-        override fun onAdFailedToLoad(p0: AdRequestError) {}
+    private val mBannerAdListener = object : BannerAdEventListener {
+        override fun onLeftApplication() {
+            //TODO("Not yet implemented")
+        }
 
-        override fun onAdClosed() {}
+        override fun onReturnedToApplication() {
+            //TODO("Not yet implemented")
+        }
 
-        override fun onAdLeftApplication() {}
 
-        override fun onAdLoaded() { mAdMobView.visibility = View.VISIBLE }
+        override fun onAdLoaded() {
+            mAdMobView.visibility = View.VISIBLE
+        }
 
-        override fun onAdOpened() {}
+        override fun onAdFailedToLoad(p0: AdRequestError) {
+            //TODO("Not yet implemented")
+        }
+
     }
 
 
@@ -69,21 +82,21 @@ class MovieAboutFragment : Fragment() {
     }
 
     private fun initAdMobView() {
-        mAdMobView.adSize = AdSize.flexibleSize()
-
-        mAdMobView.blockId = Settings.BLOCK_ID1
-        mAdMobView.adEventListener = mBannerAdListener
+        mAdMobView.setAdSize(AdSize.flexibleSize())
+        mAdMobView.setBlockId(Settings.block_id())
+        mAdMobView.setBannerAdEventListener(mBannerAdListener)
 
         mAdRequest = AdRequest.Builder().build()
 
         val layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         layoutParams.gravity = Gravity.CENTER_HORIZONTAL
-        pageLayout.addView(mAdMobView, layoutParams)
+        pageLayout.addView(mAdMobView,0)
+//        pageLayout.addView(mAdMobView, layoutParams)
     }
 
     private fun refreshBannerAd() {
         mAdMobView.visibility = View.INVISIBLE
-        mAdMobView.loadAd(mAdRequest)
+        mAdRequest?.let { mAdMobView.loadAd(it) }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -129,7 +142,7 @@ class MovieAboutFragment : Fragment() {
 
         if (viewModel.currentMovie?.movieImageURL != null) {
             Glide
-                    .with(context!!)
+                    .with(requireContext())
                     .load(viewModel.currentMovie?.movieImageURL!!)
                     .fitCenter()
                     //.placeholder(R.drawable.loading_spinner)

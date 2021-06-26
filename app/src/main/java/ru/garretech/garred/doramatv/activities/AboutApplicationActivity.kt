@@ -13,40 +13,40 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.yandex.mobile.ads.*
-
+import com.yandex.mobile.ads.banner.AdSize
+import com.yandex.mobile.ads.banner.BannerAdEventListener
+import com.yandex.mobile.ads.banner.BannerAdView
+import com.yandex.mobile.ads.common.AdRequest
+import com.yandex.mobile.ads.common.AdRequestError
 import kotlinx.android.synthetic.main.activity_about_application.*
-import kotlinx.android.synthetic.main.toolbar.*
 import ru.garretech.garred.doramatv.BuildConfig
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.Settings
 
 class AboutApplicationActivity : AppCompatActivity() {
 
-    val mAdMobView: AdView by lazy { AdView(this) }
+    val mAdMobView: BannerAdView by lazy { BannerAdView(this) }
     private var mAdRequest: AdRequest? = null
 
 
-    private val mBannerAdListener = object : AdEventListener {
-        override fun onAdFailedToLoad(p0: AdRequestError) {
-
+    private val mBannerAdListener = object : BannerAdEventListener {
+        override fun onLeftApplication() {
+            //TODO("Not yet implemented")
         }
 
-        override fun onAdClosed() {
-
+        override fun onReturnedToApplication() {
+            //TODO("Not yet implemented")
         }
 
-
-        override fun onAdLeftApplication() {
-
-        }
 
         override fun onAdLoaded() {
             mAdMobView.visibility = View.VISIBLE
         }
 
-        override fun onAdOpened() {
-
+        override fun onAdFailedToLoad(p0: AdRequestError) {
+            //TODO("Not yet implemented")
         }
+
     }
 
 
@@ -69,10 +69,9 @@ class AboutApplicationActivity : AppCompatActivity() {
 
 
     private fun initAdMobView() {
-        mAdMobView.adSize = AdSize.flexibleSize()
-
-        mAdMobView.blockId = Settings.BLOCK_ID1
-        mAdMobView.adEventListener = mBannerAdListener
+        mAdMobView.setAdSize(AdSize.flexibleSize())
+        mAdMobView.setBlockId(Settings.block_id())
+        mAdMobView.setBannerAdEventListener(mBannerAdListener)
 
         mAdRequest = AdRequest.Builder().build()
 
@@ -84,7 +83,7 @@ class AboutApplicationActivity : AppCompatActivity() {
 
     private fun refreshBannerAd() {
         mAdMobView.visibility = View.INVISIBLE
-        mAdMobView.loadAd(mAdRequest)
+        mAdRequest?.let { mAdMobView.loadAd(it) }
     }
 
     internal fun revertSpanned(stext: Spanned): Spannable {

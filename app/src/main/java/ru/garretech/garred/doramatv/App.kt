@@ -7,14 +7,19 @@ import androidx.multidex.MultiDex
 import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
+import com.yandex.mobile.ads.common.MobileAds
 import io.reactivex.plugins.RxJavaPlugins
 
+
 class App : Application() {
+
+    private val YANDEX_MOBILE_ADS_TAG = "YandexMobileAds"
 
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(applicationContext)
 
+        MobileAds.initialize(this) { Log.d(YANDEX_MOBILE_ADS_TAG, "SDK initialized") }
 
         // Инициализируем firebase логирование только если сборка в release варианте
         if (!BuildConfig.DEBUG) {

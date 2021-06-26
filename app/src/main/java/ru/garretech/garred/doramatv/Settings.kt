@@ -11,8 +11,7 @@ object Settings {
     const val version = "5.101"
     const val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
     var max_loaded_in_screen = 15
-    const val BLOCK_ID = "adf-304149/991383"
-    const val BLOCK_ID1 = "adf-304149/999174"
+    const val BLOCK_ID = "adf-304149/999174"
 
     const val SITE_URL = "https://doramatv.live"
     const val SITE_URL1 = "doramatv.live"
