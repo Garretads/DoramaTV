@@ -248,7 +248,7 @@ class SiteWorker {
             if (tempElements == null)
                 throw NullPointerException()
             else {
-                val editorChoiceElements = tempElements.first().getElementsByClass("simple-tile ")
+                val editorChoiceElements = tempElements.first().getElementsByClass("simple-tile")
 
                 for (i in editorChoiceElements.indices) {
                     val element1 = editorChoiceElements[i]

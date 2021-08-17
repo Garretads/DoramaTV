@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.chad.library.adapter.base.BaseMultiItemQuickAdapter
 import com.chad.library.adapter.base.BaseViewHolder
 import com.chad.library.adapter.base.entity.MultiItemEntity
+import io.reactivex.disposables.CompositeDisposable
 import ru.garretech.garred.doramatv.DisposableManager
 import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.activities.WebViewActivity
@@ -19,6 +20,8 @@ import ru.garretech.garred.doramatv.model.Source
 class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<MultiItemEntity>) : BaseMultiItemQuickAdapter<MultiItemEntity, BaseViewHolder>(data) {
     var onExpandableItemClickListener : OnExpandableItemClickListener? = null
     var selectedSeries = -1
+
+    var disposableBag = CompositeDisposable()
 
     init {
         addItemType(Series.TYPE, R.layout.cardview_series)
@@ -103,15 +106,15 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
                                     notifyItemChanged(selectedSeries)
                                     flagWatchedSource(helper)
                                     val selectQualityFragment = SelectQualityFragment.newInstance(fileLink!!)
-                                    selectQualityFragment.show(fragment.fragmentManager!!, "Выберите качество")
-                                }
+                                    selectQualityFragment.show(fragment.childFragmentManager, "Выберите качество")
+                                }.let(disposableBag::add)
                             } else
                                 Toast.makeText(fragment.context,"Ошибка при загрузке списка качеств, попробуйте еще раз", Toast.LENGTH_LONG).show()
 
                         },{
                             Toast.makeText(fragment.context,"Ошибка при получении списка качеств", Toast.LENGTH_SHORT).show()
                             Log.e("MovieSourcesFragment","Ошибка при получении списка качеств",it)
-                        })
+                        }).let(disposableBag::add)
 
                     } else {
                         fragment.viewModel.getOthersLink(source).subscribe({
@@ -127,11 +130,11 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
                                 intent.putExtra("link", seriesLink)
 
                                 fragment.startActivity(intent)
-                            }
+                            }.let(disposableBag::add)
                         },{
                             Toast.makeText(fragment.context,"Ошибка при открытии серии", Toast.LENGTH_SHORT).show()
                             Log.e("MovieSourcesFragment","Ошибка при открытии серии",it)
-                        })
+                        }).let(disposableBag::add)
                     }
                 }
 
