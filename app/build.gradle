@@ -17,7 +17,7 @@ android {
         config {
             keyAlias 'key0'
             keyPassword '457BWY4z'
-            storeFile file('/Users/sergej/doramatv_key')
+            storeFile file('/Users/sergei/doramatv_key')
             storePassword '457BWY4z'
         }
     }
@@ -60,7 +60,7 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:multidex:1.0.3'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.5.10'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.5.21'
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
     implementation 'com.google.android.material:material:1.4.0'
@@ -91,7 +91,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.7'
 
 
-    implementation 'com.yandex.android:mobileads:4.1.1'
+    implementation 'com.yandex.android:mobileads:4.3.0'
     implementation 'com.yandex.android:mobmetricalib:3.21.1'
     implementation 'com.yandex.ads.mediation:mobileads-admob:1.18.0'
 
