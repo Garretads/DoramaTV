@@ -28,8 +28,8 @@ android {
         applicationId "ru.garretech.garred.doramatv"
         minSdkVersion 19
         targetSdkVersion 30
-        versionCode 49
-        versionName "1.6.9"
+        versionCode 50
+        versionName "1.7.0"
 
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

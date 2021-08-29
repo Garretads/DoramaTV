@@ -10,6 +10,7 @@ object Settings {
     const val api_response_type = "token"
     const val version = "5.101"
     const val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
+    const val access_token1 = "abbce273a0891ea348553beb19d85a9432bbcb87ed757158ad581347d3bd620ceb8f8263c63cbeadd3493"
     var max_loaded_in_screen = 15
     const val BLOCK_ID = "adf-304149/999174"
 
@@ -25,7 +26,7 @@ object Settings {
     }
 
     fun access_token(): String {
-        return access_token
+        return access_token1
     }
 
     fun api_secret_key(): String {
