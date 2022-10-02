@@ -33,6 +33,7 @@ import ru.garretech.garred.doramatv.R
  */
 class SettingsActivity : AppCompatPreferenceActivity() {
 
+    @Deprecated("Deprecated in Java")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setupActionBar()
@@ -60,6 +61,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
     /**
      * {@inheritDoc}
      */
+    @Deprecated("Deprecated in Java")
     override fun onIsMultiPane(): Boolean {
         return isXLargeTablet(this)
     }
@@ -67,6 +69,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
     /**
      * {@inheritDoc}
      */
+    @Deprecated("Deprecated in Java")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     override fun onBuildHeaders(target: List<PreferenceActivity.Header>) {
         loadHeadersFromResource(R.xml.pref_headers, target)
@@ -76,6 +79,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
      * This method stops fragment injection in malicious applications.
      * Make sure to deny any unknown fragments here.
      */
+    @Deprecated("Deprecated in Java")
     override fun isValidFragment(fragmentName: String): Boolean {
         return (PreferenceFragment::class.java.getName() == fragmentName
                 || GeneralPreferenceFragment::class.java.getName() == fragmentName
@@ -89,6 +93,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     class GeneralPreferenceFragment : PreferenceFragment() {
+        @Deprecated("Deprecated in Java")
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             addPreferencesFromResource(R.xml.pref_general)
@@ -102,6 +107,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
             bindPreferenceSummaryToValue(findPreference("example_list"))
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onOptionsItemSelected(item: MenuItem): Boolean {
             val id = item.itemId
             if (id == android.R.id.home) {
@@ -118,6 +124,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     class NotificationPreferenceFragment : PreferenceFragment() {
+        @Deprecated("Deprecated in Java")
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             addPreferencesFromResource(R.xml.pref_notification)
@@ -130,6 +137,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
             bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"))
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onOptionsItemSelected(item: MenuItem): Boolean {
             val id = item.itemId
             if (id == android.R.id.home) {
@@ -146,6 +154,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     class DataSyncPreferenceFragment : PreferenceFragment() {
+        @Deprecated("Deprecated in Java")
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             addPreferencesFromResource(R.xml.pref_data_sync)
@@ -158,6 +167,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
             bindPreferenceSummaryToValue(findPreference("sync_frequency"))
         }
 
+        @Deprecated("Deprecated in Java")
         override fun onOptionsItemSelected(item: MenuItem): Boolean {
             val id = item.itemId
             if (id == android.R.id.home) {

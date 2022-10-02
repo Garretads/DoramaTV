@@ -4,22 +4,21 @@ buildscript {
 
     repositories {
         google()
-        jcenter()
-        maven { url 'https://maven.fabric.io/public' }
-
+        mavenCentral()
+        maven { url "https://jitpack.io" }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.21"
+        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
 
         // Add the Google Services plugin (check for v3.1.2 or higher).
-        classpath 'com.google.gms:google-services:4.3.10'
+        classpath 'com.google.gms:google-services:4.3.14'
 
         // Add the Fabric Crashlytics plugin.
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.7.1'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
 
         // Add the dependency for the Performance Monitoring plugin
-        classpath 'com.google.firebase:perf-plugin:1.4.0'  // Performance Monitoring plugin
+        classpath 'com.google.firebase:perf-plugin:1.4.1'  // Performance Monitoring plugin
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -30,7 +29,7 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
         maven { url "https://jitpack.io" }
     }
 }

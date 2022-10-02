@@ -3,7 +3,6 @@ package ru.garretech.garred.doramatv
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import androidx.multidex.MultiDex
 import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
@@ -33,9 +32,5 @@ class App : Application() {
         if (!BuildConfig.DEBUG) RxJavaPlugins.setErrorHandler { t: Throwable? -> Log.e("RxJava error","Произошла ошибка",t) }
     }
 
-    override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
-        MultiDex.install(base)
-    }
 
 }

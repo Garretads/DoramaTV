@@ -1,23 +1,19 @@
 package ru.garretech.garred.doramatv.activities
 
-import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.appcompat.widget.Toolbar
 import android.text.Spannable
 import android.text.Spanned
-import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
-import android.widget.TextView
-import com.yandex.mobile.ads.*
 import com.yandex.mobile.ads.banner.AdSize
 import com.yandex.mobile.ads.banner.BannerAdEventListener
 import com.yandex.mobile.ads.banner.BannerAdView
 import com.yandex.mobile.ads.common.AdRequest
 import com.yandex.mobile.ads.common.AdRequestError
+import com.yandex.mobile.ads.common.ImpressionData
 import kotlinx.android.synthetic.main.activity_about_application.*
 import ru.garretech.garred.doramatv.BuildConfig
 import ru.garretech.garred.doramatv.R
@@ -38,6 +34,10 @@ class AboutApplicationActivity : AppCompatActivity() {
             //TODO("Not yet implemented")
         }
 
+        override fun onImpression(p0: ImpressionData?) {
+            TODO("Not yet implemented")
+        }
+
 
         override fun onAdLoaded() {
             mAdMobView.visibility = View.VISIBLE
@@ -46,6 +46,8 @@ class AboutApplicationActivity : AppCompatActivity() {
         override fun onAdFailedToLoad(p0: AdRequestError) {
             //TODO("Not yet implemented")
         }
+
+        override fun onAdClicked() = Unit
 
     }
 
@@ -69,8 +71,8 @@ class AboutApplicationActivity : AppCompatActivity() {
 
 
     private fun initAdMobView() {
-        mAdMobView.setAdSize(AdSize.flexibleSize())
-        mAdMobView.setBlockId(Settings.block_id())
+        mAdMobView.setAdUnitId(Settings.block_id())
+        mAdMobView.setAdSize(AdSize.BANNER_300x250)
         mAdMobView.setBannerAdEventListener(mBannerAdListener)
 
         mAdRequest = AdRequest.Builder().build()

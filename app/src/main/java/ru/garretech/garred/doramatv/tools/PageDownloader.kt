@@ -12,6 +12,7 @@ import java.net.UnknownHostException
 
 class PageDownloader : AsyncTask<String, Void, Document>() {
 
+    @Deprecated("Deprecated in Java")
     override fun doInBackground(vararg strings: String): Document? {
         var result: Document? = null
         try {

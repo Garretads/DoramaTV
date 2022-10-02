@@ -18,6 +18,7 @@ import com.yandex.mobile.ads.banner.BannerAdEventListener
 import com.yandex.mobile.ads.banner.BannerAdView
 import com.yandex.mobile.ads.common.AdRequest
 import com.yandex.mobile.ads.common.AdRequestError
+import com.yandex.mobile.ads.common.ImpressionData
 
 
 import org.json.JSONException
@@ -62,6 +63,10 @@ class MovieAboutFragment : Fragment() {
             //TODO("Not yet implemented")
         }
 
+        override fun onImpression(p0: ImpressionData?) {
+            TODO("Not yet implemented")
+        }
+
 
         override fun onAdLoaded() {
             mAdMobView.visibility = View.VISIBLE
@@ -70,6 +75,8 @@ class MovieAboutFragment : Fragment() {
         override fun onAdFailedToLoad(p0: AdRequestError) {
             //TODO("Not yet implemented")
         }
+
+        override fun onAdClicked()= Unit
 
     }
 
@@ -82,8 +89,8 @@ class MovieAboutFragment : Fragment() {
     }
 
     private fun initAdMobView() {
-        mAdMobView.setAdSize(AdSize.flexibleSize())
-        mAdMobView.setBlockId(Settings.block_id())
+        mAdMobView.setAdUnitId(Settings.block_id())
+        mAdMobView.setAdSize(AdSize.BANNER_300x250)
         mAdMobView.setBannerAdEventListener(mBannerAdListener)
 
         mAdRequest = AdRequest.Builder().build()

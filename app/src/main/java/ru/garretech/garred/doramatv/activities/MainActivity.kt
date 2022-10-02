@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.ViewModelProviders
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.google.android.material.navigation.NavigationView
 import io.reactivex.Completable
@@ -50,8 +51,9 @@ import com.yandex.mobile.ads.banner.BannerAdEventListener
 import com.yandex.mobile.ads.banner.BannerAdView
 import com.yandex.mobile.ads.common.AdRequest
 import com.yandex.mobile.ads.common.AdRequestError
+import com.yandex.mobile.ads.common.ImpressionData
 
-class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
+class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, MenuItem.OnActionExpandListener, NavigationView.OnNavigationItemSelectedListener, BaseQuickAdapter.RequestLoadMoreListener, SwipeRefreshLayout.OnRefreshListener, SortingFragment.OnFragmentInteractionListener {
 
     private lateinit var searchView: SearchView
     private lateinit var movieAdapter: MovieListAdapter
@@ -130,6 +132,10 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             //TODO("Not yet implemented")
         }
 
+        override fun onImpression(p0: ImpressionData?) {
+            TODO("Not yet implemented")
+        }
+
 
         override fun onAdLoaded() {
             mAdMobView.visibility = View.VISIBLE
@@ -138,6 +144,8 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         override fun onAdFailedToLoad(p0: AdRequestError) {
             //TODO("Not yet implemented")
         }
+
+        override fun onAdClicked() = Unit
 
     }
 
@@ -230,8 +238,9 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
 
 
     private fun initAdMobView() {
-        mAdMobView.setAdSize(AdSize.flexibleSize())
-        mAdMobView.setBlockId(Settings.block_id())
+        mAdMobView.setAdUnitId(Settings.block_id())
+        mAdMobView.setAdSize(AdSize.BANNER_300x250)
+        mAdMobView.setBannerAdEventListener(mBannerAdListener)
         mAdMobView.setBannerAdEventListener(mBannerAdListener)
 
         mAdRequest = AdRequest.Builder().build()
@@ -368,6 +377,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
                             override fun onCancelPressed() {}
                         })
                     }
+                    else    -> Unit
                 }
 
                 confirmationDialog?.show(supportFragmentManager, "confirmationDialog")
@@ -525,6 +535,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == GENRES_CODE) {

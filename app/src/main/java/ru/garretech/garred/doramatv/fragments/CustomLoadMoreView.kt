@@ -9,6 +9,7 @@ class CustomLoadMoreView : LoadMoreView() {
         return R.layout.fragment_load_more
     }
 
+    @Deprecated("Deprecated in Java")
     override fun isLoadEndGone(): Boolean {
         return true
     }
