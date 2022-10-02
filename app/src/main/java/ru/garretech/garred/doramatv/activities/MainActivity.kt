@@ -132,9 +132,7 @@ class MainActivity : AppCompatActivity(), BaseQuickAdapter.OnItemClickListener, 
             //TODO("Not yet implemented")
         }
 
-        override fun onImpression(p0: ImpressionData?) {
-            TODO("Not yet implemented")
-        }
+        override fun onImpression(p0: ImpressionData?) = Unit
 
 
         override fun onAdLoaded() {

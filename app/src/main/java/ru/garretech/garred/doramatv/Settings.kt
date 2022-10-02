@@ -8,8 +8,8 @@ object Settings {
     const val api_redirect_uri = "http://api.vk.com/blank.html"
     const val api_secret_key = "HMIqzRPUL4Shf9eOnjan"
     const val api_response_type = "token"
-    const val version = "5.101"
-    const val access_token = "30338145c309b0358ad0d22022ba3a4c5005b6d541281a9ef7390cf4c1a194c97fd1fc88ebae4cf49b531"
+    const val version = "5.131"
+    const val access_token = "vk1.a.f7gKKjFNmYArFwdMYG8AOx-bb0AeDCdGpwUxpx5nCDrVcbTVSVeBGq2mHhKnTtSWt0QzoiBkZFRk0oc0lHmEbLmP79glRmEivvzFK34eGgO13c6klJgDx6TNx_8LpDSwOetI_W3XFdEvXU4glZf63Hb1ez0nrIaWRpt6KgQhha6OC-kSliVCrevqfMNlQ-Fg"
     const val access_token1 = "abbce273a0891ea348553beb19d85a9432bbcb87ed757158ad581347d3bd620ceb8f8263c63cbeadd3493"
     var max_loaded_in_screen = 15
     const val BLOCK_ID = "adf-304149/999174"
@@ -26,7 +26,7 @@ object Settings {
     }
 
     fun access_token(): String {
-        return access_token1
+        return access_token
     }
 
     fun api_secret_key(): String {
