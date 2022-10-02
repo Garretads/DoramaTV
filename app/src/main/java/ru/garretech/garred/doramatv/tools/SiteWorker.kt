@@ -194,7 +194,7 @@ class SiteWorker {
     companion object {
         //val SITE_URL = "http://doramatv.live"
         //private val SITE_URL1 = "doramatv.live"
-        private val editorChoice = "row tiles-row short"
+        private val editorChoice = "tiles-row"
         val NEW_MOVIES_PARAMS = arrayOf("sortType", "created")
         val LIST_PREFIX = "list"
         val SEARCH_PREFIX = "search"
