@@ -1,0 +1,63 @@
+package ru.garretech.garred.doramatv.flow.movieInfo
+
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.webkit.WebViewClient
+import ru.garretech.garred.doramatv.R
+import android.webkit.WebView
+import android.webkit.WebResourceRequest
+import android.os.Build
+import android.annotation.TargetApi
+import android.util.Log
+import android.view.Window
+import android.view.WindowManager
+import kotlinx.android.synthetic.main.activity_web_view.*
+
+
+
+
+class WebPlayerActivity : AppCompatActivity() {
+    val mWebViewClient by lazy { object : WebViewClient() {
+        @TargetApi(Build.VERSION_CODES.N)
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            view.loadUrl(request.url.toString())
+            return true
+        }
+
+        // Для старых устройств
+        @Deprecated("Deprecated in Java")
+        override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+            view.loadUrl(url)
+            return true
+        }
+
+
+    }}
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        val url = intent.getStringExtra("link")
+        setContentView(R.layout.activity_web_view)
+        webView.webViewClient = mWebViewClient
+        webView.settings.javaScriptEnabled = true
+        webView.settings.allowUniversalAccessFromFileURLs = true
+        webView.settings.allowFileAccessFromFileURLs = true
+
+        url?.let {
+            Log.d("webView","Loading url:${it}")
+            webView.loadUrl(it)
+        }
+    }
+
+
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            webView.destroy()
+            super.onBackPressed()
+        }
+    }
+}

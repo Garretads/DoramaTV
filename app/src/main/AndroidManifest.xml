@@ -35,47 +35,47 @@
         android:theme="@style/Theme.AppCompat.NoActionBar"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".activities.WebViewActivity"
+            android:name=".flow.movieInfo.WebPlayerActivity"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/NoActionBar"
             android:exported="false" />
 
         <activity
-            android:name=".activities.SettingsActivity"
+            android:name=".flow.profile.SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".activities.MainActivity"
+            android:parentActivityName=".flow.main.MainActivity"
             android:exported="false">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="ru.garretech.garred.doramatv.activities.MainActivity" />
+                android:value="ru.garretech.garred.doramatv.flow.main.MainActivity" />
         </activity>
 
         <activity
-            android:name=".activities.AboutApplicationActivity"
+            android:name=".flow.profile.AboutApplicationActivity"
             android:exported="false" />
 
         <activity
-            android:name=".activities.GenresActivity"
+            android:name=".flow.catalog.GenresActivity"
             android:label="@string/title_activity_genres"
-            android:parentActivityName=".activities.MainActivity"
+            android:parentActivityName=".flow.main.MainActivity"
             android:exported="false">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="ru.garretech.garred.doramatv.activities.MainActivity" />
+                android:value="ru.garretech.garred.doramatv.flow.main.MainActivity" />
         </activity>
 
         <activity
-            android:name=".activities.MovieInfoActivity"
+            android:name="ru.garretech.garred.doramatv.flow.movieInfo.MovieInfoActivity"
             android:label="@string/title_activity_movie_about"
-            android:parentActivityName=".activities.MainActivity"
+            android:parentActivityName=".flow.main.MainActivity"
             android:exported="false">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="ru.garretech.garred.doramatv.activities.MainActivity" />
+                android:value="ru.garretech.garred.doramatv.flow.main.MainActivity" />
         </activity>
 
         <activity
-            android:name=".activities.MainActivity"
+            android:name=".flow.main.MainActivity"
             android:exported="true"
             >
             <intent-filter>

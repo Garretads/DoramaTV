@@ -7,7 +7,7 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import okhttp3.*
 import ru.garretech.garred.doramatv.Settings
-import ru.garretech.garred.doramatv.model.Movie
+import ru.garretech.garred.doramatv.data.model.Movie
 
 import org.json.JSONArray
 import org.json.JSONException
@@ -16,8 +16,8 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import ru.garretech.garred.doramatv.model.Series
-import ru.garretech.garred.doramatv.model.Source
+import ru.garretech.garred.doramatv.data.model.Series
+import ru.garretech.garred.doramatv.data.model.Source
 
 import java.io.IOException
 import java.util.HashMap

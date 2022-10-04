@@ -1,6 +1,6 @@
 package ru.garretech.garred.doramatv.tools
 
-import ru.garretech.garred.doramatv.model.History
+import ru.garretech.garred.doramatv.data.model.History
 
 
 class HistoryProvider(val history: History) {

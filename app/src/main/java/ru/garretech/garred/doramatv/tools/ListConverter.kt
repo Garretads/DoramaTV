@@ -2,8 +2,6 @@ package ru.garretech.garred.doramatv.tools
 
 import androidx.room.TypeConverter
 
-import java.util.Arrays
-
 class ListConverter {
     @TypeConverter
     fun fromList(list: List<String>): String {
@@ -13,7 +11,8 @@ class ListConverter {
 
     @TypeConverter
     fun toList(listAsString: String): List<String> {
-        val newList = Arrays.asList(*listAsString.split("\\s*,\\s*".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray())
+        val newList = listOf(*listAsString.split("\\s*,\\s*".toRegex()).dropLastWhile { it.isEmpty() }
+            .toTypedArray())
         return newList
     }
 
