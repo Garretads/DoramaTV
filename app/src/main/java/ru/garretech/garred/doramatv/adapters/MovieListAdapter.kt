@@ -44,7 +44,6 @@ class MovieListAdapter(layoutResId: Int, data: List<Movie>?) : BaseQuickAdapter<
             .with(helper.itemView.context!!)
             .load(item.movieImageURL)
             .fitCenter()
-            //.placeholder(R.drawable.loading_spinner)
             .into(imageView)
     }
 }

@@ -19,11 +19,11 @@ android {
     }
 
 
-    compileSdkVersion 31
+    compileSdkVersion 33
     defaultConfig {
         applicationId "ru.garretech.garred.doramatv"
         minSdkVersion 19
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode 51
         versionName "1.7.1"
 
@@ -44,7 +44,7 @@ android {
     }
     productFlavors {
     }
-    buildToolsVersion '30.0.3'
+    buildToolsVersion '33.0.0'
     compileOptions {
         sourceCompatibility = '1.17'
         targetCompatibility = '1.17'

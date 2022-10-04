@@ -23,7 +23,6 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     var title : String = ""
 
 
-
     fun getGenresList() =
             SiteWorker.genresList.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
 
@@ -88,9 +87,5 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     fun clearHistory() = dataSource.clearHistory().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
 
     fun clearFavorites() = dataSource.clearFavorites().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-
-    companion object {
-        const val APP_FIRST_RUN = "first_run_check_new"
-    }
 
 }

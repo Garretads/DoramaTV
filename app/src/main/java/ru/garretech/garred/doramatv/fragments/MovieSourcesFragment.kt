@@ -1,48 +1,28 @@
 package ru.garretech.garred.doramatv.fragments
 
 import android.content.Context
-import android.content.Intent
 import android.net.ConnectivityManager
 import android.os.Bundle
-import android.os.Handler
 import androidx.fragment.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
-
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
-import org.jsoup.nodes.Element
 import ru.garretech.garred.doramatv.DisposableManager
-
 import java.util.ArrayList
-import java.util.concurrent.ExecutionException
-
 import ru.garretech.garred.doramatv.R
-import ru.garretech.garred.doramatv.Settings
-import ru.garretech.garred.doramatv.activities.WebViewActivity
 import ru.garretech.garred.doramatv.adapters.MovieSourceAdapter
 import ru.garretech.garred.doramatv.model.Movie
-import ru.garretech.garred.doramatv.tools.*
 import ru.garretech.garred.doramatv.viewmodels.MovieSourcesFragmentViewModel
-import java.io.IOException
-import java.util.regex.Pattern
 
 
 class MovieSourcesFragment : Fragment() {
 
-    // TODO: Rename and change types of parameters
-    private var arrayAdapter: ArrayAdapter<String>? = null
+    private lateinit var arrayAdapter: ArrayAdapter<String>
     lateinit var viewModel : MovieSourcesFragmentViewModel
 
     private var sourcesProgressCircle : ProgressBar? = null
@@ -56,10 +36,10 @@ class MovieSourcesFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ViewModelProviders.of(this).get(MovieSourcesFragmentViewModel::class.java)
+        viewModel = ViewModelProvider(this).get(MovieSourcesFragmentViewModel::class.java)
 
-        arrayAdapter = ArrayAdapter(context!!, android.R.layout.simple_list_item_1, ArrayList())
-        arrayAdapter!!.setNotifyOnChange(true)
+        arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, ArrayList())
+        arrayAdapter.setNotifyOnChange(true)
 
         seriesAdapter = MovieSourceAdapter(this, ArrayList())
         seriesAdapter.setHasStableIds(true)
@@ -67,19 +47,12 @@ class MovieSourcesFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-
         val view = inflater.inflate(R.layout.fragment_movie_sources, container, false)
         seriesRecyclerView = view.findViewById(R.id.sourcesRecyclerView)
         sourcesProgressCircle = view.findViewById(R.id.sourcesProgressCircle)
 
         seriesRecyclerView.adapter = seriesAdapter
         seriesRecyclerView.layoutManager = LinearLayoutManager(context)
-
-        /*
-        * Если delayedStart установлен, то отменить
-        *
-        *
-        * */
 
         if (savedInstanceState != null) {
             savedInstanceState.getString(URL_MOVIE)?.let {
@@ -112,7 +85,7 @@ class MovieSourcesFragment : Fragment() {
     }
 
     private fun loadSeriesList() {
-        if (viewModel.seriesList.size == 0) {
+        if (viewModel.seriesList.isEmpty()) {
 
             DisposableManager.add(
                     viewModel.getSeriesList(viewModel.currentMovie?.url!!, viewModel.currentMovie?.initialSeries!!)
@@ -120,7 +93,7 @@ class MovieSourcesFragment : Fragment() {
 
                         val listViewList = ArrayList<String>()
 
-                        if (seriesList.size == 0) {
+                        if (seriesList.isEmpty()) {
                             listViewList.add("Пусто")
                             empty = true
                         } else {
@@ -135,7 +108,7 @@ class MovieSourcesFragment : Fragment() {
         } else {
             val listViewList = ArrayList<String>()
 
-            if (viewModel.seriesList.size == 0) {
+            if (viewModel.seriesList.isEmpty()) {
                 listViewList.add("Пусто")
                 empty = true
             } else {
@@ -165,7 +138,7 @@ class MovieSourcesFragment : Fragment() {
     }
 
     internal fun hasConnection(): Boolean {
-        val cm = activity!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val cm = requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val ni = cm.activeNetworkInfo
         return ni != null && ni.isConnected
     }

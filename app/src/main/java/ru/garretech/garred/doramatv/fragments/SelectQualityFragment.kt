@@ -12,12 +12,11 @@ import android.widget.Toast
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.ArrayList
-import java.util.regex.Pattern
 
-class SelectQualityFragment : androidx.fragment.app.DialogFragment(), DialogInterface.OnClickListener {
-    internal lateinit var sourcesObject: JSONObject
-    internal lateinit var sourcesNames: ArrayList<String>
-    internal lateinit var sourcesLinks: ArrayList<String>
+class SelectQualityFragment : DialogFragment(), DialogInterface.OnClickListener {
+    private lateinit var sourcesObject: JSONObject
+    private lateinit var sourcesNames: ArrayList<String>
+    private lateinit var sourcesLinks: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,20 +44,6 @@ class SelectQualityFragment : androidx.fragment.app.DialogFragment(), DialogInte
                             else    -> Unit
                         }
                     }
-
-
-//                for (index in 0 until sourcesObject.names().length()) {
-//                    if (sourcesObject.names().getString(index).contains("mp4"))
-//                        sourcesNames.add(sourcesObject.names().getString(index).substring(4)+"P")
-//                    else if (sourcesObject.names().getString(index).contains("hls"))
-//                        sourcesNames.add("HLS")
-//                    else
-//                        sourcesNames.add(sourcesObject.names().getString(index))
-//                }
-//
-//                for (name in sourcesOrigNames) {
-//                    sourcesLinks.add(sourcesObject.getString(name))
-//                }
 
             } catch (e: JSONException) {
                 e.printStackTrace()

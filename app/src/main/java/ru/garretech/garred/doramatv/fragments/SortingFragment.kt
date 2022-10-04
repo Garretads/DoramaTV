@@ -17,8 +17,7 @@ import ru.garretech.garred.doramatv.R
 import ru.garretech.garred.doramatv.adapters.CustomTableLayout
 
 
-class SortingFragment : androidx.fragment.app.DialogFragment() {
-    // TODO: Rename and change types of parameters
+class SortingFragment : DialogFragment() {
     private var initialURL: Uri? = null
     private var listener: OnFragmentInteractionListener? = null
     private lateinit var paramsJSONArray : JSONArray
@@ -144,7 +143,7 @@ class SortingFragment : androidx.fragment.app.DialogFragment() {
         if (context is OnFragmentInteractionListener) {
             listener = context
         } else {
-            throw RuntimeException(context.toString() + " must implement OnFragmentInteractionListener")
+            throw RuntimeException("$context must implement OnFragmentInteractionListener")
         }
     }
 
@@ -157,12 +156,12 @@ class SortingFragment : androidx.fragment.app.DialogFragment() {
         fun onFragmentInteraction(result : Map<String,Any>)
     }
 
-    fun onSortButtonClick() {
+    private fun onSortButtonClick() {
         listener?.onFragmentInteraction(formQueryString())
         dismiss()
     }
 
-    fun formQueryString() : Map<String,Any> {
+    private fun formQueryString() : Map<String,Any> {
         /* 1. Собрать выбранные элементы из каждого поля
          * 2. Если зайдействованы одновременно элементы из полей страна и прочее, выбрать прочее (для начала)
          * 3. Выяснить, есть ли среди выбранных префиксы

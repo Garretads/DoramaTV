@@ -18,8 +18,8 @@ class ConfirmationFragment : DialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            titleText = it.getString(ARG_PARAM1)
-            contentText = it.getString(ARG_PARAM2)
+            titleText = it.getString(TITLE_ARG)
+            contentText = it.getString(CONTENT_ARG)
         }
     }
 
@@ -62,22 +62,21 @@ class ConfirmationFragment : DialogFragment() {
 
 
     interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         fun onAcceptPressed()
         fun onCancelPressed()
     }
 
     companion object {
 
-        private const val ARG_PARAM1 = "title"
-        private const val ARG_PARAM2 = "content"
+        private const val TITLE_ARG = "title"
+        private const val CONTENT_ARG = "content"
 
         @JvmStatic
         fun newInstance(title: String, content: String) =
             ConfirmationFragment().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1, title)
-                    putString(ARG_PARAM2, content)
+                    putString(TITLE_ARG, title)
+                    putString(CONTENT_ARG, content)
                 }
             }
     }

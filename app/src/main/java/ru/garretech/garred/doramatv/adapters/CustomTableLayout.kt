@@ -46,7 +46,7 @@ class CustomTableLayout(context: Context,attrs: AttributeSet) :TableLayout(conte
 
 
     private fun setChildrenOnClickListener(tr:TableRow) {
-        val c = tr.getChildCount()
+        val c = tr.childCount
         for (i in 0 until c) {
             val v = tr.getChildAt(i)
             if (v is RadioButton) {
@@ -56,7 +56,4 @@ class CustomTableLayout(context: Context,attrs: AttributeSet) :TableLayout(conte
         }
     }
 
-    companion object {
-        private val TAG = "ToggleButtonGroupTableLayout"
-    }
 }

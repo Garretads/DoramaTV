@@ -49,13 +49,6 @@ class SiteWorker {
 
 
         val nextQuery: Observable<List<Movie>>
-            @Throws(
-                ExecutionException::class,
-                InterruptedException::class,
-                NullPointerException::class,
-                ArrayIndexOutOfBoundsException::class,
-                IOException::class
-            )
             get() = if (queryAmount == -1 || currentOffset < queryAmount) {
                 when (requestType) {
                     SIMPLE_QUERY -> {
@@ -81,14 +74,12 @@ class SiteWorker {
                         }
 
                         val pageContent = pageDownloader.execute(uriQuery!!.toString()).get()
-
-                        if (pageContent == null)
-                            throw NullPointerException()
+                            ?: error("Page content is null")
 
                         if (queryAmount == -1)
                             queryAmount = getMaxQueryElementCount(pageContent)
 
-                        val result = movieListContentParse(context, pageContent, limit)
+                        val result = movieListContentParse(pageContent, limit)
 
                         val resultArray = result["list"] as List<Movie>
                         list?.addAll(resultArray)
@@ -119,7 +110,7 @@ class SiteWorker {
                         if (queryAmount == -1)
                             queryAmount = getMaxSearchElementCount(pageContent)
 
-                        val result = movieListContentParse(context, pageContent, limit)
+                        val result = movieListContentParse(pageContent, limit)
 
                         val resultArray = result["list"] as List<Movie>
 
@@ -207,10 +198,7 @@ class SiteWorker {
     }
 
     companion object {
-        //val SITE_URL = "http://doramatv.live"
-        //private val SITE_URL1 = "doramatv.live"
         private val editorChoice = "tiles-row"
-        val NEW_MOVIES_PARAMS = arrayOf("sortType", "created")
         val LIST_PREFIX = "list"
         val SEARCH_PREFIX = "search"
         val ONGOING_PREFIX = "list/tags/ongoing"
@@ -260,7 +248,7 @@ class SiteWorker {
             pageContent = pageDownloader.execute(Settings.SITE_URL).get()
 
             if (pageContent == null)
-                throw NullPointerException()
+                error("Page content is null")
 
             //var imageDownloader: ImageDownloader
             var movie: Movie
@@ -276,34 +264,9 @@ class SiteWorker {
                     var url = Settings.SITE_URL + element1.getElementsByTag("a")[0].attr("href")
                     url = url.substring(0, url.lastIndexOf('/'))
                     val title = element1.getElementsByTag("img")[0].attr("alt")
-                    val imageURL: String
-                    imageURL = element1.getElementsByTag("img")[0].attr("data-original")
+                    val imageURL: String = element1.getElementsByTag("img")[0].attr("data-original")
                     movie = Movie(title, imageURL, url)
 
-                    /*var image: Bitmap? = null
-                    try {
-                        image = getCachedImage(context!!, imageURL)
-                        Log.d("STATUS: ", "$imageURL found")
-                    } catch (e: FileNotFoundException) {
-                        try {
-                            imageDownloader = ImageDownloader()
-                            image = imageDownloader.execute(imageURL).get()
-                            saveImage(context!!, image!!, imageURL)
-                        } catch (e1: ExecutionException) {
-                            e.printStackTrace()
-                        } catch (e1: InterruptedException) {
-                            e.printStackTrace()
-                        } catch (e1: FileNotFoundException) {
-                            e1.printStackTrace()
-                        } catch (e1: IOException) {
-                            e1.printStackTrace()
-                        }
-
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }*/
-
-                    //movie.image = image
                     movieList.add(movie)
                 }
             }
@@ -360,7 +323,6 @@ class SiteWorker {
             var patternText: String? = null
 
             for (element in elements) {
-
                 if (element.getElementsContainingText("Список")
                         .let { letElements -> elements = letElements; letElements.size != 0 }
                 ) {
@@ -379,10 +341,6 @@ class SiteWorker {
             return resultAmount
         }
 
-        private fun getCurrentListElementCount(pageContent: Document): Int {
-            val elements = pageContent.getElementsByClass("col-sm-6")
-            return elements.size
-        }
 
         @Throws(
             InterruptedException::class,
@@ -392,7 +350,6 @@ class SiteWorker {
             ArrayIndexOutOfBoundsException::class
         )
         fun getMovieInfo(URL: String) = Single.create<Movie> {
-            val info = JSONObject()
             val pageDownloader = PageDownloader()
             val pageContent: Document?
             var name = ""
@@ -481,7 +438,6 @@ class SiteWorker {
 
         @Throws(ArrayIndexOutOfBoundsException::class)
         private fun movieListContentParse(
-            context: Context?,
             pageContent: Document,
             limit: Int
         ): HashMap<String, Any> {
@@ -502,22 +458,20 @@ class SiteWorker {
                 val tempElements =
                     element.getElementsByClass("tile-info").first().getElementsByTag("a")
                 if (tempElements.size != 0) {
-                    val genres: String
-                    if (tempElements.size > 1) {
+                    val genres = if (tempElements.size > 1) {
                         val stringBuilder = StringBuilder()
                         for (element1 in tempElements) {
                             stringBuilder.append(element1.text())
                             stringBuilder.append(", ")
                         }
-                        genres = stringBuilder.toString()
+                        stringBuilder.toString()
                             .substring(0, stringBuilder.toString().lastIndexOf(", "))
                     } else {
-                        genres = tempElements.first().text()
+                        tempElements.first().text()
                     }
 
 //                    if (genres.contains(explicitContent[0]) || genres.contains(explicitContent[1]) || genres.contains(explicitContent[2]))
 //                        continue
-
 
                     var tempElement = element.getElementsByClass("img").first()
                     val url = Settings.SITE_URL + tempElement.getElementsByTag("a")[0].attr("href")
@@ -676,57 +630,6 @@ class SiteWorker {
             return sortingVarJsonArray
         }
 
-        /* fun getSources(seriesList: ArrayList<Series>, URL: String, seriesIndex: Int) =
-
-             Single.create<JSONArray> {
-                 val VOICE = "Озвучка"
-                 val SUBS = "Сабы"
-                 val SUBS_NORMAL = "Субтитры"
-                 val ADULT_PREFIX = "?mtr=1"
-                 var pageDownloader: PageDownloader
-                 var pageContent: Document
-                 var translation: String? = null
-
-                 val oneSeriesSources = JSONArray()
-                 pageDownloader = PageDownloader()
-
-                 pageContent = pageDownloader.execute(URL + (seriesList.get(seriesIndex) as JSONObject).getString("link") + ADULT_PREFIX).get()
-
-                 if (pageContent == null) {
-                     it.onError(NullPointerException())
-                 }
-
-                 val elements = pageContent.getElementsByClass("chapter")
-                 for (element1 in elements) {
-                     val jsonObject = JSONObject()
-                     val subUnit: String
-                     val seriesID: String = element1.getElementsByAttribute("data-sid").first().attr("data-sid")
-                     val sourceName : String = element1.getElementsByClass("text-additional").first().text()
-
-                     if (element1.getElementsByClass("person-link").first() != null)
-                         subUnit = "Фансаб " + element1.getElementsByClass("person-link").first().text()
-                     else
-                         subUnit = "Оригинал"
-
-                     if (element1.text().contains(VOICE))
-                         translation = VOICE
-                     else if (element1.text().contains(SUBS))
-                         translation = SUBS_NORMAL
-
-                     jsonObject.put("sources_name", sourceName)
-
-                     jsonObject.put("series_id", seriesID)
-
-                     if (translation != null)
-                         jsonObject.put("sub_unit", "$subUnit ($translation) $sourceName")
-                     else
-                         jsonObject.put("sub_unit", "$subUnit $sourceName")
-
-                     oneSeriesSources.put(jsonObject)
-                 }
-                 it.onSuccess(oneSeriesSources)
-             }*/
-
 
         fun getSources(series: Series, URL: String) =
 
@@ -778,47 +681,9 @@ class SiteWorker {
             }
 
 
-        /*fun formSeriesList(URL: String, initialSeries: String) =
-
-        Single.create<JSONArray> {
-            val seriesList = JSONArray()
-            val ADULT_PREFIX = "?mtr=1"
-            val pageDownloader = PageDownloader()
-            val pageContent: Document
-
-            if (initialSeries == "/") {
-                it.onSuccess(seriesList)
-            }
-
-            pageContent = pageDownloader.execute(URL + initialSeries + ADULT_PREFIX).get()
-
-            if (pageContent == null) it.onError(NullPointerException())
-
-            val element = pageContent.getElementById("chapterSelectorSelect")
-
-            if (element == null) it.onError(NullPointerException())
-
-            val elements = element.getElementsByTag("option")
-            var index = 0
-
-            for (element1 in elements) {
-                val `object` = JSONObject()
-                `object`.put("name", element1.text())
-                var link = element1.attr("value")
-                link = link.substring(link.lastIndexOf("/"))
-                `object`.put("link", link)
-                seriesList.put(index, `object`)
-                index++
-            }
-            it.onSuccess(seriesList)
-        }*/
-
-
         fun formSeriesList(URL: String, initialSeries: String) =
 
             Single.create<ArrayList<Series>> {
-                //val seriesList = JSONArray()
-
                 val seriesList = ArrayList<Series>()
                 val ADULT_PREFIX = "?mtr=1"
                 val pageDownloader = PageDownloader()

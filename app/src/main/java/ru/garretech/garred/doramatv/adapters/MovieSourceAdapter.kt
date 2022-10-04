@@ -1,6 +1,5 @@
 package ru.garretech.garred.doramatv.adapters
 
-import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
@@ -155,11 +154,11 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
     }
 
     private fun flagWatchedSource(helper: BaseViewHolder?) {
-        helper?.setTextColor(R.id.sourceNameText,ContextCompat.getColor(fragment.context!!,R.color.watched_source))
+        helper?.setTextColor(R.id.sourceNameText,ContextCompat.getColor(fragment.requireContext(),R.color.watched_source))
     }
 
     private fun unflagWatchedSource(helper: BaseViewHolder?) {
-        helper?.setTextColor(R.id.sourceNameText,ContextCompat.getColor(fragment.context!!,android.R.color.secondary_text_dark))
+        helper?.setTextColor(R.id.sourceNameText,ContextCompat.getColor(fragment.requireContext(),android.R.color.secondary_text_dark))
     }
 
 

@@ -12,7 +12,7 @@ import android.widget.TextView
 import ru.garretech.garred.doramatv.R
 
 
-class DisclaimerFragment : androidx.fragment.app.DialogFragment() {
+class DisclaimerFragment : DialogFragment() {
 
     var message : String? = null
 
@@ -20,7 +20,6 @@ class DisclaimerFragment : androidx.fragment.app.DialogFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_disclaimer, container, false)
         val disclaimerMessage = view.findViewById<TextView>(R.id.disclaimerMessage)
         val button = view.findViewById<Button>(R.id.dissmissDisclaimerButton)
@@ -35,7 +34,6 @@ class DisclaimerFragment : androidx.fragment.app.DialogFragment() {
     }
 
     companion object {
-
 
         @JvmStatic
         fun newInstance(message : String) = DisclaimerFragment().also {
