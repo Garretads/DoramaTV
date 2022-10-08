@@ -24,7 +24,7 @@ android {
         applicationId "ru.garretech.garred.doramatv"
         minSdkVersion 19
         targetSdkVersion 33
-        versionCode 51
+        versionCode 52
         versionName "1.7.1"
 
         multiDexEnabled true
