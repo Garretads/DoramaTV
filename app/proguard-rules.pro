@@ -16,6 +16,9 @@
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable
 
+# ALSO REMEMBER KEEPING YOUR MODEL CLASSES
+-keep class ru.garretech.garred.doramatv.data.model.** { *; }
+
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile

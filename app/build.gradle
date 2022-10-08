@@ -35,9 +35,13 @@ android {
     buildTypes {
         debug {
             ext.enableCrashlytics = false
+            minifyEnabled false
+            shrinkResources false
         }
 
         release {
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.config
         }

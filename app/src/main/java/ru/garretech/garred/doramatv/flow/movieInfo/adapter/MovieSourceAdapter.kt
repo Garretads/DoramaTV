@@ -27,12 +27,6 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
         addItemType(Source.TYPE, R.layout.cardview_source)
     }
 
-
-    fun setOnChapterClickListener(listener : OnExpandableItemClickListener) {
-        onExpandableItemClickListener = listener
-    }
-
-
     override fun convert(helper: BaseViewHolder?, item: MultiItemEntity?) {
         when (helper?.itemViewType) {
             Series.TYPE -> {
@@ -50,29 +44,33 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
                 * Забирать индексы просмотренных серий. Сверять текущий индекс с полученным
                 *
                 * */
-
                 helper.itemView.setOnClickListener {
                     val pos = helper.adapterPosition
-
-                    //TODO ("Подгрузить список источников")
 
                     if (series.isExpanded)
                         collapse(pos)
                     else {
-                        if (!series.sourcesLoaded)
-                            DisposableManager.add(fragment.viewModel.getOneSeriesSources(series, fragment.viewModel.currentMovie?.url!!)
-                                    .subscribe({ sourcesArray ->
+                        if (!series.sourcesLoaded) {
+                            setLoading(helper, true)
 
-                                        for (source in sourcesArray) {
-                                            series.addSubItem(source)
-                                            notifyDataSetChanged()
-                                        }
-                                        series.sourcesLoaded = true
-                                        selectedSeries = series.index
-                                        expand(pos)
-                                    }, {
-                                        Log.e("SOURCE LIST", "ERROR LOADING SOURCES LIST", it)
-                                    }))
+                            DisposableManager.add(fragment.viewModel.getOneSeriesSources(series, fragment.viewModel.currentMovie?.url!!)
+                                .subscribe({ sourcesArray ->
+
+                                    for (source in sourcesArray) {
+                                        series.addSubItem(source)
+                                        notifyDataSetChanged()
+                                    }
+                                    series.sourcesLoaded = true
+                                    selectedSeries = series.index
+                                    setLoading(helper, false)
+
+                                    expand(pos)
+                                }, {
+                                    setLoading(helper, false)
+
+                                    Log.e("SOURCE LIST", "ERROR LOADING SOURCES LIST", it)
+                                }))
+                        }
                         else {
                             selectedSeries = series.index
                             expand(pos)
@@ -95,6 +93,7 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
                     unflagWatchedSource(helper)
 
                 helper.itemView.setOnClickListener {
+                    setLoading(helper, true)
 
                     if (sourceName.contains("vk.com")) {
                         fragment.viewModel.getVkLink(source).subscribe({ fileLink ->
@@ -110,9 +109,11 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
                             } else
                                 Toast.makeText(fragment.context,"Ошибка при загрузке списка качеств, попробуйте еще раз", Toast.LENGTH_LONG).show()
 
+                            setLoading(helper, false)
                         },{
                             Toast.makeText(fragment.context,"Ошибка при получении списка качеств", Toast.LENGTH_SHORT).show()
                             Log.e("MovieSourcesFragment","Ошибка при получении списка качеств",it)
+                            setLoading(helper, false)
                         }).let(disposableBag::add)
 
                     } else {
@@ -128,11 +129,14 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
                                 else seriesLink = it
                                 intent.putExtra("link", seriesLink)
 
+                                setLoading(helper, false)
+
                                 fragment.startActivity(intent)
                             }.let(disposableBag::add)
                         },{
                             Toast.makeText(fragment.context,"Ошибка при открытии серии", Toast.LENGTH_SHORT).show()
                             Log.e("MovieSourcesFragment","Ошибка при открытии серии",it)
+                            setLoading(helper, false)
                         }).let(disposableBag::add)
                     }
                 }
@@ -141,16 +145,20 @@ class MovieSourceAdapter(val fragment: MovieSourcesFragment, data : ArrayList<Mu
         }
     }
 
+    private fun setLoading(helper : BaseViewHolder?, isLoading: Boolean) {
+        helper?.setGone(R.id.progressBarId, isLoading)
+    }
+
     override fun getItemId(position: Int): Long {
         return mData[position].hashCode().toLong()
     }
 
     private fun flagWatchedSeries(helper : BaseViewHolder?) {
-        helper?.setVisible(R.id.seriesWatchedImage,true)
+        helper?.setGone(R.id.seriesWatchedImage,true)
     }
 
     private fun unflagWatchedSeries(helper : BaseViewHolder?) {
-        helper?.setVisible(R.id.seriesWatchedImage,false)
+        helper?.setGone(R.id.seriesWatchedImage,false)
     }
 
     private fun flagWatchedSource(helper: BaseViewHolder?) {
